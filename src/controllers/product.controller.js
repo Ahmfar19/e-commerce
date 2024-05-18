@@ -1,0 +1,142 @@
+const Product = require('../models/product.model');
+const { sendResponse } = require('../helpers/apiResponse');
+const path = require('path');
+const fs = require('fs');
+
+const createProductFolder = async (uploadPath, files, product, lastProduct) => {
+    return new Promise((resolve, reject) => {
+        fs.mkdir(uploadPath, { recursive: true }, async (err) => {
+            if (err) {
+                reject(err);
+            }
+            if (files) {
+                const images = await saveImagesToFolder(files, uploadPath);
+                product.image = JSON.stringify(images);
+                await product.updateById(lastProduct);
+                resolve(product);
+            }
+        });
+    });
+};
+const saveImagesToFolder = (files, uploadPath) => {
+    return files.map((file) => {
+        const fileName = file.originalname;
+        const filePath = path.join(uploadPath, fileName);
+        fs.writeFileSync(filePath, fileName); // Save file to folder
+        return fileName;
+    });
+};
+const createProduct = async (req, res) => {
+    try {
+        const { category_id, title, description, price, stock } = req.body;
+
+        const product = new Product({
+            category_id,
+            title,
+            description,
+            price,
+            stock,
+        });
+
+        const lastProduct = await product.save();
+        const folderName = `product_${lastProduct}`;
+        const uploadPath = path.join(__dirname, '../../assets/images', folderName);
+
+        if (!fs.existsSync(uploadPath)) {
+            const data = await createProductFolder(uploadPath, req.files, product, lastProduct);
+
+            sendResponse(res, 201, 'Created', 'Successfully created a product.', null, data);
+        } else {
+            throw new Error(`Product_${lastProduct} already exists`);
+        }
+    } catch (err) {
+        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+    }
+};
+const getProduct = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const product = await Product.getSingleById(id);
+        const folderName = `product_${id}`;
+        const uploadPath = path.join(__dirname, '../../assets/images', folderName);
+
+        if (fs.existsSync(uploadPath)) {
+            const files = fs.readdirSync(uploadPath);
+
+            const images = files.map((file) => {
+                return `${folderName}/${file}`;
+            });
+
+            product[0].image = JSON.stringify(images);
+        }
+        sendResponse(res, 200, 'OK', 'Product retrieved successfully.', null, product);
+    } catch (err) {
+        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+    }
+};
+
+const updateProduct = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const { category_id, title, description, price, stock } = req.body;
+
+        // update product text only
+        const product = new Product({
+            category_id: category_id,
+            title: title,
+            description: description,
+            price: price,
+            stock: stock,
+        });
+        await product.updateById(id);
+
+        const folderName = `product_${id}`;
+        const uploadPath = path.join(__dirname, '../../assets/images', folderName);
+
+        // Handle image update
+        if (req.files) {
+            // Delete existing images
+            if (fs.existsSync(uploadPath)) {
+                const files = fs.readdirSync(uploadPath);
+                files.forEach((file) => {
+                    fs.unlinkSync(path.join(uploadPath, file));
+                });
+            }
+
+            const newImages = [];
+            req.files.forEach((file) => {
+                const imagePath = path.join(folderName, file.originalname);
+                newImages.push(imagePath);
+            });
+        }
+
+        const data = await createProductFolder(uploadPath, req.files, product, id);
+
+        sendResponse(res, 202, 'Accepted', 'Successfully updated a product.', null, data);
+    } catch (err) {
+        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+    }
+};
+const deleteProduct = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const data = await Product.deleteById(id);
+        if (data.affectedRows === 0) {
+            return res.json({
+                status: 404,
+                statusCode: 'Bad Request',
+                message: 'No product found for delete',
+            });
+        }
+        sendResponse(res, 202, 'Accepted', 'Successfully deleted a product.', null, null);
+    } catch (err) {
+        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+    }
+};
+
+module.exports = {
+    createProduct,
+    updateProduct,
+    getProduct,
+    deleteProduct,
+};
