@@ -1,0 +1,28 @@
+{
+    "typescript": {
+        "indentWidth": 4,
+        "quoteStyle": "preferSingle",
+        "newLineKind": "auto"
+    },
+    "json": {
+        "indentWidth": 4,
+        "newLineKind": "auto"
+    },
+    "markdown": {
+        "newLineKind": "auto"
+    },
+    "includes": [
+        "**/*.{ts,tsx,js,jsx,cjs,mjs,json,md}"
+    ],
+    "excludes": [
+        "**/node_modules",
+        "**/*-lock.json",
+        "**/dist",
+        "**/VROOT"
+    ],
+    "plugins": [
+        "./plugin1.wasm",
+        "./plugin2.wasm",
+        "./plugin3.wasm"
+    ]
+}
