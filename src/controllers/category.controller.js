@@ -56,10 +56,10 @@ const deleteCategory = async (req, res) => {
             return res.json({
                 status: 404,
                 statusCode: 'Bad Request',
-                message: 'No category found for delete',
+                message: 'No wishList found for delete',
             });
         }
-        sendResponse(res, 202, 'Accepted', 'Successfully deleted a category.', null, null);
+        sendResponse(res, 202, 'Accepted', 'Successfully deleted a wishList.', null, null);
     } catch (err) {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }

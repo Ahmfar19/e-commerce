@@ -116,6 +116,7 @@ const deleteUser = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
+//not working
 const login = async (req, res) => {
     const { email_username, password, rememberMe, fingerprint } = req.body;
 
