@@ -45,5 +45,6 @@ router.get('/carts/:customer_id', cartController.getCarts)
 router.get('/cart/:id/:customer_id', cartController.getSingleCart)
 router.put('/cart/edit/:id/:customer_id', cartController.updateCart)
 router.delete('/cart/delete/:id/:customer_id', cartController.deleteCart)
+
 module.exports = router;
 
