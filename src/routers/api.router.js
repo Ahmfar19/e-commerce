@@ -7,6 +7,8 @@ const upload = multer();
 const customerController = require('../controllers/customer.controller');
 const categoryController = require('../controllers/category.controller');
 const productController = require('../controllers/product.controller');
+const wishListController = require('../controllers/wishlist.controller');
+const cartController = require('../controllers/cart.controller');
 
 // users
 router.post('/user/new', customerController.createUser);
@@ -15,19 +17,33 @@ router.get('/user/:id', customerController.getSingleUser);
 router.put('/user/edit/:id', customerController.updateUser);
 router.delete('/user/delete/:id', customerController.deleteUser);
 router.put('/user/password/:id', customerController.updateUserPassword);
+
 // categories
 router.get('/categories', categoryController.getCategories);
 router.get('/category/:id', categoryController.getSingleCategory);
 router.post('/category/new', categoryController.createCategory);
 router.put('/category/edit/:id', categoryController.updateCategory);
 router.delete('/category/delete/:id', categoryController.deleteCategory);
+
 // products
-router.get('/products', productController.getProducts);
 router.get('/product/:id', productController.getProduct);
-
+router.get('/products', productController.getProducts);
 router.post('/product/new', upload.array('images'), productController.createProduct);
-
-router.put('/product/edit/:id', productController.updateProduct);
+router.put('/product/edit/:id', upload.array('images'), productController.updateProduct);
 router.delete('/product/delete/:id', productController.deleteProduct);
+
+// wishlists
+router.post('/wishlist/new', wishListController.createWishList);
+router.get('/wishLists/:customer_id', wishListController.getWishLists);
+router.get('/wishList/:id/:customer_id', wishListController.getSingleWishList);
+router.put('/wishList/edit/:id/:customer_id', wishListController.updateWishList);
+router.delete('/wishList/delete/:id/:customer_id', wishListController.deleteWishList);
+
+// carts
+router.post('/cart/new', cartController.createCart);
+router.get('/carts/:customer_id', cartController.getCarts);
+router.get('/cart/:id/:customer_id', cartController.getSingleCart);
+router.put('/cart/edit/:id/:customer_id', cartController.updateCart);
+router.delete('/cart/delete/:id/:customer_id', cartController.deleteCart);
 
 module.exports = router;
