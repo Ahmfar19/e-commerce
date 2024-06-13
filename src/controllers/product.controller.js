@@ -77,7 +77,7 @@ const getProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
     try {
         const id = req.params.id;
-    
+
         const { category_id, title, description, price, stock } = req.body;
 
         // update product text only
@@ -88,9 +88,9 @@ const updateProduct = async (req, res) => {
             price: price,
             stock: stock,
         });
-       
+
         const check = await product.updateById(id);
-       
+
         if (check.affectedRows === 0) {
             return res.json({
                 status: 404,
@@ -98,10 +98,10 @@ const updateProduct = async (req, res) => {
                 message: 'No product found for update',
             });
         }
-      
+
         const folderName = `product_${id}`;
         const uploadPath = path.join(__dirname, '../../assets/images', folderName);
-    
+
         // Handle image update
         if (req.files.length) {
             // Delete existing images
@@ -110,23 +110,22 @@ const updateProduct = async (req, res) => {
                 files.forEach((file) => {
                     fs.unlinkSync(path.join(uploadPath, file));
                 });
-            }  
+            }
         }
 
-         const data = await createProductFolder(uploadPath, req.files, product, id);
-      
-         sendResponse(res, 202, 'Accepted', 'Successfully updated a product.', null, data);
-   
-        } catch (err) {
+        const data = await createProductFolder(uploadPath, req.files, product, id);
+
+        sendResponse(res, 202, 'Accepted', 'Successfully updated a product.', null, data);
+    } catch (err) {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
 };
 const deleteProduct = async (req, res) => {
     try {
         const id = req.params.id;
-       
+
         const data = await Product.deleteById(id);
-       
+
         if (data.affectedRows === 0) {
             return res.json({
                 status: 404,
@@ -134,7 +133,7 @@ const deleteProduct = async (req, res) => {
                 message: 'No product found for delete',
             });
         }
-      
+
         const folderName = `product_${id}`;
         const uploadPath = path.join(__dirname, '../../assets/images', folderName);
 
@@ -144,11 +143,11 @@ const deleteProduct = async (req, res) => {
                 fs.unlinkSync(path.join(uploadPath, file));
             });
             fs.rmdirSync(uploadPath); // Delete the directory after removing files
-        }  
+        }
 
         sendResponse(res, 202, 'Accepted', 'Successfully deleted a product.', null, null);
     } catch (err) {
-         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
 };
 const getProducts = async (req, res) => {
@@ -158,11 +157,11 @@ const getProducts = async (req, res) => {
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
-}
+};
 module.exports = {
     createProduct,
     updateProduct,
     getProduct,
     deleteProduct,
-    getProducts
+    getProducts,
 };

@@ -12,7 +12,7 @@ const createWishList = async (req, res) => {
 };
 const getSingleWishList = async (req, res) => {
     try {
-        const { id, customer_id} = req.params;
+        const { id, customer_id } = req.params;
         const signleWishList = await WishList.getSingleById(id, customer_id);
         sendResponse(res, 200, 'Ok', 'Successfully retrieved the single wishList.', null, signleWishList);
     } catch (error) {
@@ -21,7 +21,7 @@ const getSingleWishList = async (req, res) => {
 };
 const updateWishList = async (req, res) => {
     try {
-        const { id, customer_id} = req.params; 
+        const { id, customer_id } = req.params;
 
         const wishList = new WishList(req.body);
 
@@ -42,7 +42,7 @@ const updateWishList = async (req, res) => {
 };
 const deleteWishList = async (req, res) => {
     try {
-        const { id, customer_id} = req.params; 
+        const { id, customer_id } = req.params;
         const data = await WishList.deleteById(id, customer_id);
         if (data.affectedRows === 0) {
             return res.json({
@@ -64,12 +64,12 @@ const getWishLists = async (req, res) => {
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
-}
+};
 
 module.exports = {
     createWishList,
     getSingleWishList,
     updateWishList,
     deleteWishList,
-    getWishLists
+    getWishLists,
 };

@@ -27,24 +27,23 @@ router.delete('/category/delete/:id', categoryController.deleteCategory);
 
 // products
 router.get('/product/:id', productController.getProduct);
-router.get('/products', productController.getProducts)
+router.get('/products', productController.getProducts);
 router.post('/product/new', upload.array('images'), productController.createProduct);
 router.put('/product/edit/:id', upload.array('images'), productController.updateProduct);
 router.delete('/product/delete/:id', productController.deleteProduct);
 
-//wishlists
-router.post('/wishlist/new', wishListController.createWishList)
+// wishlists
+router.post('/wishlist/new', wishListController.createWishList);
 router.get('/wishLists/:customer_id', wishListController.getWishLists);
-router.get('/wishList/:id/:customer_id', wishListController.getSingleWishList)
-router.put('/wishList/edit/:id/:customer_id', wishListController.updateWishList)
-router.delete('/wishList/delete/:id/:customer_id', wishListController.deleteWishList)
+router.get('/wishList/:id/:customer_id', wishListController.getSingleWishList);
+router.put('/wishList/edit/:id/:customer_id', wishListController.updateWishList);
+router.delete('/wishList/delete/:id/:customer_id', wishListController.deleteWishList);
 
-//carts
-router.post('/cart/new', cartController.createCart)
-router.get('/carts/:customer_id', cartController.getCarts)
-router.get('/cart/:id/:customer_id', cartController.getSingleCart)
-router.put('/cart/edit/:id/:customer_id', cartController.updateCart)
-router.delete('/cart/delete/:id/:customer_id', cartController.deleteCart)
+// carts
+router.post('/cart/new', cartController.createCart);
+router.get('/carts/:customer_id', cartController.getCarts);
+router.get('/cart/:id/:customer_id', cartController.getSingleCart);
+router.put('/cart/edit/:id/:customer_id', cartController.updateCart);
+router.delete('/cart/delete/:id/:customer_id', cartController.deleteCart);
 
 module.exports = router;
-

@@ -64,12 +64,12 @@ const getCarts = async (req, res) => {
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
-}
+};
 
 module.exports = {
     createCart,
     getSingleCart,
     updateCart,
     deleteCart,
-    getCarts
+    getCarts,
 };

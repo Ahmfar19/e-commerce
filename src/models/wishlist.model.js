@@ -2,7 +2,7 @@ const pool = require('../databases/mysql.db');
 
 class WishList {
     constructor(options) {
-        this.product_id	= options.product_id;
+        this.product_id = options.product_id;
         this.customer_id = options.customer_id;
         this.quantity = options.quantity;
     }
