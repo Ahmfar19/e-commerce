@@ -8,7 +8,7 @@ const customerController = require('../controllers/customer.controller');
 const categoryController = require('../controllers/category.controller');
 const productController = require('../controllers/product.controller');
 const wishListController = require('../controllers/wishlist.controller');
-const cartController = require('../controllers/cart.controller');
+
 
 // users
 router.post('/user/new', customerController.createUser);
@@ -38,12 +38,5 @@ router.get('/wishLists/:customer_id', wishListController.getWishLists);
 router.get('/wishList/:id/:customer_id', wishListController.getSingleWishList);
 router.put('/wishList/edit/:id/:customer_id', wishListController.updateWishList);
 router.delete('/wishList/delete/:id/:customer_id', wishListController.deleteWishList);
-
-// carts
-router.post('/cart/new', cartController.createCart);
-router.get('/carts/:customer_id', cartController.getCarts);
-router.get('/cart/:id/:customer_id', cartController.getSingleCart);
-router.put('/cart/edit/:id/:customer_id', cartController.updateCart);
-router.delete('/cart/delete/:id/:customer_id', cartController.deleteCart);
 
 module.exports = router;
