@@ -4,7 +4,8 @@ const { sendResponse } = require('../helpers/apiResponse');
 
 const createUser = async (req, res) => {
     try {
-        const { username, first_name, last_name, email, password, address, phone } = req.body;
+        const { username, first_name, last_name, email, password, address, phone, personal_number, registered } = req.body;
+        
         const checkuser = await User.checkIfUserExisted(email, username);
 
         if (checkuser.length) {
@@ -26,13 +27,16 @@ const createUser = async (req, res) => {
             email,
             password: hashedPassword.data,
             address,
-            phone
+            phone,
+            personal_number,
+            registered
         });
-
+        console.log(user);
         await user.createUser();
 
         sendResponse(res, 201, 'Created', 'Successfully created a user.', null, user);
     } catch (error) {
+        console.log(error.message);
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };

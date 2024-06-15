@@ -9,6 +9,8 @@ class User {
         this.password = options.password;
         this.address = options.address;
         this.phone = options.phone;
+        this.personal_number = options.personal_number;
+        this.registered = options.registered;
     }
     async createUser() {
         const sql = `INSERT INTO customers (
@@ -18,7 +20,9 @@ class User {
             email,
             password,
             address,
-            phone   
+            phone,
+            personal_number,
+            registered
         ) VALUES (
             "${this.username}", 
             "${this.first_name}", 
@@ -26,7 +30,9 @@ class User {
             "${this.email}", 
             "${this.password}",
             "${this.address}",
-            ${this.phone} 
+            ${this.phone},
+            "${this.personal_number}",
+            ${this.registered}
         )`;
         const result = await pool.execute(sql);
         this.customer_id = result[0].insertId;
@@ -49,7 +55,9 @@ class User {
         last_name = "${this.last_name}", 
         email = "${this.email}",
         address = "${this.address}",
-        phone = ${this.phone}
+        phone = ${this.phone},
+        personal_number = "${this.personal_number}",
+        registered = ${this.registered}
         WHERE customer_id = ${id}`;
         await pool.execute(sql);
     }
