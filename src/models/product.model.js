@@ -79,6 +79,11 @@ class Product {
         const [rows] = await pool.execute(sql);
         return rows;
     }
+    static async getByCategory(category_id) {
+        const sql = `SELECT * FROM products WHERE category_id = "${category_id}"`;
+        const [rows] = await pool.execute(sql);
+        return rows;
+    }
 }
 
 module.exports = Product;
