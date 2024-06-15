@@ -4,36 +4,36 @@ class Product {
     constructor(options) {
         this.category_id = options.category_id;
         this.image = options.image || '';
-        this.title = options.title;
-        this.description = options.description;
+        this.name = options.name;
+        this.description = options.description || '';
         this.price = options.price;
         this.discount = options.discount || 0; // Set default discount to 0 if not provided
         this.quantity = options.quantity;
-        this.shop = options.shop;
+        this.available = options.available;
     }
     
     async save() {
         const sql = `INSERT INTO products (
             category_id,
             image,
-            title,
+            name,
             description,
             price,
             discount,
             quantity,
-            shop
+            available
         ) VALUES (
             ?, ?, ?, ?, ?, ?, ?, ?
         )`;
         const values = [
             this.category_id,
             this.image,
-            this.title,
+            this.name,
             this.description,
             this.price,
             this.discount,
             this.quantity,
-            this.shop
+            this.available
         ];
         const [result] = await pool.execute(sql, values);
         this.product_id = result.insertId;
@@ -53,22 +53,22 @@ class Product {
         const sql = `UPDATE products SET 
         category_id = ?,
         image = ?,
-        title = ?,
+        name = ?,
         description = ?,
         price = ?,
         discount = ?,
         quantity = ?,
-        shop = ?
+        available = ?
         WHERE product_id = ?`;
         const values = [
             this.category_id,
             this.image,
-            this.title,
+            this.name,
             this.description,
             this.price,
             this.discount,
             this.quantity,
-            this.shop,
+            this.available,
             id
         ];
         const [rows] = await pool.execute(sql, values);

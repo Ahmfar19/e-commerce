@@ -29,16 +29,16 @@ const saveImagesToFolder = async (files, uploadPath) => {
 };
 const createProduct = async (req, res) => {
     try {
-        const { category_id, title, description, price, discount, quantity, shop } = req.body;
+        const { category_id, name, description, price, discount, quantity, available } = req.body;
 
         const product = new Product({
             category_id,
-            title,
+            name,
             description,
             price,
             discount,
             quantity,
-            shop,
+            available,
         });
 
         const lastProduct = await product.save();
@@ -81,17 +81,17 @@ const updateProduct = async (req, res) => {
     try {
         const id = req.params.id;
 
-        const { category_id, title, description, price, discount, quantity, shop } = req.body;
+        const { category_id, name, description, price, discount, quantity, available } = req.body;
 
         // update product text only
         const product = new Product({
             category_id: category_id,
-            title: title,
+            name: name,
             description: description,
             price: price,
             discount: discount,
             quantity: quantity,
-            shop: shop
+            available: available
         });
 
         const check = await product.updateById(id);

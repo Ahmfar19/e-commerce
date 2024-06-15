@@ -7,8 +7,6 @@ const upload = multer();
 const customerController = require('../controllers/customer.controller');
 const categoryController = require('../controllers/category.controller');
 const productController = require('../controllers/product.controller');
-const wishListController = require('../controllers/wishlist.controller');
-
 
 // users
 router.post('/user/new', customerController.createUser);
@@ -31,12 +29,5 @@ router.get('/products', productController.getProducts);
 router.post('/product/new', upload.array('images'), productController.createProduct);
 router.put('/product/edit/:id', upload.array('images'), productController.updateProduct);
 router.delete('/product/delete/:id', productController.deleteProduct);
-
-// wishlists
-router.post('/wishlist/new', wishListController.createWishList);
-router.get('/wishLists/:customer_id', wishListController.getWishLists);
-router.get('/wishList/:id/:customer_id', wishListController.getSingleWishList);
-router.put('/wishList/edit/:id/:customer_id', wishListController.updateWishList);
-router.delete('/wishList/delete/:id/:customer_id', wishListController.deleteWishList);
 
 module.exports = router;
