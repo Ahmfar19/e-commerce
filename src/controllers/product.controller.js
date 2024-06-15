@@ -22,24 +22,27 @@ const saveImagesToFolder = async (files, uploadPath) => {
     const savePromises = files.map(async (file) => {
         const fileName = file.originalname;
         const filePath = path.join(uploadPath, fileName);
-        await fs.promises.writeFile(filePath, fileName); // Asynchronous file writing
+        await fs.promises.writeFile(filePath, file.buffer);// Asynchronous file writing
         return fileName;
     });
     return Promise.all(savePromises);
 };
 const createProduct = async (req, res) => {
     try {
-        const { category_id, title, description, price, stock } = req.body;
+        const { category_id, title, description, price, discount, quantity, shop } = req.body;
 
         const product = new Product({
             category_id,
             title,
             description,
             price,
-            stock,
+            discount,
+            quantity,
+            shop,
         });
 
         const lastProduct = await product.save();
+
         const folderName = `product_${lastProduct}`;
         const uploadPath = path.join(__dirname, '../../assets/images', folderName);
 
@@ -78,7 +81,7 @@ const updateProduct = async (req, res) => {
     try {
         const id = req.params.id;
 
-        const { category_id, title, description, price, stock } = req.body;
+        const { category_id, title, description, price, discount, quantity, shop } = req.body;
 
         // update product text only
         const product = new Product({
@@ -86,7 +89,9 @@ const updateProduct = async (req, res) => {
             title: title,
             description: description,
             price: price,
-            stock: stock,
+            discount: discount,
+            quantity: quantity,
+            shop: shop
         });
 
         const check = await product.updateById(id);

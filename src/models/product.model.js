@@ -7,8 +7,11 @@ class Product {
         this.title = options.title;
         this.description = options.description;
         this.price = options.price;
-        this.stock = options.stock;
+        this.discount = options.discount || 0; // Set default discount to 0 if not provided
+        this.quantity = options.quantity;
+        this.shop = options.shop;
     }
+    
     async save() {
         const sql = `INSERT INTO products (
             category_id,
@@ -16,17 +19,24 @@ class Product {
             title,
             description,
             price,
-            stock
+            discount,
+            quantity,
+            shop
         ) VALUES (
-             ${this.category_id},
-             '${this.image}',
-            "${this.title}",
-            "${this.description}",
-             ${this.price},
-             ${this.stock}
+            ?, ?, ?, ?, ?, ?, ?, ?
         )`;
-        const result = await pool.execute(sql);
-        this.product_id = result[0].insertId;
+        const values = [
+            this.category_id,
+            this.image,
+            this.title,
+            this.description,
+            this.price,
+            this.discount,
+            this.quantity,
+            this.shop
+        ];
+        const [result] = await pool.execute(sql, values);
+        this.product_id = result.insertId;
         return this.product_id;
     }
     static async getAll() {
@@ -41,14 +51,27 @@ class Product {
     }
     async updateById(id) {
         const sql = `UPDATE products SET 
-        category_id = ${this.category_id},
-        image = '${this.image}',
-        title = "${this.title}",
-        description = "${this.description}",
-        price = ${this.price},
-        stock = ${this.stock}
-        WHERE product_id = ${id}`;
-        const [rows] = await pool.execute(sql);
+        category_id = ?,
+        image = ?,
+        title = ?,
+        description = ?,
+        price = ?,
+        discount = ?,
+        quantity = ?,
+        shop = ?
+        WHERE product_id = ?`;
+        const values = [
+            this.category_id,
+            this.image,
+            this.title,
+            this.description,
+            this.price,
+            this.discount,
+            this.quantity,
+            this.shop,
+            id
+        ];
+        const [rows] = await pool.execute(sql, values);
         return rows;
     }
     static async deleteById(id) {
