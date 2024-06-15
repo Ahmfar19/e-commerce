@@ -7,6 +7,7 @@ const upload = multer();
 const customerController = require('../controllers/customer.controller');
 const categoryController = require('../controllers/category.controller');
 const productController = require('../controllers/product.controller');
+const orderTypeController = require('../controllers/orderType.controller');
 
 // users
 router.post('/user/new', customerController.createUser);
@@ -31,4 +32,10 @@ router.put('/product/edit/:id', upload.array('images'), productController.update
 router.delete('/product/delete/:id', productController.deleteProduct);
 router.get('/products/:categoryId', productController.getProductByCategoryId)
 
+//orderType
+router.get('/orderTypes', orderTypeController.getOrderTypes)
+router.post('/orderType/new', orderTypeController.createOrderType)
+router.get('/orderType/:id', orderTypeController.getSingleOrderType)
+router.put('/orderType/edit/:id', orderTypeController.updateOrderType)
+router.delete('/orderType/delete/:id', orderTypeController.deleteOrderType)
 module.exports = router;
