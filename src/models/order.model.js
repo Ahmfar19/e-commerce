@@ -44,6 +44,19 @@ class Order {
         return rows;
     }
 
+    static async deleteAll() {
+        const sql = `DELETE FROM orders`;
+        const [rows] = await pool.execute(sql);
+        return rows;
+    }
+
+    static async getByCustomerId(customer_id){
+        const sql = `SELECT *, DATE_FORMAT(order_date, '%Y-%m-%d %H:%i:%s') AS order_date 
+        FROM  orders where customer_id = ?`;
+        const [rows] = await pool.execute(sql, [customer_id]);
+        return rows;
+    }
+    
     static async checkCustomerIfExisted(email) {
         const sql = `SELECT * FROM customers WHERE email = ?`;
         const [rows] = await pool.execute(sql, [email]);

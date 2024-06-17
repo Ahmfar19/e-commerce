@@ -82,7 +82,30 @@ const getAllOrders = async (req, res) => {
     }
 };
 
+const deleteAllOrders = async (req, res) => {
+    try {
+        await Order.deleteAll();
+        sendResponse(res, 202, 'Accepted', 'Successfully deleted all orders', null, null);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+    }
+};
+
+const getOrderByCustomerId = async (req, res) => {
+   
+    try {
+        const id = req.params.id;
+        const customerOrders = await Order.getByCustomerId(id);
+
+        sendResponse(res, 202, 'Accepted', 'Successfully retrieved all the orders for customer.', null, customerOrders);
+    } catch (err) {
+        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+    }
+        
+};
 module.exports = {
     createOrder,
-    getAllOrders
+    getAllOrders,
+    deleteAllOrders,
+    getOrderByCustomerId
 };
