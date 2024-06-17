@@ -42,5 +42,5 @@ router.delete('/orderType/delete/:id', orderTypeController.deleteOrderType)
 
 //orders
 router.post('/order/new', orderController.createOrder)
-
+router.get('/orders', orderController.getAllOrders)
 module.exports = router;

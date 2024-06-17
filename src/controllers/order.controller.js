@@ -53,7 +53,7 @@ const createOrder = async (req, res) => {
             });
 
             const last_customer_id = await customer.createUser();
-            
+
             const order = new Order({
                 customer_id: last_customer_id,
                 type_id,
@@ -73,7 +73,16 @@ const createOrder = async (req, res) => {
     }
 };
 
+const getAllOrders = async (req, res) => {
+    try {
+         const orders = await Order.getAll();
+         sendResponse(res, 200, 'Ok', 'Successfully retrieved all the orders.', null, orders);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
 
 module.exports = {
-    createOrder
+    createOrder,
+    getAllOrders
 };
