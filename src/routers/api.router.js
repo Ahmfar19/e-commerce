@@ -8,6 +8,7 @@ const customerController = require('../controllers/customer.controller');
 const categoryController = require('../controllers/category.controller');
 const productController = require('../controllers/product.controller');
 const orderTypeController = require('../controllers/orderType.controller');
+const orderController = require('../controllers/order.controller');
 
 // users
 router.post('/user/new', customerController.createUser);
@@ -38,4 +39,8 @@ router.post('/orderType/new', orderTypeController.createOrderType)
 router.get('/orderType/:id', orderTypeController.getSingleOrderType)
 router.put('/orderType/edit/:id', orderTypeController.updateOrderType)
 router.delete('/orderType/delete/:id', orderTypeController.deleteOrderType)
+
+//orders
+router.post('/order/new', orderController.createOrder)
+
 module.exports = router;

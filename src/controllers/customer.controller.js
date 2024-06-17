@@ -31,7 +31,7 @@ const createUser = async (req, res) => {
             personal_number,
             registered
         });
-        console.log(user);
+
         await user.createUser();
 
         sendResponse(res, 201, 'Created', 'Successfully created a user.', null, user);
