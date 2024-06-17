@@ -56,7 +56,51 @@ class Order {
         const [rows] = await pool.execute(sql, [customer_id]);
         return rows;
     }
-    
+
+    static async deleteOrderByCustomerId(customer_id){
+        const sql = `DELETE FROM orders where customer_id = ?`;
+        const [rows] = await pool.execute(sql, [customer_id]);
+        return rows;
+    }
+
+    static async deleteById(id) {
+        const sql = `DELETE FROM orders where order_id = ?`;
+        const [rows] = await pool.execute(sql, [id]);
+        return rows;
+    }
+
+    static async getById(id) {
+        const sql = `SELECT *, DATE_FORMAT(order_date, '%Y-%m-%d %H:%i:%s') AS order_date FROM orders where order_id = ?`;
+        const [rows] = await pool.execute(sql, [id]);
+        return rows;
+    }
+
+    // static async updateById(id){
+    //     const sql = `UPDATE orders SET 
+    //     category_id = ?,
+    //     image = ?,
+    //     name = ?,
+    //     description = ?,
+    //     price = ?,
+    //     discount = ?,
+    //     quantity = ?,
+    //     available = ?
+    //     WHERE product_id = ?`;
+    //     const values = [
+    //         this.category_id,
+    //         this.image,
+    //         this.name,
+    //         this.description,
+    //         this.price,
+    //         this.discount,
+    //         this.quantity,
+    //         this.available,
+    //         id
+    //     ];
+    //     const [rows] = await pool.execute(sql, values);
+    //     return rows;
+    // }
+
     static async checkCustomerIfExisted(email) {
         const sql = `SELECT * FROM customers WHERE email = ?`;
         const [rows] = await pool.execute(sql, [email]);

@@ -103,9 +103,57 @@ const getOrderByCustomerId = async (req, res) => {
     }
         
 };
+
+const deleteOrderByCustomerId = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const data = await Order.deleteOrderByCustomerId(id);
+        if (data.affectedRows === 0) {
+            return res.json({
+                status: 404,
+                statusCode: 'Bad Request',
+                message: 'No orders found for delete',
+            });
+        }
+        sendResponse(res, 202, 'Accepted', 'Successfully deleted a customer orders.', null, null);
+    } catch (err) {
+        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+    }
+}
+
+const deleteOrderById = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const data = await Order.deleteById(id);
+        if (data.affectedRows === 0) {
+            return res.json({
+                status: 404,
+                statusCode: 'Bad Request',
+                message: 'No order found for delete',
+            });
+        }
+        sendResponse(res, 202, 'Accepted', 'Successfully deleted  order.', null, null);
+    } catch (err) {
+        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+    }
+};
+
+const getOrderById = async (req, res) => {
+    try {
+        const { id } = req.params
+        const order = await Order.getById(id);
+        sendResponse(res, 202, 'Accepted', 'Successfully retrieved all the order ', null, order);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+    }
+};
+
 module.exports = {
     createOrder,
     getAllOrders,
     deleteAllOrders,
-    getOrderByCustomerId
+    getOrderByCustomerId,
+    deleteOrderByCustomerId,
+    deleteOrderById,
+    getOrderById
 };

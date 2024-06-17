@@ -45,5 +45,8 @@ router.post('/order/new', orderController.createOrder)
 router.get('/orders', orderController.getAllOrders)
 router.delete('/orders/delete', orderController.deleteAllOrders)
 router.get('/orders/customer/:id', orderController.getOrderByCustomerId)
+router.delete('/orders/customer/delete/:id', orderController.deleteOrderByCustomerId)
+router.delete('/order/delete/:id', orderController.deleteOrderById)
+router.get('/order/:id', orderController.getOrderById)
 
 module.exports = router;
