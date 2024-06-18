@@ -75,32 +75,6 @@ class Order {
         return rows;
     }
 
-    // static async updateById(id){
-    //     const sql = `UPDATE orders SET 
-    //     category_id = ?,
-    //     image = ?,
-    //     name = ?,
-    //     description = ?,
-    //     price = ?,
-    //     discount = ?,
-    //     quantity = ?,
-    //     available = ?
-    //     WHERE product_id = ?`;
-    //     const values = [
-    //         this.category_id,
-    //         this.image,
-    //         this.name,
-    //         this.description,
-    //         this.price,
-    //         this.discount,
-    //         this.quantity,
-    //         this.available,
-    //         id
-    //     ];
-    //     const [rows] = await pool.execute(sql, values);
-    //     return rows;
-    // }
-
     static async checkCustomerIfExisted(email) {
         const sql = `SELECT * FROM customers WHERE email = ?`;
         const [rows] = await pool.execute(sql, [email]);

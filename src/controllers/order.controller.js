@@ -1,38 +1,63 @@
 const Order = require('../models/order.model');
 const User = require('../models/customer.model');
+const OrderItems = require('../models/orderItems.model');
 const { sendResponse } = require('../helpers/apiResponse');
 const { hashPassword } = require('../helpers/utils');
+const { getNowDate_time } = require('../helpers/utils')
 
-const createOrder = async (req, res) => {
+const createOrder = async (req, res, total) => {
     try {
+
         const {
             username, first_name, last_name,
             email, password, address,
             phone, personal_number, registered,
-            type_id, order_date,
-            sub_total, tax, items_discount, shipping,
-            total
+            type_id,
+            tax, shipping, orderItems
         } = req.body;
 
-        // Check if the user exists in the database
+        //get Now Date
+        const nowDate = getNowDate_time()
+
+        // total price befor discount
+        const totalPriceBeforDiscount = orderItems.reduce((acc, current) => {
+            return acc + current.price * current.quantity;
+        }, 0);
+
+        // total discount
+        const totalDiscount = orderItems.reduce((acc, current) => {
+            return acc + current.discount * current.quantity;
+        }, 0)
+
+        // total price with tax and shipping
+        const finallprice = (totalPriceBeforDiscount - totalDiscount) - (tax + shipping);
+        //    Check if the user exists in the database
         const checkCustomer = await Order.checkCustomerIfExisted(email)
+
         if (checkCustomer.length) {
             // User exists, use their existing customer_id
+
             const order = new Order({
                 customer_id: checkCustomer[0].customer_id,
                 type_id,
-                order_date,
-                sub_total,
+                order_date: nowDate,
+                sub_total: totalPriceBeforDiscount,
                 tax,
-                items_discount,
+                items_discount: totalDiscount,
                 shipping,
-                total
+                total: finallprice
             });
 
-            await order.save();
+            const order_id = await order.save();
+            
+            await OrderItems.saveMulti({
+                order_id,
+                orderItems
+            })
+
             return sendResponse(res, 201, 'Created', 'Successfully created a order.', null, order);
         } else {
-            // User does not exist, create a new customer and then create the order
+            //  User does not exist, create a new customer and then create the order
             const hashedPassword = await hashPassword(password);
 
             if (!hashedPassword.success) {
@@ -57,15 +82,19 @@ const createOrder = async (req, res) => {
             const order = new Order({
                 customer_id: last_customer_id,
                 type_id,
-                order_date,
-                sub_total,
+                order_date: nowDate,
+                sub_total: totalPriceBeforDiscount,
                 tax,
-                items_discount,
+                items_discount: totalDiscount,
                 shipping,
-                total
+                total: finallprice
             });
 
-            await order.save();
+            const order_id = await order.save();
+            await OrderItems.saveMulti({
+                order_id,
+                orderItems
+            })
             return sendResponse(res, 201, 'Created', 'Successfully created a order.', null, order);
         }
     } catch (err) {
@@ -73,10 +102,11 @@ const createOrder = async (req, res) => {
     }
 };
 
+
 const getAllOrders = async (req, res) => {
     try {
-         const orders = await Order.getAll();
-         sendResponse(res, 200, 'Ok', 'Successfully retrieved all the orders.', null, orders);
+        const orders = await Order.getAll();
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the orders.', null, orders);
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
@@ -92,7 +122,7 @@ const deleteAllOrders = async (req, res) => {
 };
 
 const getOrderByCustomerId = async (req, res) => {
-   
+
     try {
         const id = req.params.id;
         const customerOrders = await Order.getByCustomerId(id);
@@ -101,7 +131,7 @@ const getOrderByCustomerId = async (req, res) => {
     } catch (err) {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
-        
+
 };
 
 const deleteOrderByCustomerId = async (req, res) => {
@@ -119,7 +149,7 @@ const deleteOrderByCustomerId = async (req, res) => {
     } catch (err) {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
-}
+};
 
 const deleteOrderById = async (req, res) => {
     try {
@@ -155,5 +185,5 @@ module.exports = {
     getOrderByCustomerId,
     deleteOrderByCustomerId,
     deleteOrderById,
-    getOrderById
+    getOrderById,
 };
