@@ -163,7 +163,6 @@ const getProducts = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
-
 const getProductByCategoryId = async (req, res) => {
     try {
         const { categoryId } = req.params
@@ -173,6 +172,7 @@ const getProductByCategoryId = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 }
+
 module.exports = {
     createProduct,
     updateProduct,
