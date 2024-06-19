@@ -12,13 +12,15 @@ const path = require('path');
 const createOrder = async (req, res) => {
     try {
         const orderData = await validateAndGetOrderData(req.body);
+        
         const customer = await getOrCreateCustomer(orderData);
         const order = await createOrderAndSaveItems(orderData, customer.id);
        
         //send Email to customer
         const templatePath = path.resolve(`assets/orderTamplate/index.html`);
-        const items = orderData.orderItems
-        const htmlTamplate = await ejs.renderFile(templatePath, { items });
+        
+   
+        const htmlTamplate = await ejs.renderFile(templatePath, { orderData  });
         sendReqularEmail(orderData.email, "hello", "customer", htmlTamplate)
         
         return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, order);
