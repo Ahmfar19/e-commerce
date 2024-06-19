@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Summary</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .order-summary {
+            width: 350px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .order-summary h2 {
+            margin: 0 0 20px;
+            font-size: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .order-summary .item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .order-summary .item img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-right: 15px;
+        }
+        .order-summary .item .details {
+            flex-grow: 1;
+        }
+        .order-summary .item .details .name {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        .order-summary .item .details .price {
+            color: #999;
+            text-decoration: line-through;
+        }
+        .order-summary .item .details .discounted-price {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+        .order-summary .total {
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+            text-align: right;
+        }
+        .order-summary .total div {
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .order-summary .total div strong {
+            font-size: 16px;
+        }
+        .order-summary .edit-cart {
+            text-align: right;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .order-summary .edit-cart a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .order-summary .edit-cart a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="order-summary">
+        <h2>Order Summary</h2>
+        <div class="edit-cart">
+            <a href="#">Edit cart</a>
+        </div>
+        <div class="item">
+            <img src="https://via.placeholder.com/60" alt="Product Image">
+            <div class="details">
+                <div class="name">1X National Fresh Fruit</div>
+                <div>
+                    <span class="discounted-price">£85.00</span>
+                    <span class="price">£95.00</span>
+                </div>
+            </div>
+        </div>
+        <div class="item">
+            <img src="https://via.placeholder.com/60" alt="Product Image">
+            <div class="details">
+                <div class="name">1X National Fresh Fruit</div>
+                <div>
+                    <span class="discounted-price">£85.00</span>
+                    <span class="price">£95.00</span>
+                </div>
+            </div>
+        </div>
+        <div class="total">
+            <div>SUBTOTAL: <strong>£170.00</strong></div>
+            <div>SHIPPING: <strong>£20.00</strong></div>
+            <div>TAX: <strong>£0.00</strong></div>
+            <div>PROMO/GIFT CERTIFICATE: <span style="color: red;">N/A</span></div>
+            <div><strong>TOTAL: £190.00</strong></div>
+        </div>
+    </div>
+</body>
+</html>

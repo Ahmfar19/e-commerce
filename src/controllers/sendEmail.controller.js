@@ -14,19 +14,13 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-const sendReqularEmail = async (to, subject, text, orderItems) => {
+const sendReqularEmail = async (to, subject, text, htmlTamplate) => {
     let mailOptions = {
         from: EMAIL,
         to: to,
         subject: subject,
         text: text,
-        html: `
-            <h2>Order Confirmation</h2>
-            <p>Order has been successfully created.</p>
-            <ul>
-                ${orderItems.map((item) => `<li>${item.product_name} x ${item.quantity}</li>`).join('')}
-            </ul>
-        `
+        html:htmlTamplate
     };
     return sendEmail(mailOptions);
 };
