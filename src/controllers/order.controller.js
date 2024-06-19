@@ -5,16 +5,22 @@ const { sendResponse } = require('../helpers/apiResponse');
 const { hashPassword } = require('../helpers/utils');
 const { getNowDate_time } = require('../helpers/utils')
 const { sendReqularEmail } = require('./sendEmail.controller');
+const ejs = require('ejs');
 const path = require('path');
-const fs = require('fs');
+
+
 const createOrder = async (req, res) => {
     try {
         const orderData = await validateAndGetOrderData(req.body);
         const customer = await getOrCreateCustomer(orderData);
         const order = await createOrderAndSaveItems(orderData, customer.id);
-        const htmlTemplatePath = path.resolve(`assets/orderTamplate/index.html`);
-        let htmlTemplate = fs.readFileSync(htmlTemplatePath, 'utf-8');
-        sendReqularEmail(orderData.email, "hello", "customer", htmlTemplate)
+       
+        //send Email to customer
+        const templatePath = path.resolve(`assets/orderTamplate/index.html`);
+        const items = orderData.orderItems
+        const htmlTamplate = await ejs.renderFile(templatePath, { items });
+        sendReqularEmail(orderData.email, "hello", "customer", htmlTamplate)
+        
         return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, order);
     } catch (err) {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
@@ -50,6 +56,7 @@ const validateAndGetOrderData = async (body) => {
 
     // Calculate final price
     const finallprice = (totalPriceBeforDiscount - totalDiscount) + (tax + shipping);
+
 
     return {
         username,
