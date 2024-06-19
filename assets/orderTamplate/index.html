@@ -87,26 +87,18 @@
         <div class="edit-cart">
             <a href="#">Edit cart</a>
         </div>
-        <div class="item">
-            <img src="https://via.placeholder.com/60" alt="Product Image">
-            <div class="details">
-                <div class="name">1X National Fresh Fruit</div>
-                <div>
-                    <span class="discounted-price">£85.00</span>
-                    <span class="price">£95.00</span>
+        <% items.forEach(item => { %>
+            <div class="item">
+                <img src="" alt="Product Image">
+                <div class="details">
+                    <div class="name"><%= item.quantity %>X <%= item.name %></div>
+                    <div>
+                        <span class="discounted-price">£<%= (item.quantity * item.price) - (item.quantity * item.discount) %></span>
+                        <span class="price">£<%= item.quantity * item.price %></span>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="item">
-            <img src="https://via.placeholder.com/60" alt="Product Image">
-            <div class="details">
-                <div class="name">1X National Fresh Fruit</div>
-                <div>
-                    <span class="discounted-price">£85.00</span>
-                    <span class="price">£95.00</span>
-                </div>
-            </div>
-        </div>
+        <% }) %>
         <div class="total">
             <div>SUBTOTAL: <strong>£170.00</strong></div>
             <div>SHIPPING: <strong>£20.00</strong></div>
