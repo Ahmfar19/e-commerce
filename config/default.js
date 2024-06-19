@@ -5,8 +5,9 @@ module.exports = {
     DB_USERNAME: process.env.DB_USERNAME || 'root',
     DB_USERNAME_PASSWORD: process.env.DB_USERNAME_PASSWORD || '',
     DB_NAME: process.env.DB_NAME || 'ecommerce',
+    EMAIL_HOST : process.env.EMAIL_HOST,
+    EMAIL : process.env.EMAIL,
+    EMAIL_PASS : process.env.EMAIL_PASS ,
 };
 
-// DB Name:  s94538_system_deklarator
-// DB User:  s94538_system_deklarator
-// Password: k9YWZFDgTRkRXRVPzNCL
+

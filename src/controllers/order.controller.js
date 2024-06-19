@@ -4,104 +4,136 @@ const OrderItems = require('../models/orderItems.model');
 const { sendResponse } = require('../helpers/apiResponse');
 const { hashPassword } = require('../helpers/utils');
 const { getNowDate_time } = require('../helpers/utils')
+const { sendReqularEmail } = require('./sendEmail.controller');
 
-const createOrder = async (req, res, total) => {
+const createOrder = async (req, res) => {
     try {
-
-        const {
-            username, first_name, last_name,
-            email, password, address,
-            phone, personal_number, registered,
-            type_id,
-            tax, shipping, orderItems
-        } = req.body;
-
-        //get Now Date
-        const nowDate = getNowDate_time()
-
-        // total price befor discount
-        const totalPriceBeforDiscount = orderItems.reduce((acc, current) => {
-            return acc + current.price * current.quantity;
-        }, 0);
-
-        // total discount
-        const totalDiscount = orderItems.reduce((acc, current) => {
-            return acc + current.discount * current.quantity;
-        }, 0)
-
-        // total price with tax and shipping
-        const finallprice = (totalPriceBeforDiscount - totalDiscount) - (tax + shipping);
-        //    Check if the user exists in the database
-        const checkCustomer = await Order.checkCustomerIfExisted(email)
-
-        if (checkCustomer.length) {
-            // User exists, use their existing customer_id
-
-            const order = new Order({
-                customer_id: checkCustomer[0].customer_id,
-                type_id,
-                order_date: nowDate,
-                sub_total: totalPriceBeforDiscount,
-                tax,
-                items_discount: totalDiscount,
-                shipping,
-                total: finallprice
-            });
-
-            const order_id = await order.save();
-            
-            await OrderItems.saveMulti({
-                order_id,
-                orderItems
-            })
-
-            return sendResponse(res, 201, 'Created', 'Successfully created a order.', null, order);
-        } else {
-            //  User does not exist, create a new customer and then create the order
-            const hashedPassword = await hashPassword(password);
-
-            if (!hashedPassword.success) {
-                return res.json({
-                    error: hashedPassword.error,
-                });
-            }
-            const customer = new User({
-                username,
-                first_name,
-                last_name,
-                email,
-                password: hashedPassword.data,
-                address,
-                phone,
-                personal_number,
-                registered
-            });
-
-            const last_customer_id = await customer.createUser();
-
-            const order = new Order({
-                customer_id: last_customer_id,
-                type_id,
-                order_date: nowDate,
-                sub_total: totalPriceBeforDiscount,
-                tax,
-                items_discount: totalDiscount,
-                shipping,
-                total: finallprice
-            });
-
-            const order_id = await order.save();
-            await OrderItems.saveMulti({
-                order_id,
-                orderItems
-            })
-            return sendResponse(res, 201, 'Created', 'Successfully created a order.', null, order);
-        }
+        const orderData = await validateAndGetOrderData(req.body);
+        const customer = await getOrCreateCustomer(orderData);
+        const order = await createOrderAndSaveItems(orderData, customer.id);
+        sendReqularEmail(orderData.email, "hello", "customer", orderData.orderItems)
+        return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, order);
     } catch (err) {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
 };
 
+const validateAndGetOrderData = async (body) => {
+    const {
+        username, first_name, last_name,
+        email, password, address,
+        phone, personal_number, registered,
+        type_id,
+        tax, shipping, orderItems
+    } = body;
+
+    // Validate input data
+    if (!username || !email || !password || !address || !phone || !personal_number || !registered || !type_id || !tax || !shipping || !orderItems) {
+        throw new Error('Invalid input data.');
+    }
+
+    // Get current date
+    const nowDate = getNowDate_time();
+
+    // Calculate total price before discount
+    const totalPriceBeforDiscount = orderItems.reduce((acc, current) => {
+        return acc + current.price * current.quantity;
+    }, 0);
+
+    // Calculate total discount
+    const totalDiscount = orderItems.reduce((acc, current) => {
+        return acc + current.discount * current.quantity;
+    }, 0);
+
+    // Calculate final price
+    const finallprice = (totalPriceBeforDiscount - totalDiscount) + (tax + shipping);
+
+    return {
+        username,
+        first_name,
+        last_name,
+        email,
+        password,
+        address,
+        phone,
+        personal_number,
+        registered,
+        type_id,
+        tax,
+        shipping,
+        orderItems,
+        nowDate,
+        totalPriceBeforDiscount,
+        totalDiscount,
+        finallprice
+    };
+};
+
+const getOrCreateCustomer = async (orderData) => {
+    const { email, password } = orderData;
+
+    // Check if the user exists in the database
+    const checkCustomer = await Order.checkCustomerIfExisted(email);
+
+    if (checkCustomer.length) {
+        // User exists, return their customer_id
+        return { id: checkCustomer[0].customer_id };
+    } else {
+        // User does not exist, create a new customer
+        const hashedPassword = await hashPassword(password);
+
+        if (!hashedPassword.success) {
+            throw new Error(hashedPassword.error);
+        }
+
+        const customer = new User({
+            username: orderData.username,
+            first_name: orderData.first_name,
+            last_name: orderData.last_name,
+            email,
+            password: hashedPassword.data,
+            address: orderData.address,
+            phone: orderData.phone,
+            personal_number: orderData.personal_number,
+            registered: orderData.registered
+        });
+
+        const last_customer_id = await customer.createUser();
+        return { id: last_customer_id };
+    }
+};
+
+const createOrderAndSaveItems = async (orderData, customerId) => {
+    const {
+        type_id,
+        nowDate,
+        totalPriceBeforDiscount,
+        tax,
+        totalDiscount,
+        shipping,
+        finallprice,
+        orderItems
+    } = orderData;
+
+    const order = new Order({
+        customer_id: customerId,
+        type_id,
+        order_date: nowDate,
+        sub_total: totalPriceBeforDiscount,
+        tax,
+        items_discount: totalDiscount,
+        shipping,
+        total: finallprice
+    });
+
+    const order_id = await order.save();
+    await OrderItems.saveMulti({
+        order_id,
+        orderItems
+    });
+
+    return order;
+};
 
 const getAllOrders = async (req, res) => {
     try {
