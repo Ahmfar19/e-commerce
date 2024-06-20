@@ -23,20 +23,17 @@ class Product {
             quantity,
             available
         ) VALUES (
-            ?, ?, ?, ?, ?, ?, ?, ?
+           ${this.category_id}, 
+            '${this.image}', 
+            "${this.name}",
+            "${this.description}", 
+            ${this.price},
+            ${this.discount},
+            ${this.quantity},
+            ${this.available}
         )`;
-        const values = [
-            this.category_id,
-            this.image,
-            this.name,
-            this.description,
-            this.price,
-            this.discount,
-            this.quantity,
-            this.available
-        ];
-        const [result] = await pool.execute(sql, values);
-        this.product_id = result.insertId;
+        const result = await pool.execute(sql);
+        this.product_id = result[0].insertId;
         return this.product_id;
     }
     static async getAll() {

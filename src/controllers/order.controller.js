@@ -12,6 +12,7 @@ const path = require('path');
 const createOrder = async (req, res) => {
     try {
         const orderData = await validateAndGetOrderData(req.body);
+       
         const customer = await getOrCreateCustomer(orderData);
         
         const order = await createOrderAndSaveItems(orderData, customer.id);

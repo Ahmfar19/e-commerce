@@ -13,6 +13,7 @@ const createProductFolder = async (uploadPath, files, product, lastProduct) => {
                 const images = await saveImagesToFolder(files, uploadPath);
                 product.image = JSON.stringify(images);
                 await product.updateById(lastProduct);
+        
                 resolve(product);
             }
         });
