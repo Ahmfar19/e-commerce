@@ -18,7 +18,7 @@ const createOrder = async (req, res) => {
         const orderData = await validateAndGetOrderData(req.body);
         const customer = await getOrCreateCustomer(orderData);
         const order = await createOrderAndSaveItems(orderData, customer.id);
-
+       
         // send Email to customer
         const templatePath = path.resolve(`public/orderTamplate/index.html`);
 
@@ -39,7 +39,7 @@ const validateAndGetOrderData = async (body) => {
 
     // Validate input data
     if (
-        !customer.username || !customer.email || !customer.password || !customer.address || !customer.phone
+        !customer.username || !customer.email || !customer.address || !customer.phone
         || !customer.personal_number || !customer.type_id || !customer.tax || !customer.shipping
     ) {
         throw new Error('Invalid input data.');
@@ -82,17 +82,11 @@ const getOrCreateCustomer = async (orderData) => {
         return { id: checkCustomer[0].customer_id };
     } else {
         // User does not exist, create a new customer
-        const hashedPassword = await hashPassword(customer.password);
-
-        if (!hashedPassword.success) {
-            throw new Error(hashedPassword.error);
-        }
         const newCustomer = new User({
             username: customer.username,
             first_name: customer.first_name,
             last_name: customer.last_name,
             email: customer.email,
-            password: hashedPassword.data,
             address: customer.address,
             phone: customer.phone,
             personal_number: customer.personal_number,

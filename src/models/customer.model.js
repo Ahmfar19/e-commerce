@@ -6,7 +6,7 @@ class User {
         this.first_name = options.first_name;
         this.last_name = options.last_name;
         this.email = options.email;
-        this.password = options.password;
+        this.password = options.password || '';
         this.address = options.address;
         this.phone = options.phone;
         this.personal_number = options.personal_number;

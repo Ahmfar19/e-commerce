@@ -120,10 +120,10 @@ const deleteUser = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
-// not working
-const login = async (req, res) => {
-    const { email_username, password, rememberMe, fingerprint } = req.body;
 
+const login = async (req, res) => {
+    
+    const { email_username, password, rememberMe, fingerprint } = req.body;
     try {
         const data = await User.loginUser(email_username);
 
@@ -152,6 +152,8 @@ const login = async (req, res) => {
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 };
+
+// not working
 const verifyToken = async (req, res) => {
     const { user_id, fingerprint } = req.body;
 

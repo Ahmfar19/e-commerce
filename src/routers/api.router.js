@@ -17,6 +17,7 @@ router.get('/user/:id', customerController.getSingleUser);
 router.put('/user/edit/:id', customerController.updateUser);
 router.delete('/user/delete/:id', customerController.deleteUser);
 router.put('/user/password/:id', customerController.updateUserPassword);
+router.post('/user/login', customerController.login)
 
 // categories
 router.get('/categories', categoryController.getCategories);
