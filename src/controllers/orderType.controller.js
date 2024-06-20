@@ -70,5 +70,5 @@ module.exports = {
     createOrderType,
     getSingleOrderType,
     updateOrderType,
-    deleteOrderType
+    deleteOrderType,
 };

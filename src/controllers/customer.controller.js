@@ -4,8 +4,9 @@ const { sendResponse } = require('../helpers/apiResponse');
 
 const createUser = async (req, res) => {
     try {
-        const { username, first_name, last_name, email, password, address, phone, personal_number, registered } = req.body;
-        
+        const { username, first_name, last_name, email, password, address, phone, personal_number, registered } =
+            req.body;
+
         const checkuser = await User.checkIfUserExisted(email, username);
 
         if (checkuser.length) {
@@ -29,7 +30,7 @@ const createUser = async (req, res) => {
             address,
             phone,
             personal_number,
-            registered
+            registered,
         });
 
         await user.createUser();
@@ -96,7 +97,7 @@ const updateUserPassword = async (req, res) => {
         }
 
         const match = await comparePassword(password, user[0].password);
-        
+
         if (match !== true) {
             return sendResponse(res, 400, 'Bad Request', 'Current password does not match', null, null);
         }

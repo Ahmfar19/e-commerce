@@ -31,23 +31,22 @@ router.get('/products', productController.getProducts);
 router.post('/product/new', upload.array('images'), productController.createProduct);
 router.put('/product/edit/:id', upload.array('images'), productController.updateProduct);
 router.delete('/product/delete/:id', productController.deleteProduct);
-router.get('/products/:categoryId', productController.getProductByCategoryId)
+router.get('/products/:categoryId', productController.getProductByCategoryId);
 
-//orderType
-router.get('/orderTypes', orderTypeController.getOrderTypes)
-router.post('/orderType/new', orderTypeController.createOrderType)
-router.get('/orderType/:id', orderTypeController.getSingleOrderType)
-router.put('/orderType/edit/:id', orderTypeController.updateOrderType)
-router.delete('/orderType/delete/:id', orderTypeController.deleteOrderType)
+// orderType
+router.get('/orderTypes', orderTypeController.getOrderTypes);
+router.post('/orderType/new', orderTypeController.createOrderType);
+router.get('/orderType/:id', orderTypeController.getSingleOrderType);
+router.put('/orderType/edit/:id', orderTypeController.updateOrderType);
+router.delete('/orderType/delete/:id', orderTypeController.deleteOrderType);
 
-//orders
-router.post('/order/new', orderController.createOrder)
-router.get('/orders', orderController.getAllOrders)
-router.delete('/orders/delete', orderController.deleteAllOrders)
-router.get('/orders/customer/:id', orderController.getOrderByCustomerId)
-router.delete('/orders/customer/delete/:id', orderController.deleteOrderByCustomerId)
-router.delete('/order/delete/:id', orderController.deleteOrderById)
-router.get('/order/:id', orderController.getOrderById)
-
+// orders
+router.post('/order/new', orderController.createOrder);
+router.get('/orders', orderController.getAllOrders);
+router.delete('/orders/delete', orderController.deleteAllOrders);
+router.get('/orders/customer/:id', orderController.getOrderByCustomerId);
+router.delete('/orders/customer/delete/:id', orderController.deleteOrderByCustomerId);
+router.delete('/order/delete/:id', orderController.deleteOrderById);
+router.get('/order/:id', orderController.getOrderById);
 
 module.exports = router;

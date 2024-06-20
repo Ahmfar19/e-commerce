@@ -31,5 +31,5 @@ function getNowDate_time() {
 module.exports = {
     hashPassword,
     comparePassword,
-    getNowDate_time
+    getNowDate_time,
 };

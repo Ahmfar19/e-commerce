@@ -1,7 +1,6 @@
 const pool = require('../databases/mysql.db');
 
 class Order {
-
     constructor(options) {
         this.customer_id = options.customer_id;
         this.type_id = options.type_id;
@@ -50,14 +49,14 @@ class Order {
         return rows;
     }
 
-    static async getByCustomerId(customer_id){
+    static async getByCustomerId(customer_id) {
         const sql = `SELECT *, DATE_FORMAT(order_date, '%Y-%m-%d %H:%i:%s') AS order_date 
         FROM  orders where customer_id = ?`;
         const [rows] = await pool.execute(sql, [customer_id]);
         return rows;
     }
 
-    static async deleteOrderByCustomerId(customer_id){
+    static async deleteOrderByCustomerId(customer_id) {
         const sql = `DELETE FROM orders where customer_id = ?`;
         const [rows] = await pool.execute(sql, [customer_id]);
         return rows;
@@ -70,7 +69,8 @@ class Order {
     }
 
     static async getById(id) {
-        const sql = `SELECT *, DATE_FORMAT(order_date, '%Y-%m-%d %H:%i:%s') AS order_date FROM orders where order_id = ?`;
+        const sql =
+            `SELECT *, DATE_FORMAT(order_date, '%Y-%m-%d %H:%i:%s') AS order_date FROM orders where order_id = ?`;
         const [rows] = await pool.execute(sql, [id]);
         return rows;
     }

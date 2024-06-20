@@ -2,7 +2,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const apiRouter = require('./routers/api.router');
 const cors = require('cors');
-const path = require('path')
+const path = require('path');
 require('./databases/mysql.db');
 
 const app = express();

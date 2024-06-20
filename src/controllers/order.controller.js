@@ -3,13 +3,10 @@ const User = require('../models/customer.model');
 const OrderItems = require('../models/orderItems.model');
 const { sendResponse } = require('../helpers/apiResponse');
 const { hashPassword } = require('../helpers/utils');
-const { getNowDate_time } = require('../helpers/utils')
+const { getNowDate_time } = require('../helpers/utils');
 const { sendReqularEmail } = require('./sendEmail.controller');
 const ejs = require('ejs');
 const path = require('path');
-
-
-
 
 function getFirstImage(item) {
     const images = JSON.parse(item.image);
@@ -18,16 +15,15 @@ function getFirstImage(item) {
 
 const createOrder = async (req, res) => {
     try {
-        
         const orderData = await validateAndGetOrderData(req.body);
         const customer = await getOrCreateCustomer(orderData);
         const order = await createOrderAndSaveItems(orderData, customer.id);
 
-        //send Email to customer
+        // send Email to customer
         const templatePath = path.resolve(`public/orderTamplate/index.html`);
 
         const htmlTamplate = await ejs.renderFile(templatePath, { orderData, getFirstImage });
-        sendReqularEmail(orderData.customer.email, "hello", "customer", htmlTamplate)
+        sendReqularEmail(orderData.customer.email, 'hello', 'customer', htmlTamplate);
 
         return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, order);
     } catch (err) {
@@ -37,11 +33,15 @@ const createOrder = async (req, res) => {
 
 const validateAndGetOrderData = async (body) => {
     const {
-        customer, products
+        customer,
+        products,
     } = body;
 
     // Validate input data
-    if (!customer.username || !customer.email || !customer.password || !customer.address || !customer.phone || !customer.personal_number || !customer.type_id || !customer.tax || !customer.shipping) {
+    if (
+        !customer.username || !customer.email || !customer.password || !customer.address || !customer.phone
+        || !customer.personal_number || !customer.type_id || !customer.tax || !customer.shipping
+    ) {
         throw new Error('Invalid input data.');
     }
 
@@ -67,14 +67,12 @@ const validateAndGetOrderData = async (body) => {
         nowDate,
         totalPriceBeforDiscount,
         totalDiscount,
-        finallprice
+        finallprice,
     };
 };
 
 const getOrCreateCustomer = async (orderData) => {
-
     const { customer } = orderData;
-
 
     // Check if the user exists in the database
     const checkCustomer = await Order.checkCustomerIfExisted(customer.email);
@@ -98,9 +96,8 @@ const getOrCreateCustomer = async (orderData) => {
             address: customer.address,
             phone: customer.phone,
             personal_number: customer.personal_number,
-            registered: customer.registered
+            registered: customer.registered,
         });
-
 
         const last_customer_id = await newCustomer.createUser();
 
@@ -115,7 +112,7 @@ const createOrderAndSaveItems = async (orderData, customerId) => {
         nowDate,
         totalPriceBeforDiscount,
         finallprice,
-        totalDiscount
+        totalDiscount,
     } = orderData;
 
     const order = new Order({
@@ -126,13 +123,13 @@ const createOrderAndSaveItems = async (orderData, customerId) => {
         tax: customer.tax,
         items_discount: totalDiscount,
         shipping: customer.shipping,
-        total: finallprice
+        total: finallprice,
     });
 
     const order_id = await order.save();
     await OrderItems.saveMulti({
         order_id,
-        products
+        products,
     });
 
     return order;
@@ -157,7 +154,6 @@ const deleteAllOrders = async (req, res) => {
 };
 
 const getOrderByCustomerId = async (req, res) => {
-
     try {
         const id = req.params.id;
         const customerOrders = await Order.getByCustomerId(id);
@@ -166,7 +162,6 @@ const getOrderByCustomerId = async (req, res) => {
     } catch (err) {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
-
 };
 
 const deleteOrderByCustomerId = async (req, res) => {
@@ -205,7 +200,7 @@ const deleteOrderById = async (req, res) => {
 
 const getOrderById = async (req, res) => {
     try {
-        const { id } = req.params
+        const { id } = req.params;
         const order = await Order.getById(id);
         sendResponse(res, 202, 'Accepted', 'Successfully retrieved all the order ', null, order);
     } catch (error) {

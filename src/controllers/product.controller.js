@@ -10,7 +10,7 @@ const createProductFolder = async (uploadPath, files, product, lastProduct) => {
                 reject(err);
             }
             if (files) {
-                const images = await saveImagesToFolder(files, uploadPath);          
+                const images = await saveImagesToFolder(files, uploadPath);
                 product.image = JSON.stringify(images);
                 await product.updateById(lastProduct);
                 resolve(product);
@@ -22,7 +22,7 @@ const saveImagesToFolder = async (files, uploadPath) => {
     const savePromises = files.map(async (file) => {
         const fileName = file.originalname;
         const filePath = path.join(uploadPath, fileName);
-        await fs.promises.writeFile(filePath, file.buffer);// Asynchronous file writing
+        await fs.promises.writeFile(filePath, file.buffer); // Asynchronous file writing
         return fileName;
     });
     return Promise.all(savePromises);
@@ -91,7 +91,7 @@ const updateProduct = async (req, res) => {
             price: price,
             discount: discount,
             quantity: quantity,
-            available: available
+            available: available,
         });
 
         const check = await product.updateById(id);
@@ -165,13 +165,13 @@ const getProducts = async (req, res) => {
 };
 const getProductByCategoryId = async (req, res) => {
     try {
-        const { categoryId } = req.params
+        const { categoryId } = req.params;
         const products = await Product.getByCategory(categoryId);
         sendResponse(res, 200, 'Ok', 'Successfully retrieved all the products.', null, products);
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
-}
+};
 
 module.exports = {
     createProduct,
@@ -179,5 +179,5 @@ module.exports = {
     getProduct,
     deleteProduct,
     getProducts,
-    getProductByCategoryId
+    getProductByCategoryId,
 };

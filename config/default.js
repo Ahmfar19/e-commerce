@@ -5,9 +5,7 @@ module.exports = {
     DB_USERNAME: process.env.DB_USERNAME || 'root',
     DB_USERNAME_PASSWORD: process.env.DB_USERNAME_PASSWORD || '',
     DB_NAME: process.env.DB_NAME || 'ecommerce',
-    EMAIL_HOST : process.env.EMAIL_HOST,
-    EMAIL : process.env.EMAIL,
-    EMAIL_PASS : process.env.EMAIL_PASS ,
+    EMAIL_HOST: process.env.EMAIL_HOST,
+    EMAIL: process.env.EMAIL,
+    EMAIL_PASS: process.env.EMAIL_PASS,
 };
-
-

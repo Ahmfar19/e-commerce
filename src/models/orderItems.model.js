@@ -1,7 +1,6 @@
 const pool = require('../databases/mysql.db');
 
 class OrderItems {
-
     constructor(options) {
         this.order_id = options.order_id;
         this.product_id = options.product_id;
@@ -29,15 +28,14 @@ class OrderItems {
             this.product_id,
             this.quantity,
             this.price,
-            this.discount
+            this.discount,
         ];
         const result = await pool.execute(sql, values);
         this.order_Item = result[0].insertId;
         return this.order_Item;
     }
-    
+
     static async saveMulti(product_items) {
-     
         if (!Array.isArray(product_items.products) || product_items.products.length === 0) {
             throw new Error('Invalid report items data');
         }

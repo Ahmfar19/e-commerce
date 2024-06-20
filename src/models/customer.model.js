@@ -82,8 +82,7 @@ class User {
         return rows;
     }
     static async checkUserUpdate(username, email, id) {
-        const sql =
-            `SELECT * FROM customers WHERE 
+        const sql = `SELECT * FROM customers WHERE 
             (username = '${username}' OR email = '${email}') 
             AND NOT customer_id = ${id}`;
         const [rows] = await pool.execute(sql);

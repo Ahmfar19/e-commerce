@@ -11,7 +11,7 @@ class Product {
         this.quantity = options.quantity;
         this.available = options.available;
     }
-    
+
     async save() {
         const sql = `INSERT INTO products (
             category_id,
@@ -37,7 +37,7 @@ class Product {
         return this.product_id;
     }
     static async getAll() {
-        const sql = "SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id";
+        const sql = 'SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id';
         const [rows] = await pool.execute(sql);
         return rows;
     }
@@ -66,7 +66,7 @@ class Product {
             this.discount,
             this.quantity,
             this.available,
-            id
+            id,
         ];
         const [rows] = await pool.execute(sql, values);
         return rows;
