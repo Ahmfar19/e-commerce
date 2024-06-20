@@ -12,17 +12,15 @@ const path = require('path');
 const createOrder = async (req, res) => {
     try {
         const orderData = await validateAndGetOrderData(req.body);
-        
         const customer = await getOrCreateCustomer(orderData);
         const order = await createOrderAndSaveItems(orderData, customer.id);
-       
+
         //send Email to customer
         const templatePath = path.resolve(`assets/orderTamplate/index.html`);
         
-   
-        const htmlTamplate = await ejs.renderFile(templatePath, { orderData  });
+        const htmlTamplate = await ejs.renderFile(templatePath, { orderData });
         sendReqularEmail(orderData.email, "hello", "customer", htmlTamplate)
-        
+
         return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, order);
     } catch (err) {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
@@ -31,15 +29,11 @@ const createOrder = async (req, res) => {
 
 const validateAndGetOrderData = async (body) => {
     const {
-        username, first_name, last_name,
-        email, password, address,
-        phone, personal_number, registered,
-        type_id,
-        tax, shipping, orderItems
+        customer, products
     } = body;
 
     // Validate input data
-    if (!username || !email || !password || !address || !phone || !personal_number || !registered || !type_id || !tax || !shipping || !orderItems) {
+    if (!customer.username || !customer.email || !customer.password || !customer.address || !customer.phone || !customer.personal_number || !customer.type_id || !customer.tax || !customer.shipping) {
         throw new Error('Invalid input data.');
     }
 
@@ -47,33 +41,21 @@ const validateAndGetOrderData = async (body) => {
     const nowDate = getNowDate_time();
 
     // Calculate total price before discount
-    const totalPriceBeforDiscount = orderItems.reduce((acc, current) => {
+    const totalPriceBeforDiscount = products.reduce((acc, current) => {
         return acc + current.price * current.quantity;
     }, 0);
 
     // Calculate total discount
-    const totalDiscount = orderItems.reduce((acc, current) => {
+    const totalDiscount = products.reduce((acc, current) => {
         return acc + current.discount * current.quantity;
     }, 0);
 
     // Calculate final price
-    const finallprice = (totalPriceBeforDiscount - totalDiscount) + (tax + shipping);
-
+    const finallprice = (totalPriceBeforDiscount - totalDiscount) + (!customer.tax + !customer.shipping);
 
     return {
-        username,
-        first_name,
-        last_name,
-        email,
-        password,
-        address,
-        phone,
-        personal_number,
-        registered,
-        type_id,
-        tax,
-        shipping,
-        orderItems,
+        customer,
+        products,
         nowDate,
         totalPriceBeforDiscount,
         totalDiscount,
@@ -82,66 +64,67 @@ const validateAndGetOrderData = async (body) => {
 };
 
 const getOrCreateCustomer = async (orderData) => {
-    const { email, password } = orderData;
+
+    const { customer } = orderData;
+
 
     // Check if the user exists in the database
-    const checkCustomer = await Order.checkCustomerIfExisted(email);
+    const checkCustomer = await Order.checkCustomerIfExisted(customer.email);
 
     if (checkCustomer.length) {
         // User exists, return their customer_id
         return { id: checkCustomer[0].customer_id };
     } else {
         // User does not exist, create a new customer
-        const hashedPassword = await hashPassword(password);
+        const hashedPassword = await hashPassword(customer.password);
 
         if (!hashedPassword.success) {
             throw new Error(hashedPassword.error);
         }
-
-        const customer = new User({
-            username: orderData.username,
-            first_name: orderData.first_name,
-            last_name: orderData.last_name,
-            email,
+        const newCustomer = new User({
+            username: customer.username,
+            first_name: customer.first_name,
+            last_name: customer.last_name,
+            email: customer.email,
             password: hashedPassword.data,
-            address: orderData.address,
-            phone: orderData.phone,
-            personal_number: orderData.personal_number,
-            registered: orderData.registered
+            address: customer.address,
+            phone: customer.phone,
+            personal_number: customer.personal_number,
+            registered: customer.registered
         });
 
-        const last_customer_id = await customer.createUser();
+
+        const last_customer_id = await newCustomer.createUser();
+
         return { id: last_customer_id };
     }
 };
 
 const createOrderAndSaveItems = async (orderData, customerId) => {
     const {
-        type_id,
+        customer,
+        products,
         nowDate,
         totalPriceBeforDiscount,
-        tax,
-        totalDiscount,
-        shipping,
         finallprice,
-        orderItems
+        totalDiscount
     } = orderData;
-
+   
     const order = new Order({
         customer_id: customerId,
-        type_id,
+        type_id:customer.type_id,
         order_date: nowDate,
         sub_total: totalPriceBeforDiscount,
-        tax,
+        tax : customer.tax,
         items_discount: totalDiscount,
-        shipping,
+        shipping : customer.shipping,
         total: finallprice
     });
 
     const order_id = await order.save();
     await OrderItems.saveMulti({
         order_id,
-        orderItems
+        products
     });
 
     return order;
