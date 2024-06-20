@@ -24,7 +24,7 @@ const createOrder = async (req, res) => {
         const order = await createOrderAndSaveItems(orderData, customer.id);
 
         //send Email to customer
-        const templatePath = path.resolve(`assets/orderTamplate/index.html`);
+        const templatePath = path.resolve(`public/orderTamplate/index.html`);
 
         const htmlTamplate = await ejs.renderFile(templatePath, { orderData, getFirstImage });
         sendReqularEmail(orderData.customer.email, "hello", "customer", htmlTamplate)

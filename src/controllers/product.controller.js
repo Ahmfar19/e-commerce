@@ -44,7 +44,7 @@ const createProduct = async (req, res) => {
         const lastProduct = await product.save();
 
         const folderName = `product_${lastProduct}`;
-        const uploadPath = path.join(__dirname, '../../assets/images', folderName);
+        const uploadPath = path.join(__dirname, '../../public/images/', folderName);
 
         if (!fs.existsSync(uploadPath)) {
             const data = await createProductFolder(uploadPath, req.files, product, lastProduct);
@@ -62,7 +62,7 @@ const getProduct = async (req, res) => {
         const { id } = req.params;
         const product = await Product.getSingleById(id);
         const folderName = `product_${id}`;
-        const uploadPath = path.join(__dirname, '../../assets/images', folderName);
+        const uploadPath = path.join(__dirname, '../../public/images/', folderName);
 
         if (fs.existsSync(uploadPath)) {
             const files = fs.readdirSync(uploadPath);
@@ -105,7 +105,7 @@ const updateProduct = async (req, res) => {
         }
 
         const folderName = `product_${id}`;
-        const uploadPath = path.join(__dirname, '../../assets/images', folderName);
+        const uploadPath = path.join(__dirname, '../../public/images/', folderName);
 
         // Handle image update
         if (req.files.length) {
@@ -140,7 +140,7 @@ const deleteProduct = async (req, res) => {
         }
 
         const folderName = `product_${id}`;
-        const uploadPath = path.join(__dirname, '../../assets/images', folderName);
+        const uploadPath = path.join(__dirname, '../../public/images/', folderName);
 
         if (fs.existsSync(uploadPath)) {
             const files = fs.readdirSync(uploadPath);

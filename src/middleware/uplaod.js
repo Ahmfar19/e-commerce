@@ -8,7 +8,7 @@ const storage = multer.diskStorage({
 
         const folderName = req.body.title; // Assuming folderName is a key in req.body
 
-        const uploadPath = path.join(__dirname, '../../assets/images', folderName);
+        const uploadPath = path.join(__dirname, '../../public/images/', folderName);
 
         // Check if the folder exists
         if (!fs.existsSync(uploadPath)) {

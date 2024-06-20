@@ -2,13 +2,14 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const apiRouter = require('./routers/api.router');
 const cors = require('cors');
+const path = require('path')
 require('./databases/mysql.db');
 
 const app = express();
 
 app.use(cookieParser());
 app.use(express.json());
-
+app.use(express.static(path.resolve('./public')));
 // const NODE_ENV = process.env.NODE_ENV || 'development';
 // const whitelist = [];
 // const corsOptions = {
