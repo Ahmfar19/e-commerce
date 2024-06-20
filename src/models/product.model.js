@@ -37,7 +37,7 @@ class Product {
         return this.product_id;
     }
     static async getAll() {
-        const sql = 'SELECT * FROM products';
+        const sql = "SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id";
         const [rows] = await pool.execute(sql);
         return rows;
     }
