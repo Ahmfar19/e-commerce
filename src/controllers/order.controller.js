@@ -9,18 +9,24 @@ const ejs = require('ejs');
 const path = require('path');
 
 
+
+
+function getFirstImage(item) {
+    const images = JSON.parse(item.image);
+    return images[0];
+}
+
 const createOrder = async (req, res) => {
     try {
-        const orderData = await validateAndGetOrderData(req.body);
-       
-        const customer = await getOrCreateCustomer(orderData);
         
+        const orderData = await validateAndGetOrderData(req.body);
+        const customer = await getOrCreateCustomer(orderData);
         const order = await createOrderAndSaveItems(orderData, customer.id);
-     
+
         //send Email to customer
         const templatePath = path.resolve(`assets/orderTamplate/index.html`);
-        
-        const htmlTamplate = await ejs.renderFile(templatePath, { orderData });
+
+        const htmlTamplate = await ejs.renderFile(templatePath, { orderData, getFirstImage });
         sendReqularEmail(orderData.customer.email, "hello", "customer", htmlTamplate)
 
         return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, order);
@@ -111,15 +117,15 @@ const createOrderAndSaveItems = async (orderData, customerId) => {
         finallprice,
         totalDiscount
     } = orderData;
-   
+
     const order = new Order({
         customer_id: customerId,
-        type_id:customer.type_id,
+        type_id: customer.type_id,
         order_date: nowDate,
         sub_total: totalPriceBeforDiscount,
-        tax : customer.tax,
+        tax: customer.tax,
         items_discount: totalDiscount,
-        shipping : customer.shipping,
+        shipping: customer.shipping,
         total: finallprice
     });
 

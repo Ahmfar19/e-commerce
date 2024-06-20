@@ -15,6 +15,7 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendReqularEmail = async (to, subject, text, htmlTamplate) => {
+  
     let mailOptions = {
         from: EMAIL,
         to: to,

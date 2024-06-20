@@ -10,10 +10,9 @@ const createProductFolder = async (uploadPath, files, product, lastProduct) => {
                 reject(err);
             }
             if (files) {
-                const images = await saveImagesToFolder(files, uploadPath);
+                const images = await saveImagesToFolder(files, uploadPath);          
                 product.image = JSON.stringify(images);
                 await product.updateById(lastProduct);
-        
                 resolve(product);
             }
         });
