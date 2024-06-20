@@ -13,13 +13,14 @@ const createOrder = async (req, res) => {
     try {
         const orderData = await validateAndGetOrderData(req.body);
         const customer = await getOrCreateCustomer(orderData);
+        
         const order = await createOrderAndSaveItems(orderData, customer.id);
-
+     
         //send Email to customer
         const templatePath = path.resolve(`assets/orderTamplate/index.html`);
         
         const htmlTamplate = await ejs.renderFile(templatePath, { orderData });
-        sendReqularEmail(orderData.email, "hello", "customer", htmlTamplate)
+        sendReqularEmail(orderData.customer.email, "hello", "customer", htmlTamplate)
 
         return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, order);
     } catch (err) {
@@ -51,7 +52,7 @@ const validateAndGetOrderData = async (body) => {
     }, 0);
 
     // Calculate final price
-    const finallprice = (totalPriceBeforDiscount - totalDiscount) + (!customer.tax + !customer.shipping);
+    const finallprice = (totalPriceBeforDiscount - totalDiscount) + (customer.tax + customer.shipping);
 
     return {
         customer,

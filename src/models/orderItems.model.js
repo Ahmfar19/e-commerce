@@ -43,8 +43,8 @@ class OrderItems {
         }
         // Create an array of promises for report item insertion
         const insertionPromises = product_items.products.map(async (item) => {
-            const sql = `INSERT INTO order_items (order_id, product_id, quantity, price, discount) VALUES (?, ?, ?, ?, ?)`;
-            const values = [product_items.order_id, item.product_id, item.quantity, item.price, item.discount];
+            const sql = `INSERT INTO order_items (order_id, product_id, quantity) VALUES (?, ?, ?)`;
+            const values = [product_items.order_id, item.product_id, item.quantity];
             return await pool.execute(sql, values);
         });
         await Promise.all(insertionPromises);
