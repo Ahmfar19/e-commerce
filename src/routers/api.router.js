@@ -33,7 +33,10 @@ router.post('/product/new', upload.array('images'), productController.createProd
 router.put('/product/edit/:id', upload.array('images'), productController.updateProduct);
 router.delete('/product/delete/:id', productController.deleteProduct);
 router.get('/products/catergory/:categoryId', productController.getProductByCategoryId);
-router.get('/products/pagenation', productController.getPaginatedProducts)
+router.get('/products/pagenation', productController.getPaginatedProducts);
+router.get('/products/filter', productController.filterProductsByName);
+
+
 // orderType
 router.get('/orderTypes', orderTypeController.getOrderTypes);
 router.post('/orderType/new', orderTypeController.createOrderType);

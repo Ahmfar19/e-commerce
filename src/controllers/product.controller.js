@@ -18,6 +18,7 @@ const createProductFolder = async (uploadPath, files, product, lastProduct) => {
         });
     });
 };
+
 const saveImagesToFolder = async (files, uploadPath) => {
     const savePromises = files.map(async (file) => {
         const fileName = file.originalname;
@@ -27,6 +28,7 @@ const saveImagesToFolder = async (files, uploadPath) => {
     });
     return Promise.all(savePromises);
 };
+
 const createProduct = async (req, res) => {
     try {
         const { category_id, name, description, price, discount, quantity, available } = req.body;
@@ -57,6 +59,7 @@ const createProduct = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
 };
+
 const getProduct = async (req, res) => {
     try {
         const { id } = req.params;
@@ -77,6 +80,7 @@ const getProduct = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
 };
+
 const updateProduct = async (req, res) => {
     try {
         const id = req.params.id;
@@ -125,6 +129,7 @@ const updateProduct = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
 };
+
 const deleteProduct = async (req, res) => {
     try {
         const id = req.params.id;
@@ -155,6 +160,7 @@ const deleteProduct = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
 };
+
 const getProducts = async (req, res) => {
     try {
         const products = await Product.getAll();
@@ -163,6 +169,7 @@ const getProducts = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
+
 const getProductByCategoryId = async (req, res) => {
     try {
         const { categoryId } = req.params;
@@ -172,10 +179,21 @@ const getProductByCategoryId = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
+
 const getPaginatedProducts = async (req, res) => {
     const { page , pageSize  } = req.query;
     try {
         const products = await Product.getPaginated(Number(page), Number(pageSize));
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the products.', null, products);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
+const filterProductsByName = async (req, res) => {
+    const { searchTerm } = req.query;
+    try {
+        const products = await Product.filterByName(searchTerm);
         sendResponse(res, 200, 'Ok', 'Successfully retrieved all the products.', null, products);
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
@@ -189,5 +207,6 @@ module.exports = {
     deleteProduct,
     getProducts,
     getProductByCategoryId,
-    getPaginatedProducts
+    getPaginatedProducts,
+    filterProductsByName
 };

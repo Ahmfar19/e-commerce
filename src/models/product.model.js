@@ -77,14 +77,19 @@ class Product {
         return rows;
     }
     static async getByCategory(category_id) {
-        const sql = `SELECT * FROM products WHERE category_id = "${category_id}"`;
-        const [rows] = await pool.execute(sql);
+        const sql = `SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id WHERE products.category_id = ?`;
+        const [rows] = await pool.execute(sql, [category_id]);
         return rows;
     }
     static async getPaginated(page, pageSize) {
         const offset = (page - 1) * pageSize;
         const sql = 'SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id LIMIT ? OFFSET ?';
         const [rows] = await pool.execute(sql, [pageSize, offset]);
+        return rows;
+    }
+    static async filterByName(searchTerm) {
+        const sql = 'SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id WHERE products.name LIKE ?';
+        const [rows] = await pool.execute(sql, [`%${searchTerm}%`]);
         return rows;
     }
 }
