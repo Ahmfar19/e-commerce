@@ -44,7 +44,7 @@ class Product {
     }
 
     static async getSingleById(id) {
-        const sql = `SELECT * FROM products WHERE product_id = "${id}"`;
+        const sql = `SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id WHERE product_id = "${id}"`;
         const [rows] = await pool.execute(sql);
         return rows;
     }
@@ -81,13 +81,6 @@ class Product {
         return rows;
     }
 
-    static async getByCategory(category_id) {
-        const sql =
-            `SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id WHERE products.category_id = ?`;
-        const [rows] = await pool.execute(sql, [category_id]);
-        return rows;
-    }
-
     static async getPaginated(page, pageSize) {
         const offset = (page - 1) * pageSize;
         const sql =
@@ -101,6 +94,16 @@ class Product {
             'SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id WHERE products.name LIKE ?';
         const [rows] = await pool.execute(sql, [`%${searchTerm}%`]);
         return rows;
+    }
+
+    static async getProductByFilter(key, value) { 
+            const sql = `
+                SELECT * FROM products 
+                INNER JOIN categories ON products.category_id = categories.category_id 
+                WHERE products.${key} = ?
+            `;
+            const [rows] = await pool.execute(sql, [value]);
+            return rows; 
     }
 }
 

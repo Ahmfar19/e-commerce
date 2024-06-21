@@ -32,9 +32,9 @@ router.get('/products', productController.getProducts);
 router.post('/product/new', upload.array('images'), productController.createProduct);
 router.put('/product/edit/:id', upload.array('images'), productController.updateProduct);
 router.delete('/product/delete/:id', productController.deleteProduct);
-router.get('/products/catergory/:categoryId', productController.getProductByCategoryId);
 router.get('/products/pagenation', productController.getPaginatedProducts);
-router.get('/products/filter', productController.filterProductsByName);
+router.get('/products/search', productController.filterProductsByName);
+router.get('/products/filter', productController.getProductsFilter);
 
 // orderType
 router.get('/orderTypes', orderTypeController.getOrderTypes);

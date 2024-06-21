@@ -170,15 +170,15 @@ const getProducts = async (req, res) => {
     }
 };
 
-const getProductByCategoryId = async (req, res) => {
+const getProductsFilter = async (req, res) => {
     try {
-        const { categoryId } = req.params;
-        const products = await Product.getByCategory(categoryId);
+        const { key, value } = req.query 
+        const products = await Product.getProductByFilter(key, value);
         sendResponse(res, 200, 'Ok', 'Successfully retrieved all the products.', null, products);
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
-};
+}
 
 const getPaginatedProducts = async (req, res) => {
     const { page, pageSize } = req.query;
@@ -200,13 +200,14 @@ const filterProductsByName = async (req, res) => {
     }
 };
 
+
 module.exports = {
     createProduct,
     updateProduct,
     getProduct,
     deleteProduct,
     getProducts,
-    getProductByCategoryId,
     getPaginatedProducts,
     filterProductsByName,
+    getProductsFilter
 };
