@@ -18,7 +18,7 @@ const createOrder = async (req, res) => {
         const orderData = await validateAndGetOrderData(req.body);
         const customer = await getOrCreateCustomer(orderData);
         const order = await createOrderAndSaveItems(orderData, customer.id);
-       
+
         // send Email to customer
         const templatePath = path.resolve(`public/orderTamplate/index.html`);
 

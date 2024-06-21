@@ -122,7 +122,6 @@ const deleteUser = async (req, res) => {
 };
 
 const login = async (req, res) => {
-    
     const { email_username, password, rememberMe, fingerprint } = req.body;
     try {
         const data = await User.loginUser(email_username);

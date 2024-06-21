@@ -36,16 +36,19 @@ class Product {
         this.product_id = result[0].insertId;
         return this.product_id;
     }
+
     static async getAll() {
         const sql = 'SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id';
         const [rows] = await pool.execute(sql);
         return rows;
     }
+
     static async getSingleById(id) {
         const sql = `SELECT * FROM products WHERE product_id = "${id}"`;
         const [rows] = await pool.execute(sql);
         return rows;
     }
+
     async updateById(id) {
         const sql = `UPDATE products SET 
         category_id = ?,
@@ -71,24 +74,31 @@ class Product {
         const [rows] = await pool.execute(sql, values);
         return rows;
     }
+
     static async deleteById(id) {
         const sql = `DELETE FROM products WHERE product_id = "${id}"`;
         const [rows] = await pool.execute(sql);
         return rows;
     }
+
     static async getByCategory(category_id) {
-        const sql = `SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id WHERE products.category_id = ?`;
+        const sql =
+            `SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id WHERE products.category_id = ?`;
         const [rows] = await pool.execute(sql, [category_id]);
         return rows;
     }
+
     static async getPaginated(page, pageSize) {
         const offset = (page - 1) * pageSize;
-        const sql = 'SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id LIMIT ? OFFSET ?';
+        const sql =
+            'SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id LIMIT ? OFFSET ?';
         const [rows] = await pool.execute(sql, [pageSize, offset]);
         return rows;
     }
+
     static async filterByName(searchTerm) {
-        const sql = 'SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id WHERE products.name LIKE ?';
+        const sql =
+            'SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id WHERE products.name LIKE ?';
         const [rows] = await pool.execute(sql, [`%${searchTerm}%`]);
         return rows;
     }

@@ -17,7 +17,7 @@ router.get('/user/:id', customerController.getSingleUser);
 router.put('/user/edit/:id', customerController.updateUser);
 router.delete('/user/delete/:id', customerController.deleteUser);
 router.put('/user/password/:id', customerController.updateUserPassword);
-router.post('/user/login', customerController.login)
+router.post('/user/login', customerController.login);
 
 // categories
 router.get('/categories', categoryController.getCategories);
@@ -35,7 +35,6 @@ router.delete('/product/delete/:id', productController.deleteProduct);
 router.get('/products/catergory/:categoryId', productController.getProductByCategoryId);
 router.get('/products/pagenation', productController.getPaginatedProducts);
 router.get('/products/filter', productController.filterProductsByName);
-
 
 // orderType
 router.get('/orderTypes', orderTypeController.getOrderTypes);

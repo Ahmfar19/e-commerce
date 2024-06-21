@@ -181,7 +181,7 @@ const getProductByCategoryId = async (req, res) => {
 };
 
 const getPaginatedProducts = async (req, res) => {
-    const { page , pageSize  } = req.query;
+    const { page, pageSize } = req.query;
     try {
         const products = await Product.getPaginated(Number(page), Number(pageSize));
         sendResponse(res, 200, 'Ok', 'Successfully retrieved all the products.', null, products);
@@ -208,5 +208,5 @@ module.exports = {
     getProducts,
     getProductByCategoryId,
     getPaginatedProducts,
-    filterProductsByName
+    filterProductsByName,
 };
