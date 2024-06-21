@@ -172,6 +172,15 @@ const getProductByCategoryId = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
+const getPaginatedProducts = async (req, res) => {
+    const { page , pageSize  } = req.query;
+    try {
+        const products = await Product.getPaginated(Number(page), Number(pageSize));
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the products.', null, products);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
 
 module.exports = {
     createProduct,
@@ -180,4 +189,5 @@ module.exports = {
     deleteProduct,
     getProducts,
     getProductByCategoryId,
+    getPaginatedProducts
 };

@@ -81,6 +81,12 @@ class Product {
         const [rows] = await pool.execute(sql);
         return rows;
     }
+    static async getPaginated(page, pageSize) {
+        const offset = (page - 1) * pageSize;
+        const sql = 'SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id LIMIT ? OFFSET ?';
+        const [rows] = await pool.execute(sql, [pageSize, offset]);
+        return rows;
+    }
 }
 
 module.exports = Product;
