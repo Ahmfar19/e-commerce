@@ -8,7 +8,7 @@ class Product {
         this.description = options.description || '';
         this.price = options.price;
         this.discount = options.discount || 0; // Set default discount to 0 if not provided
-        this.quantity = options.quantity;
+        this.total_quantity = options.total_quantity;
         this.available = options.available;
     }
 
@@ -20,7 +20,7 @@ class Product {
             description,
             price,
             discount,
-            quantity,
+            total_quantity,
             available
         ) VALUES (
            ${this.category_id}, 
@@ -29,7 +29,7 @@ class Product {
             "${this.description}", 
             ${this.price},
             ${this.discount},
-            ${this.quantity},
+            ${this.total_quantity},
             ${this.available}
         )`;
         const result = await pool.execute(sql);
@@ -57,7 +57,7 @@ class Product {
         description = ?,
         price = ?,
         discount = ?,
-        quantity = ?,
+        total_quantity = ?,
         available = ?
         WHERE product_id = ?`;
         const values = [
@@ -67,7 +67,7 @@ class Product {
             this.description,
             this.price,
             this.discount,
-            this.quantity,
+            this.total_quantity,
             this.available,
             id,
         ];
