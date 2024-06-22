@@ -37,7 +37,6 @@ const createUser = async (req, res) => {
 
         sendResponse(res, 201, 'Created', 'Successfully created a user.', null, user);
     } catch (error) {
-        console.log(error.message);
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };

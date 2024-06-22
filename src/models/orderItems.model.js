@@ -63,7 +63,6 @@ class OrderItems {
             const [rows] = await pool.execute(sql, productIds);
             return rows;
         } catch (error) {
-            console.error('Error checking product quantities:', error.message);
             throw new Error('Failed to check product quantities.');
         }
     }
