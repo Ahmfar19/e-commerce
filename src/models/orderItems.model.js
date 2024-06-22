@@ -47,6 +47,26 @@ class OrderItems {
         });
         await Promise.all(insertionPromises);
     }
+
+    static async checkQuantity(productIds) {
+        if (!Array.isArray(productIds) || productIds.length === 0) {
+            throw new Error('Invalid product IDs array');
+        }
+
+        // Create placeholders for each product ID in the SQL query
+        const placeholders = productIds.map(() => '?').join(',');
+
+        // SQL query with placeholders for product IDs
+        const sql = `SELECT product_id, total_quantity FROM products WHERE product_id IN (${placeholders})`;
+        try {
+            //   Execute SQL query with product IDs as parameters
+            const [rows] = await pool.execute(sql, productIds);
+            return rows;
+        } catch (error) {
+            console.error('Error checking product quantities:', error.message);
+            throw new Error('Failed to check product quantities.');
+        }
+    }
 }
 
 module.exports = OrderItems;

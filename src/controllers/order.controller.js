@@ -45,6 +45,29 @@ const validateAndGetOrderData = async (body) => {
         throw new Error('Invalid input data.');
     }
 
+    const productIds = products.map(product => product.product_id);
+
+    const data = await OrderItems.checkQuantity(productIds);
+
+    const validationErrors = [];
+
+    // Compare quantities
+    products.forEach(product => {
+        const dbProduct = data.find(p => p.product_id === product.product_id);
+        if (!dbProduct) {
+            validationErrors.push(`Product with ID ${product.product_id} not found in database.`);
+        } else if (product.quantity > dbProduct.total_quantity) {
+            validationErrors.push(
+                `Insufficient quantity for product ID ${product.product_id}. Available quantity: ${dbProduct.total_quantity}`,
+            );
+        }
+    });
+
+    // If there are validation errors, throw an Error with all collected errors
+    if (validationErrors.length > 0) {
+        throw new Error(`Validation errors: ${validationErrors.join(', ')}`);
+    }
+
     // Get current date
     const nowDate = getNowDate_time();
 

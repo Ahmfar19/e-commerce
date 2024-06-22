@@ -44,7 +44,8 @@ class Product {
     }
 
     static async getSingleById(id) {
-        const sql = `SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id WHERE product_id = "${id}"`;
+        const sql =
+            `SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id WHERE product_id = "${id}"`;
         const [rows] = await pool.execute(sql);
         return rows;
     }
@@ -96,14 +97,14 @@ class Product {
         return rows;
     }
 
-    static async getProductByFilter(key, value) { 
-            const sql = `
+    static async getProductByFilter(key, value) {
+        const sql = `
                 SELECT * FROM products 
                 INNER JOIN categories ON products.category_id = categories.category_id 
                 WHERE products.${key} = ?
             `;
-            const [rows] = await pool.execute(sql, [value]);
-            return rows; 
+        const [rows] = await pool.execute(sql, [value]);
+        return rows;
     }
 }
 
