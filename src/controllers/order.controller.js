@@ -112,7 +112,7 @@ const getOrCreateCustomer = async (orderData) => {
             address: customer.address,
             phone: customer.phone,
             personal_number: customer.personal_number,
-            registered: customer.registered,
+            registered: false,
         });
 
         const last_customer_id = await newCustomer.createUser();
