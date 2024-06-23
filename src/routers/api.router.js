@@ -18,7 +18,7 @@ router.put('/user/edit/:id', customerController.updateUser);
 router.delete('/user/delete/:id', customerController.deleteUser);
 router.put('/user/password/:id', customerController.updateUserPassword);
 router.post('/user/login', customerController.login);
-
+router.post('/user/verifyToken', customerController.verifyToken);
 // categories
 router.get('/categories', categoryController.getCategories);
 router.get('/category/:id', categoryController.getSingleCategory);

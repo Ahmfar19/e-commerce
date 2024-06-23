@@ -7,8 +7,7 @@ const JWT_SECRET_KEY = config.get('JWT_SECRET_KEY');
 
 const createUser = async (req, res) => {
     try {
-        const { username, first_name, last_name, email, password, address, phone, personal_number, registered } =
-            req.body;
+        const { username, first_name, last_name, email, password, address, phone, personal_number } = req.body;
 
         const checkuser = await User.checkIfUserExisted(email, username);
 
@@ -33,7 +32,7 @@ const createUser = async (req, res) => {
             address,
             phone,
             personal_number,
-            registered,
+            registered: true,
         });
 
         await user.createUser();
@@ -151,10 +150,8 @@ const login = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
-
-// not working
 const verifyToken = async (req, res) => {
-    const { user_id, fingerprint } = req.body;
+    const { customer_id, fingerprint } = req.body;
 
     try {
         if (req?.headers?.authorization?.startsWith('Bearer')) {
@@ -168,7 +165,7 @@ const verifyToken = async (req, res) => {
                             message: 'invalid token',
                         });
                     } else {
-                        const checkUserDevice = fingerprint + user_id;
+                        const checkUserDevice = fingerprint + customer_id;
                         if (checkUserDevice === decoded.id) {
                             return res.json({
                                 statusCode: 200,
