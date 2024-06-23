@@ -111,7 +111,7 @@ class Order {
             }
         } catch (error) {
             console.error('Error updating product quantities:', error);
-            throw error; // إعادة رمي الخطأ لكي يتم التعامل معه في مكان آخر إذا لزم الأمر
+            throw error;
         }
     }
 }

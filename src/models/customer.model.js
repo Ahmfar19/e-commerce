@@ -72,7 +72,7 @@ class User {
         await pool.execute(sql);
     }
     static async loginUser(email_username) {
-        const sql = `SELECT * FROM staff WHERE email ="${email_username}" OR username="${email_username}"`;
+        const sql = `SELECT * FROM customers WHERE email ="${email_username}" OR username="${email_username}"`;
         const [rows] = await pool.execute(sql);
         return rows;
     }

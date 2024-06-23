@@ -22,7 +22,7 @@ const createOrder = async (req, res) => {
         const templatePath = path.resolve(`public/orderTamplate/index.html`);
 
         const htmlTamplate = await ejs.renderFile(templatePath, { orderData, getFirstImage });
-        // sendReqularEmail(orderData.customer.email, 'hello', 'customer', htmlTamplate);
+        sendReqularEmail(orderData.customer.email, 'hello', 'customer', htmlTamplate);
 
         return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, order);
     } catch (err) {

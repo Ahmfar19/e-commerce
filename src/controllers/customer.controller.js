@@ -1,6 +1,9 @@
 const User = require('../models/customer.model');
 const { hashPassword, comparePassword } = require('../helpers/utils');
 const { sendResponse } = require('../helpers/apiResponse');
+var jwt = require('jsonwebtoken');
+const config = require('config');
+const JWT_SECRET_KEY = config.get('JWT_SECRET_KEY');
 
 const createUser = async (req, res) => {
     try {
@@ -119,18 +122,16 @@ const deleteUser = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
-
 const login = async (req, res) => {
-    const { email_username, password, rememberMe, fingerprint } = req.body;
     try {
+        const { email_username, password, rememberMe, fingerprint } = req.body;
         const data = await User.loginUser(email_username);
-
-        if (data.length > 0) {
+        if (data.length) {
             const match = await comparePassword(password, data[0].password);
-
             if (match) {
                 const expiresIn = rememberMe ? '30d' : '1d';
-                const finger_print = fingerprint + String(data[0].staff_id);
+                const finger_print = fingerprint + String(data[0].customer_id);
+
                 const token = jwt.sign({ id: finger_print }, JWT_SECRET_KEY, { expiresIn });
 
                 res.json({
@@ -144,10 +145,10 @@ const login = async (req, res) => {
                 return res.json({ error: 'Password or Email is incorrect' });
             }
         } else {
-            return res.json({ error: 'User does not exist in the database' });
+            return sendResponse(res, 406, 'Not Acceptable', 'User does not exist in the database', null, null);
         }
     } catch (error) {
-        return res.status(500).json({ error: 'Internal Server Error' });
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
 
