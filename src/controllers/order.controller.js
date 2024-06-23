@@ -2,7 +2,6 @@ const Order = require('../models/order.model');
 const User = require('../models/customer.model');
 const OrderItems = require('../models/orderItems.model');
 const { sendResponse } = require('../helpers/apiResponse');
-const { hashPassword } = require('../helpers/utils');
 const { getNowDate_time } = require('../helpers/utils');
 const { sendReqularEmail } = require('./sendEmail.controller');
 const ejs = require('ejs');

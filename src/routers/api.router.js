@@ -35,6 +35,7 @@ router.delete('/product/delete/:id', productController.deleteProduct);
 router.get('/products/pagenation', productController.getPaginatedProducts);
 router.get('/products/search', productController.filterProductsByName);
 router.get('/products/filter', productController.getProductsFilter);
+router.get('/products/multi', productController.getMultiProducts);
 
 // orderType
 router.get('/orderTypes', orderTypeController.getOrderTypes);

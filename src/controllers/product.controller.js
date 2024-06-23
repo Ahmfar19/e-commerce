@@ -200,6 +200,16 @@ const filterProductsByName = async (req, res) => {
     }
 };
 
+const getMultiProducts = async (req, res) => {
+    try {
+        const { productIds } = req.body;
+        const products = await Product.getMulti(productIds);
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the products.', null, products);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
 module.exports = {
     createProduct,
     updateProduct,
@@ -209,4 +219,5 @@ module.exports = {
     getPaginatedProducts,
     filterProductsByName,
     getProductsFilter,
+    getMultiProducts,
 };
