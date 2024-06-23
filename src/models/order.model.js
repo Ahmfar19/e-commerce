@@ -80,6 +80,40 @@ class Order {
         const [rows] = await pool.execute(sql, [email]);
         return rows;
     }
+
+    static async updateProductQuantities(products) {
+        try {
+            for (const product of products) {
+                // تحديث الكمية الإجمالية
+                const updateQuantitySql = `
+                    UPDATE products
+                    SET total_quantity = total_quantity - ?
+                    WHERE product_id = ?
+                `;
+                await pool.execute(updateQuantitySql, [product.quantity, product.product_id]);
+
+                // التحقق إذا أصبحت الكمية الإجمالية تساوي 0
+                const checkQuantitySql = `
+                    SELECT total_quantity
+                    FROM products
+                    WHERE product_id = ?
+                `;
+                const [rows] = await pool.execute(checkQuantitySql, [product.product_id]);
+
+                if (rows[0].total_quantity === 0) {
+                    const updateAvailabilitySql = `
+                        UPDATE products
+                        SET available = false
+                        WHERE product_id = ?
+                    `;
+                    await pool.execute(updateAvailabilitySql, [product.product_id]);
+                }
+            }
+        } catch (error) {
+            console.error('Error updating product quantities:', error);
+            throw error; // إعادة رمي الخطأ لكي يتم التعامل معه في مكان آخر إذا لزم الأمر
+        }
+    }
 }
 
 module.exports = Order;
