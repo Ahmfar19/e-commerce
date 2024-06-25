@@ -88,25 +88,25 @@ class Order {
                 const updateQuantitySql = `
                     UPDATE products
                     SET total_quantity = total_quantity - ?
-                    WHERE product_id = ?
+                    WHERE id = ?
                 `;
-                await pool.execute(updateQuantitySql, [product.quantity, product.product_id]);
+                await pool.execute(updateQuantitySql, [product.quantity, product.id]);
 
                 // التحقق إذا أصبحت الكمية الإجمالية تساوي 0
                 const checkQuantitySql = `
                     SELECT total_quantity
                     FROM products
-                    WHERE product_id = ?
+                    WHERE id = ?
                 `;
-                const [rows] = await pool.execute(checkQuantitySql, [product.product_id]);
+                const [rows] = await pool.execute(checkQuantitySql, [product.id]);
 
                 if (rows[0].total_quantity === 0) {
                     const updateAvailabilitySql = `
                         UPDATE products
                         SET available = false
-                        WHERE product_id = ?
+                        WHERE id = ?
                     `;
-                    await pool.execute(updateAvailabilitySql, [product.product_id]);
+                    await pool.execute(updateAvailabilitySql, [product.id]);
                 }
             }
         } catch (error) {

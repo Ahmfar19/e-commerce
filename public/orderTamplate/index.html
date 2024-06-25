@@ -90,7 +90,7 @@
         <!-- Corrected JavaScript/Template Syntax -->
         <% orderData.products.forEach(item => { %>
             <div class="item">
-                <img src=".././images/product_<%= item.product_id %>/<%= getFirstImage(item) %>" alt="Product Image">
+                <img src=".././images/product_<%= item.id %>/<%= getFirstImage(item) %>" alt="Product Image">
                 <div class="details">
                     <div class="name"><%= item.quantity %>X <%= item.name %></div>
                     <div>

@@ -44,7 +44,7 @@ const validateAndGetOrderData = async (body) => {
         throw new Error('Invalid input data.');
     }
 
-    const productIds = products.map(product => product.product_id);
+    const productIds = products.map(product => product.id);
 
     const data = await OrderItems.checkQuantity(productIds);
 
@@ -52,12 +52,12 @@ const validateAndGetOrderData = async (body) => {
 
     // Compare quantities
     products.forEach(product => {
-        const dbProduct = data.find(p => p.product_id === product.product_id);
+        const dbProduct = data.find(p => p.id === product.id);
         if (!dbProduct) {
-            validationErrors.push(`Product with ID ${product.product_id} not found in database.`);
+            validationErrors.push(`Product with ID ${product.id} not found in database.`);
         } else if (product.quantity > dbProduct.total_quantity) {
             validationErrors.push(
-                `Insufficient quantity for product ID ${product.product_id}. Available quantity: ${dbProduct.total_quantity}`,
+                `Insufficient quantity for product ID ${product.id}. Available quantity: ${dbProduct.total_quantity}`,
             );
         }
     });

@@ -35,7 +35,7 @@ app.use(function(req, res, next) {
 app.use(cors());
 
 app.get('/', (req, res) => res.send('It, works!'));
-app.use('/api', apiRouter);
-// app.use('/server/api', apiRouter);
+// app.use('/api', apiRouter);
+app.use('/server/api', apiRouter);
 
 module.exports = app;
