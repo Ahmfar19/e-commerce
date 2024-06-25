@@ -30,6 +30,7 @@ class User {
             "${this.password}",
             "${this.address}",
             ${this.phone},
+            ${this.registered},
             "${this.verificationToken}",
             "${this.tokenExpiryDate}"
         )`;

@@ -37,7 +37,7 @@ const validateAndGetOrderData = async (body) => {
     } = body;
 
     // Validate input data
-   
+
     const productIds = products.map(product => product.id);
 
     const data = await OrderItems.checkQuantity(productIds);
