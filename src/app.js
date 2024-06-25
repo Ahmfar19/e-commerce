@@ -25,7 +25,7 @@ app.use(express.static(path.resolve('./public')));
 // app.use(NODE_ENV === 'development' ? cors() : cors(corsOptions));
 
 // This one or the above one
-app.use(function (req, res, next) {
+app.use(function(req, res, next) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -60,8 +60,7 @@ app.use('/api/verify-email', async (req, res, next) => {
     } catch (error) {
         res.status(500).send('Internal Server Error');
     }
-})
-
+});
 
 app.get('/', (req, res) => res.send('It, works!'));
 // app.use('/api', apiRouter);

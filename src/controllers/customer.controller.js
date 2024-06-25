@@ -8,14 +8,13 @@ const config = require('config');
 const JWT_SECRET_KEY = config.get('JWT_SECRET_KEY');
 const { sendVerificationEmail } = require('../controllers/sendEmail.controller');
 
-
 const generateToken = promisify(crypto.randomBytes);
 
 const createUser = async (req, res) => {
     try {
         const { username, first_name, last_name, email, password, address, phone, personal_number } = req.body;
 
-        const checkuser = await User.checkIfUserExisted(email, username);
+        const checkuser = await User.checkIfUserExisted(email);
 
         const hashedPassword = await hashPassword(password);
         if (!hashedPassword.success) {
@@ -31,8 +30,7 @@ const createUser = async (req, res) => {
 
             const token = tokenBuffer.toString('hex');
 
-            const tokenExpiryDate = tokenExpireDate()
-
+            const tokenExpiryDate = tokenExpireDate();
 
             const user = new User({
                 username,
@@ -45,7 +43,7 @@ const createUser = async (req, res) => {
                 personal_number,
                 registered: false,
                 verificationToken: token,
-                tokenExpiryDate: tokenExpiryDate
+                tokenExpiryDate: tokenExpiryDate,
             });
 
             if (checkuser.length && !checkuser[0].registered) {
@@ -57,9 +55,15 @@ const createUser = async (req, res) => {
             const verificationLink = `http://localhost:4000/api/verify-email?token=${token}`;
             await sendVerificationEmail(email, verificationLink);
 
-            return sendResponse(res, 201, 'Created', 'Successfully created a user. Please check your email to verify your account.', null, user);
+            return sendResponse(
+                res,
+                201,
+                'Created',
+                'Successfully created a user. Please check your email to verify your account.',
+                null,
+                user,
+            );
         }
-
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }

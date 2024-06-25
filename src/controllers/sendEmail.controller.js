@@ -31,10 +31,11 @@ const sendVerificationEmail = async (email, verificationLink) => {
         to: email,
         subject: 'Email Verification',
         text: `Please verify your email by clicking the following link: ${verificationLink}`,
-        html: `<p>Please verify your email by clicking the following link: <a href="${verificationLink}">${verificationLink}</a></p>`
+        html:
+            `<p>Please verify your email by clicking the following link: <a href="${verificationLink}">${verificationLink}</a></p>`,
     };
     return sendEmail(mailOptions);
-}
+};
 
 const sendEmail = async (mailOptions) => {
     return new Promise((resolve) => {
@@ -53,5 +54,5 @@ const sendEmail = async (mailOptions) => {
 
 module.exports = {
     sendReqularEmail,
-    sendVerificationEmail
+    sendVerificationEmail,
 };

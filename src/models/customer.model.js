@@ -85,9 +85,9 @@ class User {
         const [rows] = await pool.execute(sql);
         return rows;
     }
-    static async checkIfUserExisted(email, username) {
+    static async checkIfUserExisted(email) {
         const sql = `SELECT * FROM customers WHERE email = ? OR username = ?`;
-        const [rows] = await pool.execute(sql, [email, username]);
+        const [rows] = await pool.execute(sql, [email]);
         return rows;
     }
     static async checkUserUpdate(username, email, id) {
