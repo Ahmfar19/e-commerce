@@ -54,6 +54,7 @@ class User {
         first_name = "${this.first_name}",
         last_name = "${this.last_name}", 
         email = "${this.email}",
+        password = "${this.password}",
         address = "${this.address}",
         phone = ${this.phone},
         personal_number = "${this.personal_number}",
@@ -71,8 +72,8 @@ class User {
         const sql = `DELETE FROM customers WHERE customer_id = "${id}"`;
         await pool.execute(sql);
     }
-    static async loginUser(email_username) {
-        const sql = `SELECT * FROM customers WHERE email ="${email_username}" OR username="${email_username}"`;
+    static async loginUser(email) {
+        const sql = `SELECT * FROM customers WHERE email ="${email}"`;
         const [rows] = await pool.execute(sql);
         return rows;
     }

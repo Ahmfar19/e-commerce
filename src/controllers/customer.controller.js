@@ -10,34 +10,53 @@ const createUser = async (req, res) => {
         const { username, first_name, last_name, email, password, address, phone, personal_number } = req.body;
 
         const checkuser = await User.checkIfUserExisted(email, username);
-
-        if (checkuser.length) {
-            return sendResponse(res, 406, 'Not Acceptable', 'user already existed.', null, null);
-        }
-
+       
         const hashedPassword = await hashPassword(password);
-
         if (!hashedPassword.success) {
             return res.json({
                 error: hashedPassword.error,
             });
         }
+     
+        if (checkuser.length && checkuser[0].registered) {
+            return sendResponse(res, 406, 'Not Acceptable', 'user already existed.', null, null);
 
-        const user = new User({
-            username,
-            first_name,
-            last_name,
-            email,
-            password: hashedPassword.data,
-            address,
-            phone,
-            personal_number,
-            registered: true,
-        });
+        } else if (checkuser.length && !checkuser[0].registered) {
+           
+            const user = new User({
+                username,
+                first_name,
+                last_name,
+                email,
+                password: hashedPassword.data,
+                address,
+                phone,
+                personal_number,
+                registered: true,
+            });
+          
+            await user.updateUser(checkuser[0].customer_id);
+            return sendResponse(res, 201, 'Created', 'Successfully created a user.', null, user);
+        } else {
 
-        await user.createUser();
+            const user = new User({
+                username,
+                first_name,
+                last_name,
+                email,
+                password: hashedPassword.data,
+                address,
+                phone,
+                personal_number,
+                registered: true,
+            });
 
-        sendResponse(res, 201, 'Created', 'Successfully created a user.', null, user);
+            await user.createUser();
+
+            sendResponse(res, 201, 'Created', 'Successfully created a user.', null, user);
+        }
+
+
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
@@ -123,8 +142,8 @@ const deleteUser = async (req, res) => {
 };
 const login = async (req, res) => {
     try {
-        const { email_username, password, rememberMe, fingerprint } = req.body;
-        const data = await User.loginUser(email_username);
+        const { email, password, rememberMe, fingerprint } = req.body;
+        const data = await User.loginUser(email);
         if (data.length) {
             const match = await comparePassword(password, data[0].password);
             if (match) {
