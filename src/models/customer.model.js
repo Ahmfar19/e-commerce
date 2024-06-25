@@ -11,6 +11,8 @@ class User {
         this.phone = options.phone;
         this.personal_number = options.personal_number;
         this.registered = options.registered;
+        this.verificationToken = options.verificationToken || null;
+        this.tokenExpiryDate = options.tokenExpiryDate || null;
     }
     async createUser() {
         const sql = `INSERT INTO customers (
@@ -22,7 +24,9 @@ class User {
             address,
             phone,
             personal_number,
-            registered
+            registered,
+            verificationToken,
+            tokenExpiryDate
         ) VALUES (
             "${this.username}", 
             "${this.first_name}", 
@@ -32,7 +36,9 @@ class User {
             "${this.address}",
             ${this.phone},
             "${this.personal_number}",
-            ${this.registered}
+            ${this.registered},
+            "${this.verificationToken}",
+            "${this.tokenExpiryDate}"
         )`;
         const result = await pool.execute(sql);
         this.customer_id = result[0].insertId;
@@ -58,7 +64,9 @@ class User {
         address = "${this.address}",
         phone = ${this.phone},
         personal_number = "${this.personal_number}",
-        registered = ${this.registered}
+        registered = ${this.registered},
+        verificationToken = "${this.verificationToken}",
+        tokenExpiryDate = "${this.tokenExpiryDate}"
         WHERE customer_id = ${id}`;
         await pool.execute(sql);
     }
@@ -86,6 +94,11 @@ class User {
         const sql = `SELECT * FROM customers WHERE 
             (username = '${username}' OR email = '${email}') 
             AND NOT customer_id = ${id}`;
+        const [rows] = await pool.execute(sql);
+        return rows;
+    }
+    static async findByVerificationToken(token) {
+        const sql = `SELECT * FROM customers WHERE verificationToken = "${token}"`;
         const [rows] = await pool.execute(sql);
         return rows;
     }

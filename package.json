@@ -26,6 +26,7 @@
         "cookie-parser": "^1.4.6",
         "cors": "^2.8.5",
         "cross-env": "^7.0.3",
+        "crypto": "^1.0.1",
         "dotenv": "^16.0.0",
         "dprint": "^0.45.1",
         "ejs": "^3.1.10",
@@ -33,6 +34,7 @@
         "jsonwebtoken": "^9.0.2",
         "multer": "^1.4.5-lts.1",
         "mysql2": "^2.3.3",
-        "nodemailer": "^6.9.13"
+        "nodemailer": "^6.9.13",
+        "util": "^0.12.5"
     }
 }

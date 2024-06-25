@@ -1,43 +1,38 @@
 const User = require('../models/customer.model');
-const { hashPassword, comparePassword } = require('../helpers/utils');
+const { hashPassword, comparePassword, tokenExpireDate } = require('../helpers/utils');
 const { sendResponse } = require('../helpers/apiResponse');
 var jwt = require('jsonwebtoken');
+const { promisify } = require('util');
+const crypto = require('crypto');
 const config = require('config');
 const JWT_SECRET_KEY = config.get('JWT_SECRET_KEY');
+const { sendVerificationEmail } = require('../controllers/sendEmail.controller');
+
+
+const generateToken = promisify(crypto.randomBytes);
 
 const createUser = async (req, res) => {
     try {
         const { username, first_name, last_name, email, password, address, phone, personal_number } = req.body;
 
         const checkuser = await User.checkIfUserExisted(email, username);
-       
+
         const hashedPassword = await hashPassword(password);
         if (!hashedPassword.success) {
             return res.json({
                 error: hashedPassword.error,
             });
         }
-     
+
         if (checkuser.length && checkuser[0].registered) {
             return sendResponse(res, 406, 'Not Acceptable', 'user already existed.', null, null);
-
-        } else if (checkuser.length && !checkuser[0].registered) {
-           
-            const user = new User({
-                username,
-                first_name,
-                last_name,
-                email,
-                password: hashedPassword.data,
-                address,
-                phone,
-                personal_number,
-                registered: true,
-            });
-          
-            await user.updateUser(checkuser[0].customer_id);
-            return sendResponse(res, 201, 'Created', 'Successfully created a user.', null, user);
         } else {
+            const tokenBuffer = await generateToken(32);
+
+            const token = tokenBuffer.toString('hex');
+
+            const tokenExpiryDate = tokenExpireDate()
+
 
             const user = new User({
                 username,
@@ -48,14 +43,22 @@ const createUser = async (req, res) => {
                 address,
                 phone,
                 personal_number,
-                registered: true,
+                registered: false,
+                verificationToken: token,
+                tokenExpiryDate: tokenExpiryDate
             });
 
-            await user.createUser();
+            if (checkuser.length && !checkuser[0].registered) {
+                await user.updateUser(checkuser[0].customer_id);
+            } else {
+                await user.createUser();
+            }
 
-            sendResponse(res, 201, 'Created', 'Successfully created a user.', null, user);
+            const verificationLink = `http://localhost:4000/api/verify-email?token=${token}`;
+            await sendVerificationEmail(email, verificationLink);
+
+            return sendResponse(res, 201, 'Created', 'Successfully created a user. Please check your email to verify your account.', null, user);
         }
-
 
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);

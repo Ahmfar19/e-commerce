@@ -25,6 +25,17 @@ const sendReqularEmail = async (to, subject, text, htmlTamplate) => {
     return sendEmail(mailOptions);
 };
 
+const sendVerificationEmail = async (email, verificationLink) => {
+    const mailOptions = {
+        from: EMAIL,
+        to: email,
+        subject: 'Email Verification',
+        text: `Please verify your email by clicking the following link: ${verificationLink}`,
+        html: `<p>Please verify your email by clicking the following link: <a href="${verificationLink}">${verificationLink}</a></p>`
+    };
+    return sendEmail(mailOptions);
+}
+
 const sendEmail = async (mailOptions) => {
     return new Promise((resolve) => {
         // eslint-disable-next-line no-unused-vars
@@ -42,4 +53,5 @@ const sendEmail = async (mailOptions) => {
 
 module.exports = {
     sendReqularEmail,
+    sendVerificationEmail
 };
