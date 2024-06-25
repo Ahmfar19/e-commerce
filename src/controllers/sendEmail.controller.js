@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-const sendReqularEmail = async (to, subject, text, htmlTamplate) => {
+const sendHtmlEmail = async (to, subject, text, htmlTamplate) => {
     let mailOptions = {
         from: EMAIL,
         to: to,
@@ -37,6 +37,16 @@ const sendVerificationEmail = async (email, verificationLink) => {
     return sendEmail(mailOptions);
 };
 
+const sendReqularEmail = async (to, subject, text) => {
+    let mailOptions = {
+        from: EMAIL,
+        to: to,
+        subject: subject,
+        text: text,
+    };
+    return sendEmail(mailOptions);
+};
+
 const sendEmail = async (mailOptions) => {
     return new Promise((resolve) => {
         // eslint-disable-next-line no-unused-vars
@@ -53,6 +63,7 @@ const sendEmail = async (mailOptions) => {
 };
 
 module.exports = {
-    sendReqularEmail,
+    sendHtmlEmail,
     sendVerificationEmail,
+    sendReqularEmail,
 };

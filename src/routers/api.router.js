@@ -9,7 +9,7 @@ const categoryController = require('../controllers/category.controller');
 const productController = require('../controllers/product.controller');
 const orderTypeController = require('../controllers/orderType.controller');
 const orderController = require('../controllers/order.controller');
-
+const resetPassword = require('../controllers/resetPassword.controller');
 // users
 router.post('/user/new', customerController.createUser);
 router.get('/users', customerController.getUsers);
@@ -19,6 +19,14 @@ router.delete('/user/delete/:id', customerController.deleteUser);
 router.put('/user/password/:id', customerController.updateUserPassword);
 router.post('/user/login', customerController.login);
 router.post('/user/verifyToken', customerController.verifyToken);
+
+// Forget password
+router.post('/forgetPassword', resetPassword.forgetPassword);
+// Reset Password
+router.post('/resetPassword', resetPassword.resetPassword);
+// pinCode for compare
+router.post('/pinCode', resetPassword.checkPinCode);
+
 // categories
 router.get('/categories', categoryController.getCategories);
 router.get('/category/:id', categoryController.getSingleCategory);

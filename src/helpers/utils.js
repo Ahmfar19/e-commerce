@@ -1,5 +1,16 @@
 const bcrypt = require('bcryptjs');
 
+function getCurrentDateTime() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const dateTimeString = `${year}-${month}-${day} ${hours}:${minutes}`;
+    return dateTimeString;
+}
+
 async function hashPassword(password) {
     // Number of salt rounds (the higher, the more secure but slower)
     const saltRounds = 10;
@@ -43,9 +54,29 @@ function tokenExpireDate() {
     return formattedDateTime;
 }
 
+function getFutureDateTime() {
+    const now = new Date();
+    const futureTime = new Date(now.getTime() + (60 * 60 * 1000)); // Adding one hour in milliseconds
+    const year = futureTime.getFullYear();
+    const month = String(futureTime.getMonth() + 1).padStart(2, '0');
+    const day = String(futureTime.getDate()).padStart(2, '0');
+    const hours = String(futureTime.getHours()).padStart(2, '0');
+    const minutes = String(futureTime.getMinutes()).padStart(2, '0');
+    const dateTimeString = `${year}-${month}-${day} ${hours}:${minutes}`;
+    return dateTimeString;
+}
+
+function isDateTimeInPast(dateTimeToCheck) {
+    const currentDateTime = new Date(getCurrentDateTime());
+    const providedDateTime = new Date(dateTimeToCheck);
+    return providedDateTime.getTime() < currentDateTime.getTime();
+}
+
 module.exports = {
     hashPassword,
     comparePassword,
     getNowDate_time,
     tokenExpireDate,
+    getFutureDateTime,
+    isDateTimeInPast,
 };

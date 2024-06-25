@@ -2,41 +2,34 @@ const pool = require('../databases/mysql.db');
 
 class User {
     constructor(options) {
-        this.username = options.username;
-        this.first_name = options.first_name;
-        this.last_name = options.last_name;
+        this.fname = options.fname;
+        this.lname = options.lname;
         this.email = options.email;
         this.password = options.password || '';
         this.address = options.address;
         this.phone = options.phone;
-        this.personal_number = options.personal_number;
         this.registered = options.registered;
         this.verificationToken = options.verificationToken || null;
         this.tokenExpiryDate = options.tokenExpiryDate || null;
     }
     async createUser() {
         const sql = `INSERT INTO customers (
-            username,
-            first_name,
-            last_name,
+            fname,
+            lname,
             email,
             password,
             address,
             phone,
-            personal_number,
             registered,
             verificationToken,
             tokenExpiryDate
         ) VALUES (
-            "${this.username}", 
-            "${this.first_name}", 
-            "${this.last_name}",
+            "${this.fname}", 
+            "${this.lname}",
             "${this.email}", 
             "${this.password}",
             "${this.address}",
             ${this.phone},
-            "${this.personal_number}",
-            ${this.registered},
             "${this.verificationToken}",
             "${this.tokenExpiryDate}"
         )`;
@@ -56,14 +49,12 @@ class User {
     }
     async updateUser(id) {
         const sql = `UPDATE customers SET 
-        username = "${this.username}", 
-        first_name = "${this.first_name}",
-        last_name = "${this.last_name}", 
+        fname = "${this.fname}",
+        lname = "${this.lname}", 
         email = "${this.email}",
         password = "${this.password}",
         address = "${this.address}",
         phone = ${this.phone},
-        personal_number = "${this.personal_number}",
         registered = ${this.registered},
         verificationToken = "${this.verificationToken}",
         tokenExpiryDate = "${this.tokenExpiryDate}"
@@ -86,13 +77,13 @@ class User {
         return rows;
     }
     static async checkIfUserExisted(email) {
-        const sql = `SELECT * FROM customers WHERE email = ? OR username = ?`;
+        const sql = `SELECT * FROM customers WHERE email = ?`;
         const [rows] = await pool.execute(sql, [email]);
         return rows;
     }
     static async checkUserUpdate(username, email, id) {
         const sql = `SELECT * FROM customers WHERE 
-            (username = '${username}' OR email = '${email}') 
+            (email = '${email}') 
             AND NOT customer_id = ${id}`;
         const [rows] = await pool.execute(sql);
         return rows;

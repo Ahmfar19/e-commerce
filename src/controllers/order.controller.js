@@ -3,7 +3,7 @@ const User = require('../models/customer.model');
 const OrderItems = require('../models/orderItems.model');
 const { sendResponse } = require('../helpers/apiResponse');
 const { getNowDate_time } = require('../helpers/utils');
-const { sendReqularEmail } = require('./sendEmail.controller');
+const { sendHtmlEmail } = require('./sendEmail.controller');
 const ejs = require('ejs');
 const path = require('path');
 
@@ -22,7 +22,7 @@ const createOrder = async (req, res) => {
         const templatePath = path.resolve(`public/orderTamplate/index.html`);
 
         const htmlTamplate = await ejs.renderFile(templatePath, { orderData, getFirstImage });
-        sendReqularEmail(orderData.customer.email, 'hello', 'customer', htmlTamplate);
+        sendHtmlEmail(orderData.customer.email, 'hello', 'customer', htmlTamplate);
 
         return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, order);
     } catch (err) {
@@ -37,13 +37,7 @@ const validateAndGetOrderData = async (body) => {
     } = body;
 
     // Validate input data
-    if (
-        !customer.username || !customer.email || !customer.address || !customer.phone
-        || !customer.personal_number || !customer.type_id || !customer.tax || !customer.shipping
-    ) {
-        throw new Error('Invalid input data.');
-    }
-
+   
     const productIds = products.map(product => product.id);
 
     const data = await OrderItems.checkQuantity(productIds);
@@ -105,13 +99,11 @@ const getOrCreateCustomer = async (orderData) => {
     } else {
         // User does not exist, create a new customer
         const newCustomer = new User({
-            username: customer.username,
-            first_name: customer.first_name,
-            last_name: customer.last_name,
+            fname: customer.fname,
+            lname: customer.lname,
             email: customer.email,
             address: customer.address,
             phone: customer.phone,
-            personal_number: customer.personal_number,
             registered: false,
         });
 

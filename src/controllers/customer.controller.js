@@ -12,7 +12,7 @@ const generateToken = promisify(crypto.randomBytes);
 
 const createUser = async (req, res) => {
     try {
-        const { username, first_name, last_name, email, password, address, phone, personal_number } = req.body;
+        const { fname, lname, email, password, address, phone } = req.body;
 
         const checkuser = await User.checkIfUserExisted(email);
 
@@ -33,14 +33,12 @@ const createUser = async (req, res) => {
             const tokenExpiryDate = tokenExpireDate();
 
             const user = new User({
-                username,
-                first_name,
-                last_name,
+                fname,
+                lname,
                 email,
                 password: hashedPassword.data,
                 address,
                 phone,
-                personal_number,
                 registered: false,
                 verificationToken: token,
                 tokenExpiryDate: tokenExpiryDate,
