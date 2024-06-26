@@ -9,8 +9,6 @@ class User {
         this.address = options.address;
         this.phone = options.phone;
         this.registered = options.registered;
-        this.verificationToken = options.verificationToken || null;
-        this.tokenExpiryDate = options.tokenExpiryDate || null;
     }
     async createUser() {
         const sql = `INSERT INTO customers (
@@ -20,9 +18,7 @@ class User {
             password,
             address,
             phone,
-            registered,
-            verificationToken,
-            tokenExpiryDate
+            registered
         ) VALUES (
             "${this.fname}", 
             "${this.lname}",
@@ -30,9 +26,7 @@ class User {
             "${this.password}",
             "${this.address}",
             ${this.phone},
-            ${this.registered},
-            "${this.verificationToken}",
-            "${this.tokenExpiryDate}"
+            ${this.registered}
         )`;
         const result = await pool.execute(sql);
         this.customer_id = result[0].insertId;
@@ -56,9 +50,7 @@ class User {
         password = "${this.password}",
         address = "${this.address}",
         phone = ${this.phone},
-        registered = ${this.registered},
-        verificationToken = "${this.verificationToken}",
-        tokenExpiryDate = "${this.tokenExpiryDate}"
+        registered = ${this.registered}
         WHERE customer_id = ${id}`;
         await pool.execute(sql);
     }

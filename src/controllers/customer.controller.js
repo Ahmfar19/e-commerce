@@ -1,14 +1,15 @@
 const User = require('../models/customer.model');
-const { hashPassword, comparePassword, tokenExpireDate } = require('../helpers/utils');
+const { hashPassword, comparePassword, tokenExpireDate, handleEncrypt } = require('../helpers/utils');
 const { sendResponse } = require('../helpers/apiResponse');
 var jwt = require('jsonwebtoken');
 const { promisify } = require('util');
-const crypto = require('crypto');
 const config = require('config');
 const JWT_SECRET_KEY = config.get('JWT_SECRET_KEY');
 const { sendVerificationEmail } = require('../controllers/sendEmail.controller');
 
-const generateToken = promisify(crypto.randomBytes);
+
+
+
 
 const createUser = async (req, res) => {
     try {
@@ -26,12 +27,12 @@ const createUser = async (req, res) => {
         if (checkuser.length && checkuser[0].registered) {
             return sendResponse(res, 406, 'Not Acceptable', 'user already existed.', null, null);
         } else {
-            const tokenBuffer = await generateToken(32);
 
-            const token = tokenBuffer.toString('hex');
 
             const tokenExpiryDate = tokenExpireDate();
-
+            const token = `${email}-${tokenExpiryDate}`;
+            const encryptedToken = await handleEncrypt(token)
+      ;
             const user = new User({
                 fname,
                 lname,
@@ -40,8 +41,6 @@ const createUser = async (req, res) => {
                 address,
                 phone,
                 registered: false,
-                verificationToken: token,
-                tokenExpiryDate: tokenExpiryDate,
             });
 
             if (checkuser.length && !checkuser[0].registered) {
@@ -50,7 +49,7 @@ const createUser = async (req, res) => {
                 await user.createUser();
             }
 
-            const verificationLink = `http://localhost:4000/api/verify-email?token=${token}`;
+            const verificationLink = `http://localhost:4000/api/verify-email?token=${encryptedToken}`;
             await sendVerificationEmail(email, verificationLink);
 
             return sendResponse(
