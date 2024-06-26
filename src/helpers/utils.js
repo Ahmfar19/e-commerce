@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
+var CryptoJS = require('crypto-js');
 const User = require('../models/customer.model');
 function getCurrentDateTime() {
     const now = new Date();
@@ -67,43 +67,29 @@ function getFutureDateTime() {
     return dateTimeString;
 }
 
-
-const algorithm = 'aes-256-cbc';
-const key = crypto.randomBytes(32);
-const iv = crypto.randomBytes(16);
-
-const handleEncrypt = async (text) => {
-    const cipher = crypto.createCipheriv(algorithm, key, iv);
-    let encrypted = cipher.update(text, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-    return `${iv.toString('hex')}:${encrypted}`;
-};
-
-const handleDecrypt = async (encryptedText) => {
-    const [ivHex, encrypted] = encryptedText.split(':');
-    const iv = Buffer.from(ivHex, 'hex');
-    const decipher = crypto.createDecipheriv(algorithm, key, iv);
-    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted;
-};
-
 function isDateTimeInPast(dateTimeToCheck) {
     const currentDateTime = new Date(getCurrentDateTime());
     const providedDateTime = new Date(dateTimeToCheck);
     return providedDateTime.getTime() < currentDateTime.getTime();
 }
 
+var encryptToken = async (token) => {
+    const result = CryptoJS.AES.encrypt(token, 'secret').toString();
+    return result;
+};
+
+// Decrypt
+var handleDecrypt = async (encryptedText) => {
+    const bytes = CryptoJS.AES.decrypt(encryptedText, 'secret');
+    const originalText = bytes.toString(CryptoJS.enc.Utf8);
+    return originalText;
+};
+
 const verifyEmail = async (req, res) => {
-    
     const { token } = req.query;
     try {
-        const decrypted = await handleDecrypt(token)
-
-        const [email, year, month, day] = decrypted.split('-');
-
-        const tokenExpiryDate = `${year}-${month}-${day}`;
-
+        const decrypted = await handleDecrypt(token);
+        const [email, tokenExpiryDate] = decrypted.split('$');
         const user = await User.checkIfUserExisted(email);
 
         if (!user) {
@@ -123,7 +109,7 @@ const verifyEmail = async (req, res) => {
     } catch (error) {
         res.status(500).send('Internal Server Error');
     }
-}
+};
 
 module.exports = {
     hashPassword,
@@ -132,7 +118,7 @@ module.exports = {
     tokenExpireDate,
     getFutureDateTime,
     isDateTimeInPast,
-    handleEncrypt,
+    encryptToken,
     handleDecrypt,
-    verifyEmail
+    verifyEmail,
 };
