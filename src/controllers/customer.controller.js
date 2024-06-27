@@ -24,7 +24,7 @@ const createUser = async (req, res) => {
         } else {
             const tokenExpiryDate = tokenExpireDate();
             const token = `${email}$${tokenExpiryDate}`;
-            const encryptedToken = await encryptToken(token);
+            const encryptedToken = encryptToken(token);
 
             const user = new User({
                 fname,
@@ -42,7 +42,9 @@ const createUser = async (req, res) => {
                 await user.createUser();
             }
 
-            const verificationLink = `http://localhost:4000/api/verify-email?token=${encryptedToken}`;
+            const verificationLink = `http://localhost:4000/api/verify-email?token=${
+                encodeURIComponent(encryptedToken)
+            };`;
             await sendVerificationEmail(email, verificationLink);
 
             return sendResponse(

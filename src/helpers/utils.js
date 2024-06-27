@@ -1,6 +1,9 @@
 const bcrypt = require('bcryptjs');
 var CryptoJS = require('crypto-js');
 const User = require('../models/customer.model');
+const config = require('config');
+const CRYPTO_SECRET_KEY = config.get('CRYPTO_SECRET_KEY');
+const { sendResponse } = require('../helpers/apiResponse');
 function getCurrentDateTime() {
     const now = new Date();
     const year = now.getFullYear();
@@ -43,15 +46,10 @@ function getNowDate_time() {
 function tokenExpireDate() {
     const currentDate = new Date();
     currentDate.setDate(currentDate.getDate() + 3);
-
     const year = currentDate.getFullYear();
     const month = String(currentDate.getMonth() + 1).padStart(2, '0');
     const day = String(currentDate.getDate()).padStart(2, '0');
-    const hours = String(currentDate.getHours()).padStart(2, '0');
-    const minutes = String(currentDate.getMinutes()).padStart(2, '0');
-    const seconds = String(currentDate.getSeconds()).padStart(2, '0');
-
-    const formattedDateTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    const formattedDateTime = `${year}-${month}-${day}`;
     return formattedDateTime;
 }
 
@@ -73,14 +71,14 @@ function isDateTimeInPast(dateTimeToCheck) {
     return providedDateTime.getTime() < currentDateTime.getTime();
 }
 
-var encryptToken = async (token) => {
-    const result = CryptoJS.AES.encrypt(token, 'secret').toString();
+var encryptToken = (token) => {
+    const result = CryptoJS.AES.encrypt(token, CRYPTO_SECRET_KEY).toString();
     return result;
 };
 
 // Decrypt
-var handleDecrypt = async (encryptedText) => {
-    const bytes = CryptoJS.AES.decrypt(encryptedText, 'secret');
+var handleDecrypt = (encryptedText) => {
+    const bytes = CryptoJS.AES.decrypt(encryptedText, CRYPTO_SECRET_KEY);
     const originalText = bytes.toString(CryptoJS.enc.Utf8);
     return originalText;
 };
@@ -88,16 +86,18 @@ var handleDecrypt = async (encryptedText) => {
 const verifyEmail = async (req, res) => {
     const { token } = req.query;
     try {
-        const decrypted = await handleDecrypt(token);
+        const decrypted = handleDecrypt(token);
+
         const [email, tokenExpiryDate] = decrypted.split('$');
+
         const user = await User.checkIfUserExisted(email);
 
         if (!user) {
-            return res.status(400).send('Invalid or expired token.');
+            return sendResponse(res, 400, 'Bad Request', 'Invalid or expired token.', null, null);
         }
 
         if (tokenExpiryDate < Date.now()) {
-            return res.status(400).send('Token has expired.');
+            return sendResponse(res, 401, 'Unauthorized', 'invalid authentication token', null, null);
         }
 
         user[0].registered = true;
@@ -107,7 +107,7 @@ const verifyEmail = async (req, res) => {
 
         res.redirect('/login');
     } catch (error) {
-        res.status(500).send('Internal Server Error');
+        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
 };
 
