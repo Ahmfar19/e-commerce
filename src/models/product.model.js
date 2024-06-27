@@ -150,6 +150,26 @@ class Product {
         const [rows] = await pool.execute(sql, [limit]);
         return rows;
     }
+
+    static async filterByPriceRange(minPrice, maxPrice) {
+        const sql = `
+        SELECT 
+            p.*, 
+            c.category_name 
+        FROM 
+            products p
+        INNER JOIN 
+            categories c ON p.category_id = c.category_id
+        WHERE 
+            p.price BETWEEN ? AND ?`;
+
+        try {
+            const [rows] = await pool.execute(sql, [minPrice, maxPrice]);
+            return rows;
+        } catch (error) {
+            throw new Error('Failed to filter products by price range.');
+        }
+    }
 }
 
 module.exports = Product;

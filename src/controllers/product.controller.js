@@ -224,6 +224,23 @@ const getPopularProducts = async (req, res) => {
     }
 };
 
+const getProductsByRangePrice = async (req, res) => {
+    try {
+        const { minPrice, maxPrice } = req.query;
+
+        const min = parseFloat(minPrice);
+        const max = parseFloat(maxPrice);
+
+        if (isNaN(min) || isNaN(max)) {
+            return sendResponse(res, 400, 'Bad Request', 'Invalid price range values.', null, null);
+        }
+        const products = await Product.filterByPriceRange(min, max);
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the popular products.', null, products);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
 module.exports = {
     createProduct,
     updateProduct,
@@ -235,4 +252,5 @@ module.exports = {
     getProductsFilter,
     getMultiProducts,
     getPopularProducts,
+    getProductsByRangePrice,
 };
