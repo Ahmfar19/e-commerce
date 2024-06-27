@@ -15,7 +15,9 @@ function getFirstImage(item) {
 const createOrder = async (req, res) => {
     try {
         const orderData = await validateAndGetOrderData(req.body);
+
         const customer = await getOrCreateCustomer(orderData);
+
         const order = await createOrderAndSaveItems(orderData, customer.id);
 
         // send Email to customer
@@ -38,7 +40,7 @@ const validateAndGetOrderData = async (body) => {
 
     // Validate input data
 
-    const productIds = products.map(product => product.id);
+    const productIds = products.map(product => product.product_id);
 
     const data = await OrderItems.checkQuantity(productIds);
 
@@ -46,12 +48,12 @@ const validateAndGetOrderData = async (body) => {
 
     // Compare quantities
     products.forEach(product => {
-        const dbProduct = data.find(p => p.id === product.id);
+        const dbProduct = data.find(p => p.id === product.product_id);
         if (!dbProduct) {
-            validationErrors.push(`Product with ID ${product.id} not found in database.`);
+            validationErrors.push(`Product with ID ${product.product_id} not found in database.`);
         } else if (product.quantity > dbProduct.total_quantity) {
             validationErrors.push(
-                `Insufficient quantity for product ID ${product.id}. Available quantity: ${dbProduct.total_quantity}`,
+                `Insufficient quantity for product ID ${product.product_id}. Available quantity: ${dbProduct.total_quantity}`,
             );
         }
     });
@@ -135,6 +137,7 @@ const createOrderAndSaveItems = async (orderData, customerId) => {
     });
 
     const order_id = await order.save();
+
     await OrderItems.saveMulti({
         order_id,
         products,

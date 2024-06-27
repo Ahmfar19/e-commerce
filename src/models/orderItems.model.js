@@ -3,7 +3,7 @@ const pool = require('../databases/mysql.db');
 class OrderItems {
     constructor(options) {
         this.order_id = options.order_id;
-        this.id = options.id;
+        this.product_id = options.product_id;
         this.quantity = options.quantity;
         this.price = options.price;
         this.discount = options.discount;
@@ -12,7 +12,7 @@ class OrderItems {
     async save() {
         const sql = `INSERT INTO order_items (
             order_id,
-            id,
+            product_id,
             quantity,
             price,
             discount
@@ -25,7 +25,7 @@ class OrderItems {
         )`;
         const values = [
             this.order_id,
-            this.id,
+            this.product_id,
             this.quantity,
             this.price,
             this.discount,
@@ -41,8 +41,8 @@ class OrderItems {
         }
         // Create an array of promises for report item insertion
         const insertionPromises = product_items.products.map(async (item) => {
-            const sql = `INSERT INTO order_items (order_id, id, quantity) VALUES (?, ?, ?)`;
-            const values = [product_items.order_id, item.id, item.quantity];
+            const sql = `INSERT INTO order_items (order_id, product_id, quantity) VALUES (?, ?, ?)`;
+            const values = [product_items.order_id, item.product_id, item.quantity];
             return await pool.execute(sql, values);
         });
         await Promise.all(insertionPromises);
