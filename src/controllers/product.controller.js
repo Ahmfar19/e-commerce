@@ -215,7 +215,7 @@ const getPopularProducts = async (req, res) => {
         const { limit } = req.query;
         const parsedLimit = parseInt(limit, 10);
         if (isNaN(parsedLimit) || parsedLimit <= 0) {
-            throw new Error('Invalid limit value');
+            return sendResponse(res, 400, 'Bad Request', 'Invalid limit  value.', null, null);
         }
         const popularProducts = await Product.getPopular(parsedLimit);
         sendResponse(res, 200, 'Ok', 'Successfully retrieved all the popular products.', null, popularProducts);
