@@ -210,6 +210,20 @@ const getMultiProducts = async (req, res) => {
     }
 };
 
+const getPopularProducts = async (req, res) => {
+    try {
+        const { limit } = req.query;
+        const parsedLimit = parseInt(limit, 10);
+        if (isNaN(parsedLimit) || parsedLimit <= 0) {
+            throw new Error('Invalid limit value');
+        }
+        const popularProducts = await Product.getPopular(parsedLimit);
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the popular products.', null, popularProducts);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
 module.exports = {
     createProduct,
     updateProduct,
@@ -220,4 +234,5 @@ module.exports = {
     filterProductsByName,
     getProductsFilter,
     getMultiProducts,
+    getPopularProducts,
 };

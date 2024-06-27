@@ -44,6 +44,7 @@ router.get('/products/pagenation', productController.getPaginatedProducts);
 router.get('/products/search', productController.filterProductsByName);
 router.get('/products/filter', productController.getProductsFilter);
 router.get('/products/multi', productController.getMultiProducts);
+router.get('/popular-products', productController.getPopularProducts);
 
 // orderType
 router.get('/orderTypes', orderTypeController.getOrderTypes);

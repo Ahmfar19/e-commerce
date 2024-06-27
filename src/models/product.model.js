@@ -125,6 +125,31 @@ class Product {
             throw new Error('Failed to check product quantities.');
         }
     }
+
+    static async getPopular(limit) {
+        const sql = `SELECT 
+        order_items.product_id,
+        products.name,
+        products.price,
+        categories.category_name,
+        SUM(order_items.quantity) AS quantity
+        FROM 
+        order_items
+        INNER JOIN 
+        products 
+        ON 
+        products.id = order_items.product_id
+        INNER JOIN
+        categories
+        ON
+        products.category_id = categories.category_id
+        GROUP BY 
+        order_items.product_id
+        ORDER BY 
+        quantity LIMIT ?`;
+        const [rows] = await pool.execute(sql, [limit]);
+        return rows;
+    }
 }
 
 module.exports = Product;
