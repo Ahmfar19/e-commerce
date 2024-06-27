@@ -10,6 +10,8 @@ const productController = require('../controllers/product.controller');
 const orderTypeController = require('../controllers/orderType.controller');
 const orderController = require('../controllers/order.controller');
 const resetPassword = require('../controllers/resetPassword.controller');
+const storeInformation = require('../controllers/storeInfo.controller');
+
 // users
 router.post('/user/new', customerController.createUser);
 router.get('/users', customerController.getUsers);
@@ -62,5 +64,11 @@ router.get('/orders/customer/:id', orderController.getOrderByCustomerId);
 router.delete('/orders/customer/delete/:id', orderController.deleteOrderByCustomerId);
 router.delete('/order/delete/:id', orderController.deleteOrderById);
 router.get('/order/:id', orderController.getOrderById);
+
+// storeInfo
+router.get('/storeInfo', storeInformation.getStoreInfo);
+router.put('/storeInfo/edit/:id', storeInformation.updateStoreInformation);
+router.delete('/storeInfo/delete/:id', storeInformation.deleteStoreInfo);
+router.post('/storeInfo/new', storeInformation.createStoreInformation);
 
 module.exports = router;
