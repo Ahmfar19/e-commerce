@@ -11,10 +11,10 @@ const path = require('path');
 function getFirstImage(item) {
     const images = JSON.parse(item.image);
     return images[0];
-};
+}
 
 const calculateVatAmount = (totalWithVat, vatRate) => {
-    return totalWithVat * ((vatRate) / (100 + (+vatRate)))
+    return totalWithVat * ((vatRate) / (100 + (+vatRate)));
 };
 
 const createOrder = async (req, res) => {
@@ -78,8 +78,8 @@ const validateAndGetOrderData = async (body) => {
 
     // clacuture vat amount
     const tax = await StoreInfo.getTax();
-    const vatAmount = calculateVatAmount(totalPriceBeforDiscount, tax[0].tax_percentage)
-   
+    const vatAmount = calculateVatAmount(totalPriceBeforDiscount, tax[0].tax_percentage);
+
     // Calculate total discount
     const totalDiscount = products.reduce((acc, current) => {
         return acc + current.discount * current.quantity;
@@ -95,7 +95,7 @@ const validateAndGetOrderData = async (body) => {
         totalPriceBeforDiscount,
         totalDiscount,
         finallprice,
-        vatAmount
+        vatAmount,
     };
 };
 
