@@ -1,6 +1,7 @@
 const Order = require('../models/order.model');
 const User = require('../models/customer.model');
 const OrderItems = require('../models/orderItems.model');
+const StoreInfo = require('../models/storeInfo.model');
 const { sendResponse } = require('../helpers/apiResponse');
 const { getNowDate_time } = require('../helpers/utils');
 const { sendHtmlEmail } = require('./sendEmail.controller');
@@ -11,6 +12,10 @@ function getFirstImage(item) {
     const images = JSON.parse(item.image);
     return images[0];
 }
+
+const calculateVatAmount = (totalWithVat, vatRate) => {
+    return totalWithVat * ((vatRate) / (100 + (+vatRate)));
+};
 
 const createOrder = async (req, res) => {
     try {
@@ -66,10 +71,14 @@ const validateAndGetOrderData = async (body) => {
     // Get current date
     const nowDate = getNowDate_time();
 
-    // Calculate total price before discount
+    // Calculate total price before discount (total price with tax)
     const totalPriceBeforDiscount = products.reduce((acc, current) => {
         return acc + current.price * current.quantity;
     }, 0);
+
+    // clacuture vat amount
+    const tax = await StoreInfo.getTax();
+    const vatAmount = calculateVatAmount(totalPriceBeforDiscount, tax[0].tax_percentage);
 
     // Calculate total discount
     const totalDiscount = products.reduce((acc, current) => {
@@ -77,7 +86,7 @@ const validateAndGetOrderData = async (body) => {
     }, 0);
 
     // Calculate final price
-    const finallprice = (totalPriceBeforDiscount - totalDiscount) + (customer.tax + customer.shipping);
+    const finallprice = (totalPriceBeforDiscount - totalDiscount) + (customer.shipping);
 
     return {
         customer,
@@ -86,6 +95,7 @@ const validateAndGetOrderData = async (body) => {
         totalPriceBeforDiscount,
         totalDiscount,
         finallprice,
+        vatAmount,
     };
 };
 

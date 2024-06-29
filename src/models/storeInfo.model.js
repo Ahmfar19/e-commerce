@@ -59,6 +59,12 @@ class StoreInfo {
         const [rows] = await pool.execute(sql);
         return rows;
     }
+
+    static async getTax() {
+        const sql = `SELECT tax_percentage FROM store_info`;
+        const [rows] = await pool.execute(sql);
+        return rows;
+    }
 }
 
 module.exports = StoreInfo;
