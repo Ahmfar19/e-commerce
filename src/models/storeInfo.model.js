@@ -2,8 +2,10 @@ const pool = require('../databases/mysql.db');
 
 class StoreInfo {
     constructor(options) {
-        this.opening_time = options.opening_time;
-        this.closing_time = options.closing_time;
+        this.opening_day = options.opening_day;
+        this.closing_day = options.closing_day;
+        this.opening_weekend = options.opening_weekend;
+        this.closing_weekend = options.closing_weekend 
         this.tax_percentage = options.tax_percentage;
         this.phone = options.phone;
         this.secondaryPhone = options.secondaryPhone;
@@ -11,14 +13,18 @@ class StoreInfo {
 
     async save() {
         const sql = `INSERT INTO store_info (
-            opening_time,
-            closing_time,
+            opening_day,
+            closing_day,
+            opening_weekend,
+            closing_weekend,
             tax_percentage,
             phone,
             secondaryPhone
         ) VALUES (
-            "${this.opening_time}",
-            "${this.closing_time}",
+            "${this.opening_day}",
+            "${this.closing_day}",
+            "${this.opening_weekend}",
+            "${this.closing_weekend}",
             "${this.tax_percentage}",
            " ${this.phone}",
             "${this.secondaryPhone}"
@@ -36,15 +42,19 @@ class StoreInfo {
 
     async updateById(id) {
         const sql = `UPDATE store_info SET 
-            opening_time = ?,
-            closing_time = ?,
+            opening_day = ?,
+            closing_day = ?,
+            opening_weekend = ?,
+            closing_weekend = ?,
             tax_percentage = ?,
             phone = ?,
             secondaryPhone = ?
             WHERE id = ?`;
         const values = [
-            this.opening_time,
-            this.closing_time,
+            this.opening_day,
+            this.closing_day,
+            this.opening_weekend,
+            this.closing_weekend,
             this.tax_percentage,
             this.phone,
             this.secondaryPhone,
