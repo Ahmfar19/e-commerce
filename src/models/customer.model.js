@@ -6,8 +6,8 @@ class User {
         this.lname = options.lname;
         this.email = options.email;
         this.password = options.password || '';
-        this.address = options.address;
-        this.phone = options.phone;
+        this.address = options.address || '';
+        this.phone = options.phone || '';
         this.registered = options.registered;
     }
     async createUser() {
@@ -25,7 +25,7 @@ class User {
             "${this.email}", 
             "${this.password}",
             "${this.address}",
-            ${this.phone},
+            "${this.phone}",
             ${this.registered}
         )`;
         const result = await pool.execute(sql);
@@ -49,7 +49,7 @@ class User {
         email = "${this.email}",
         password = "${this.password}",
         address = "${this.address}",
-        phone = ${this.phone},
+        phone = "${this.phone}",
         registered = ${this.registered}
         WHERE customer_id = ${id}`;
         await pool.execute(sql);

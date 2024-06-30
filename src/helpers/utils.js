@@ -105,9 +105,9 @@ const verifyEmail = async (req, res) => {
         const newuser = new User(user[0]);
         await newuser.updateUser(user[0].customer_id);
 
-        res.redirect('/login');
+        res.redirect('http://localhost:3000/login');
     } catch (error) {
-        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
 
