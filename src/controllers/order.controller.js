@@ -2,6 +2,7 @@ const Order = require('../models/order.model');
 const User = require('../models/customer.model');
 const OrderItems = require('../models/orderItems.model');
 const StoreInfo = require('../models/storeInfo.model');
+const OrderType = require('../models/orderType.model');
 const { sendResponse } = require('../helpers/apiResponse');
 const { getNowDate_time } = require('../helpers/utils');
 const { sendHtmlEmail } = require('./sendEmail.controller');
@@ -20,9 +21,9 @@ const calculateVatAmount = (totalWithVat, vatRate) => {
 const createOrder = async (req, res) => {
     try {
         const orderData = await validateAndGetOrderData(req.body);
-
+ 
         const customer = await getOrCreateCustomer(orderData);
-
+        console.log(customer);
         const order = await createOrderAndSaveItems(orderData, customer.id);
 
         // send Email to customer
@@ -41,24 +42,23 @@ const validateAndGetOrderData = async (body) => {
     const {
         customer,
         products,
+        shipping
     } = body;
-
-    // Validate input data
-
-    const productIds = products.map(product => product.id);
-
+ 
+    const productIds = products.map(product => product.product_id);
+   
     const data = await OrderItems.checkQuantity(productIds);
-
+    
     const validationErrors = [];
 
     // Compare quantities
-    products.forEach(product => {
-        const dbProduct = data.find(p => p.id === product.id);
+    products.forEach(product => {  
+        const dbProduct = data.find(p => p.id === product.product_id);
         if (!dbProduct) {
-            validationErrors.push(`Product with ID ${product.id} not found in database.`);
+            validationErrors.push(`Product with ID ${product.product_id} not found in database.`);
         } else if (product.quantity > dbProduct.total_quantity) {
             validationErrors.push(
-                `Insufficient quantity for product ID ${product.id}. Available quantity: ${dbProduct.total_quantity}`,
+                `Insufficient quantity for product ID ${product.product_id}. Available quantity: ${dbProduct.total_quantity}`,
             );
         }
     });
@@ -86,7 +86,7 @@ const validateAndGetOrderData = async (body) => {
     }, 0);
 
     // Calculate final price
-    const finallprice = (totalPriceBeforDiscount - totalDiscount) + (customer.shipping);
+    const finallprice = (totalPriceBeforDiscount - totalDiscount) + (shipping);
 
     return {
         customer,
@@ -96,15 +96,16 @@ const validateAndGetOrderData = async (body) => {
         totalDiscount,
         finallprice,
         vatAmount,
+        shipping
     };
 };
 
 const getOrCreateCustomer = async (orderData) => {
     const { customer } = orderData;
-
+    
     // Check if the user exists in the database
     const checkCustomer = await Order.checkCustomerIfExisted(customer.email);
-
+    
     if (checkCustomer.length) {
         // User exists, return their customer_id
         return { id: checkCustomer[0].customer_id };
@@ -118,7 +119,7 @@ const getOrCreateCustomer = async (orderData) => {
             phone: customer.phone,
             registered: false,
         });
-
+       
         const last_customer_id = await newCustomer.createUser();
 
         return { id: last_customer_id };
@@ -127,27 +128,30 @@ const getOrCreateCustomer = async (orderData) => {
 
 const createOrderAndSaveItems = async (orderData, customerId) => {
     const {
-        customer,
         products,
         nowDate,
         totalPriceBeforDiscount,
         finallprice,
         totalDiscount,
+        vatAmount,
+        shipping
     } = orderData;
+ 
+    const orderType = await OrderType.getAll()
 
     const order = new Order({
         customer_id: customerId,
-        type_id: customer.type_id,
+        type_id: orderType[0].type_id,
         order_date: nowDate,
         sub_total: totalPriceBeforDiscount,
-        tax: customer.tax,
+        tax: vatAmount,
         items_discount: totalDiscount,
-        shipping: customer.shipping,
+        shipping: shipping,
         total: finallprice,
     });
 
     const order_id = await order.save();
-
+   
     await OrderItems.saveMulti({
         order_id,
         products,

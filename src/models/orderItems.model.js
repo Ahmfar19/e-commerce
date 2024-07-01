@@ -36,13 +36,14 @@ class OrderItems {
     }
 
     static async saveMulti(product_items) {
+
         if (!Array.isArray(product_items.products) || product_items.products.length === 0) {
             throw new Error('Invalid report items data');
         }
         // Create an array of promises for report item insertion
-        const insertionPromises = product_items.products.map(async (item) => {
+        const insertionPromises = product_items.products.map(async (product) => {
             const sql = `INSERT INTO order_items (order_id, product_id, quantity) VALUES (?, ?, ?)`;
-            const values = [product_items.order_id, item.product_id, item.quantity];
+            const values = [product_items.order_id, product.product_id, product.quantity];
             return await pool.execute(sql, values);
         });
         await Promise.all(insertionPromises);

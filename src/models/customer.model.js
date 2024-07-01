@@ -8,7 +8,7 @@ class User {
         this.password = options.password || '';
         this.address = options.address || '';
         this.phone = options.phone || '';
-        this.registered = options.registered || '';
+        this.registered = options.registered || false;
     }
     async createUser() {
         const sql = `INSERT INTO customers (
