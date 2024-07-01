@@ -21,9 +21,9 @@ const calculateVatAmount = (totalWithVat, vatRate) => {
 const createOrder = async (req, res) => {
     try {
         const orderData = await validateAndGetOrderData(req.body);
- 
+
         const customer = await getOrCreateCustomer(orderData);
-        console.log(customer);
+
         const order = await createOrderAndSaveItems(orderData, customer.id);
 
         // send Email to customer
@@ -42,17 +42,17 @@ const validateAndGetOrderData = async (body) => {
     const {
         customer,
         products,
-        shipping
+        shipping,
     } = body;
- 
+
     const productIds = products.map(product => product.product_id);
-   
+
     const data = await OrderItems.checkQuantity(productIds);
-    
+
     const validationErrors = [];
 
     // Compare quantities
-    products.forEach(product => {  
+    products.forEach(product => {
         const dbProduct = data.find(p => p.id === product.product_id);
         if (!dbProduct) {
             validationErrors.push(`Product with ID ${product.product_id} not found in database.`);
@@ -96,16 +96,16 @@ const validateAndGetOrderData = async (body) => {
         totalDiscount,
         finallprice,
         vatAmount,
-        shipping
+        shipping,
     };
 };
 
 const getOrCreateCustomer = async (orderData) => {
     const { customer } = orderData;
-    
+
     // Check if the user exists in the database
     const checkCustomer = await Order.checkCustomerIfExisted(customer.email);
-    
+
     if (checkCustomer.length) {
         // User exists, return their customer_id
         return { id: checkCustomer[0].customer_id };
@@ -119,7 +119,7 @@ const getOrCreateCustomer = async (orderData) => {
             phone: customer.phone,
             registered: false,
         });
-       
+
         const last_customer_id = await newCustomer.createUser();
 
         return { id: last_customer_id };
@@ -134,10 +134,10 @@ const createOrderAndSaveItems = async (orderData, customerId) => {
         finallprice,
         totalDiscount,
         vatAmount,
-        shipping
+        shipping,
     } = orderData;
- 
-    const orderType = await OrderType.getAll()
+
+    const orderType = await OrderType.getAll();
 
     const order = new Order({
         customer_id: customerId,
@@ -151,7 +151,7 @@ const createOrderAndSaveItems = async (orderData, customerId) => {
     });
 
     const order_id = await order.save();
-   
+
     await OrderItems.saveMulti({
         order_id,
         products,
