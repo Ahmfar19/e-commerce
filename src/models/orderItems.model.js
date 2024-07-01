@@ -71,7 +71,12 @@ class OrderItems {
         if (!orderId) {
             throw new Error('Invalid order ID');
         }
-        const sql = `SELECT * FROM order_items WHERE order_id = ${orderId}`;
+        const sql = `
+            SELECT order_items.*, products.name, products.image, products.price
+            FROM order_items
+            JOIN products ON order_items.product_id = products.product_id
+            WHERE order_items.order_id = ${orderId}
+        `;
         try {
             const [rows] = await pool.execute(sql);
             return rows;
