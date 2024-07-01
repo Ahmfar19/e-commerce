@@ -80,16 +80,12 @@ const getSingleUser = async (req, res) => {
 const updateUser = async (req, res) => {
     try {
         const id = req.params.id;
-        const { username, email } = req.body;
+        const { email } = req.body;
 
-        const checkUser = await User.checkUserUpdate(username, email, id);
+        const checkUser = await User.checkUserUpdate(email, id);
 
         if (checkUser.length) {
-            return res.json({
-                status: 406,
-                stautsCode: 'Not Acceptable',
-                message: 'dek_alert_user_editFail_userNameOrEmail_exsists',
-            });
+            return sendResponse(res, 406, 'Not Acceptable', 'ec_profile_user_editFail_Email_exsists', null, null);
         }
 
         const user = new User(req.body);

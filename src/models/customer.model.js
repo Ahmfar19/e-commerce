@@ -8,7 +8,7 @@ class User {
         this.password = options.password || '';
         this.address = options.address || '';
         this.phone = options.phone || '';
-        this.registered = options.registered;
+        this.registered = options.registered || '';
     }
     async createUser() {
         const sql = `INSERT INTO customers (
@@ -43,16 +43,32 @@ class User {
         return rows;
     }
     async updateUser(id) {
-        const sql = `UPDATE customers SET 
-        fname = "${this.fname}",
-        lname = "${this.lname}", 
-        email = "${this.email}",
-        password = "${this.password}",
-        address = "${this.address}",
-        phone = "${this.phone}",
-        registered = ${this.registered}
-        WHERE customer_id = ${id}`;
-        await pool.execute(sql);
+        const sql = `
+            UPDATE customers SET 
+            fname = ?, 
+            lname = ?, 
+            email = ?, 
+            password = ?, 
+            address = ?, 
+            phone = ?, 
+            registered = ?
+            WHERE customer_id = ?`;
+        const values = [
+            this.fname,
+            this.lname,
+            this.email,
+            this.password,
+            this.address,
+            this.phone,
+            this.registered,
+            id,
+        ];
+
+        try {
+            await pool.execute(sql, values);
+        } catch (error) {
+            throw error;
+        }
     }
     static async updatePassword(id, newPassword) {
         const sql = `UPDATE customers SET 
@@ -74,7 +90,7 @@ class User {
         const [rows] = await pool.execute(sql, [email]);
         return rows;
     }
-    static async checkUserUpdate(username, email, id) {
+    static async checkUserUpdate(email, id) {
         const sql = `SELECT * FROM customers WHERE 
             (email = '${email}') 
             AND NOT customer_id = ${id}`;

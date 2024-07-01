@@ -5,7 +5,7 @@ class StoreInfo {
         this.opening_day = options.opening_day;
         this.closing_day = options.closing_day;
         this.opening_weekend = options.opening_weekend;
-        this.closing_weekend = options.closing_weekend 
+        this.closing_weekend = options.closing_weekend;
         this.tax_percentage = options.tax_percentage;
         this.phone = options.phone;
         this.adress = options.adress;
