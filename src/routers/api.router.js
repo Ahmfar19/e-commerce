@@ -11,6 +11,7 @@ const orderTypeController = require('../controllers/orderType.controller');
 const orderController = require('../controllers/order.controller');
 const resetPassword = require('../controllers/resetPassword.controller');
 const storeInformation = require('../controllers/storeInfo.controller');
+const orderItemsController = require('../controllers/orderItems.controller');
 
 // users
 router.post('/user/new', customerController.createUser);
@@ -64,6 +65,9 @@ router.get('/orders/customer/:id', orderController.getOrderByCustomerId);
 router.delete('/orders/customer/delete/:id', orderController.deleteOrderByCustomerId);
 router.delete('/order/delete/:id', orderController.deleteOrderById);
 router.get('/order/:id', orderController.getOrderById);
+
+// order items
+router.get('/orderitems/:id', orderItemsController.getOrderItems);
 
 // storeInfo
 router.get('/storeInfo', storeInformation.getStoreInfo);

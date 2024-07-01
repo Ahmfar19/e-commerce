@@ -66,6 +66,19 @@ class OrderItems {
             throw new Error('Failed to check product quantities.');
         }
     }
+
+    static async getItemsByOrderId(orderId) {
+        if (!orderId) {
+            throw new Error('Invalid order ID');
+        }
+        const sql = `SELECT * FROM order_items WHERE order_id = ${orderId}`;
+        try {
+            const [rows] = await pool.execute(sql);
+            return rows;
+        } catch (error) {
+            throw new Error('Failed to get the order items');
+        }
+    }
 }
 
 module.exports = OrderItems;
