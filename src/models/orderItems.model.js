@@ -31,8 +31,8 @@ class OrderItems {
             this.discount,
         ];
         const result = await pool.execute(sql, values);
-        this.order_Item = result[0].insertId;
-        return this.order_Item;
+        this.item_id = result[0].insertId;
+        return this.item_id;
     }
 
     static async saveMulti(product_items) {
