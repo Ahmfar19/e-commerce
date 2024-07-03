@@ -31,7 +31,7 @@ const updateShipping = async (req, res) => {
         if (data.affectedRows === 0) {
             return res.json({
                 status: 404,
-                ok:false,
+                ok: false,
                 statusCode: 'Bad Request',
                 message: 'No shipping found for update',
             });
@@ -60,7 +60,7 @@ const deleteShipping = async (req, res) => {
         if (data.affectedRows === 0) {
             return res.json({
                 status: 404,
-                ok:false,
+                ok: false,
                 statusCode: 'Bad Request',
                 message: 'No shipping found for delete',
             });
@@ -75,5 +75,5 @@ module.exports = {
     updateShipping,
     getShippings,
     getSingleShipping,
-    deleteShipping
+    deleteShipping,
 };

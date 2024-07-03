@@ -3,6 +3,7 @@ const User = require('../models/customer.model');
 const OrderItems = require('../models/orderItems.model');
 const StoreInfo = require('../models/storeInfo.model');
 const OrderType = require('../models/orderType.model');
+const Shipping = require('../models/shipping.model');
 const { sendResponse } = require('../helpers/apiResponse');
 const { getNowDate_time } = require('../helpers/utils');
 const { sendHtmlEmail } = require('./sendEmail.controller');
@@ -42,7 +43,7 @@ const validateAndGetOrderData = async (body) => {
     const {
         customer,
         products,
-        shipping,
+        shipping_id,
     } = body;
 
     const productIds = products.map(product => product.product_id);
@@ -78,6 +79,10 @@ const validateAndGetOrderData = async (body) => {
 
     // clacuture vat amount
     const tax = await StoreInfo.getTax();
+    // shipping
+    const shipping = await Shipping.getById(shipping_id);
+    const shipping_price = shipping[0].shipping_price;
+
     const vatAmount = calculateVatAmount(totalPriceBeforDiscount, tax[0].tax_percentage);
 
     // Calculate total discount
@@ -86,7 +91,7 @@ const validateAndGetOrderData = async (body) => {
     }, 0);
 
     // Calculate final price
-    const finallprice = (totalPriceBeforDiscount - totalDiscount) + (shipping);
+    const finallprice = (totalPriceBeforDiscount - totalDiscount) + (shipping_price);
 
     return {
         customer,
@@ -96,7 +101,8 @@ const validateAndGetOrderData = async (body) => {
         totalDiscount,
         finallprice,
         vatAmount,
-        shipping,
+        shipping_price,
+        shipping_id,
     };
 };
 
@@ -134,7 +140,7 @@ const createOrderAndSaveItems = async (orderData, customerId) => {
         finallprice,
         totalDiscount,
         vatAmount,
-        shipping,
+        shipping_id,
     } = orderData;
 
     const orderType = await OrderType.getAll();
@@ -142,11 +148,11 @@ const createOrderAndSaveItems = async (orderData, customerId) => {
     const order = new Order({
         customer_id: customerId,
         type_id: orderType[0].type_id,
+        shipping_id: shipping_id,
         order_date: nowDate,
         sub_total: totalPriceBeforDiscount,
         tax: vatAmount,
         items_discount: totalDiscount,
-        shipping: shipping,
         total: finallprice,
     });
 

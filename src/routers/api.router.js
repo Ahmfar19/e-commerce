@@ -76,8 +76,7 @@ router.put('/storeInfo/edit/:id', storeInformation.updateStoreInformation);
 router.delete('/storeInfo/delete/:id', storeInformation.deleteStoreInfo);
 router.post('/storeInfo/new', storeInformation.createStoreInformation);
 
-
-//shipping
+// shipping
 router.post('/shipping/new', shippingController.createShipping);
 router.put('/shipping/edit/:id', shippingController.updateShipping);
 router.get('/shippings', shippingController.getShippings);

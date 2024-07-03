@@ -4,11 +4,11 @@ class Order {
     constructor(options) {
         this.customer_id = options.customer_id;
         this.type_id = options.type_id;
+        this.shipping_id = options.shipping_id;
         this.order_date = options.order_date;
         this.sub_total = options.sub_total;
         this.tax = options.tax;
         this.items_discount = options.items_discount;
-        this.shipping = options.shipping;
         this.total = options.total;
     }
 
@@ -16,20 +16,20 @@ class Order {
         const sql = `INSERT INTO orders (
             customer_id,
             type_id,
+            shipping_id,
             order_date,
             sub_total,
             tax,
             items_discount,
-            shipping,
             total
         ) VALUES (
             ${this.customer_id},
             ${this.type_id},
+            ${this.shipping_id},
             "${this.order_date}",
             ${this.sub_total},
             ${this.tax},
             ${this.items_discount},
-            ${this.shipping},
             ${this.total}
         )`;
         const result = await pool.execute(sql);
