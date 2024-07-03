@@ -31,7 +31,7 @@ const saveImagesToFolder = async (files, uploadPath) => {
 
 const createProduct = async (req, res) => {
     try {
-        const { category_id, name, description, price, discount, total_quantity, available } = req.body;
+        const { category_id, name, description, price, discount, quantity, available } = req.body;
 
         const product = new Product({
             category_id,
@@ -39,7 +39,7 @@ const createProduct = async (req, res) => {
             description,
             price,
             discount,
-            total_quantity,
+            quantity,
             available,
         });
 
@@ -85,7 +85,7 @@ const updateProduct = async (req, res) => {
     try {
         const id = req.params.id;
 
-        const { category_id, name, description, price, discount, total_quantity, available } = req.body;
+        const { category_id, name, description, price, discount, quantity, available } = req.body;
 
         // update product text only
         const product = new Product({
@@ -94,7 +94,7 @@ const updateProduct = async (req, res) => {
             description: description,
             price: price,
             discount: discount,
-            total_quantity: total_quantity,
+            quantity: quantity,
             available: available,
         });
 

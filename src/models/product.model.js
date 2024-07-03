@@ -8,7 +8,7 @@ class Product {
         this.description = options.description || '';
         this.price = options.price;
         this.discount = options.discount || 0; // Set default discount to 0 if not provided
-        this.total_quantity = options.total_quantity;
+        this.quantity = options.quantity;
         this.available = options.available;
     }
 
@@ -20,7 +20,7 @@ class Product {
             description,
             price,
             discount,
-            total_quantity,
+            quantity,
             available
         ) VALUES (
            ${this.category_id}, 
@@ -29,7 +29,7 @@ class Product {
             "${this.description}", 
             ${this.price},
             ${this.discount},
-            ${this.total_quantity},
+            ${this.quantity},
             ${this.available}
         )`;
         const result = await pool.execute(sql);
@@ -58,7 +58,7 @@ class Product {
         description = ?,
         price = ?,
         discount = ?,
-        total_quantity = ?,
+        quantity = ?,
         available = ?
         WHERE id = ?`;
         const values = [
@@ -68,7 +68,7 @@ class Product {
             this.description,
             this.price,
             this.discount,
-            this.total_quantity,
+            this.quantity,
             this.available,
             id,
         ];
@@ -116,7 +116,7 @@ class Product {
         const placeholders = productIds.map(() => '?').join(',');
 
         // SQL query with placeholders for product IDs
-        const sql = `SELECT id, total_quantity FROM products WHERE id IN (${placeholders})`;
+        const sql = `SELECT id, quantity FROM products WHERE id IN (${placeholders})`;
         try {
             //   Execute SQL query with product IDs as parameters
             const [rows] = await pool.execute(sql, productIds);

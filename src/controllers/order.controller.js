@@ -56,9 +56,9 @@ const validateAndGetOrderData = async (body) => {
         const dbProduct = data.find(p => p.id === product.product_id);
         if (!dbProduct) {
             validationErrors.push(`Product with ID ${product.product_id} not found in database.`);
-        } else if (product.quantity > dbProduct.total_quantity) {
+        } else if (product.quantity > dbProduct.quantity) {
             validationErrors.push(
-                `Insufficient quantity for product ID ${product.product_id}. Available quantity: ${dbProduct.total_quantity}`,
+                `Insufficient quantity for product ID ${product.product_id}. Available quantity: ${dbProduct.quantity}`,
             );
         }
     });

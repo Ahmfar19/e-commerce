@@ -87,20 +87,20 @@ class Order {
                 // تحديث الكمية الإجمالية
                 const updateQuantitySql = `
                     UPDATE products
-                    SET total_quantity = total_quantity - ?
+                    SET quantity = quantity - ?
                     WHERE id = ?
                 `;
                 await pool.execute(updateQuantitySql, [product.quantity, product.product_id]);
 
                 // التحقق إذا أصبحت الكمية الإجمالية تساوي 0
                 const checkQuantitySql = `
-                    SELECT total_quantity
+                    SELECT quantity
                     FROM products
                     WHERE id = ?
                 `;
                 const [rows] = await pool.execute(checkQuantitySql, [product.product_id]);
 
-                if (rows[0].total_quantity === 0) {
+                if (rows[0].quantity === 0) {
                     const updateAvailabilitySql = `
                         UPDATE products
                         SET available = false
