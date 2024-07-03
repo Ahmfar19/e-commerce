@@ -57,7 +57,7 @@ class OrderItems {
         const placeholders = productIds.map(() => '?').join(',');
 
         // SQL query with placeholders for product IDs
-        const sql = `SELECT id, quantity FROM products WHERE id IN (${placeholders})`;
+        const sql = `SELECT id, quantity FROM products WHERE product_id IN (${placeholders})`;
         try {
             //   Execute SQL query with product IDs as parameters
             const [rows] = await pool.execute(sql, productIds);

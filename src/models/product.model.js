@@ -33,8 +33,8 @@ class Product {
             ${this.available}
         )`;
         const result = await pool.execute(sql);
-        this.id = result[0].insertId;
-        return this.id;
+        this.product_id = result[0].insertId;
+        return this.product_id;
     }
 
     static async getAll() {
@@ -45,7 +45,7 @@ class Product {
 
     static async getSingleById(id) {
         const sql =
-            `SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id WHERE id = "${id}"`;
+            `SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id WHERE product_id = "${id}"`;
         const [rows] = await pool.execute(sql);
         return rows;
     }
@@ -60,7 +60,7 @@ class Product {
         discount = ?,
         quantity = ?,
         available = ?
-        WHERE id = ?`;
+        WHERE product_id = ?`;
         const values = [
             this.category_id,
             this.image,
@@ -77,7 +77,7 @@ class Product {
     }
 
     static async deleteById(id) {
-        const sql = `DELETE FROM products WHERE id = "${id}"`;
+        const sql = `DELETE FROM products WHERE product_id = "${id}"`;
         const [rows] = await pool.execute(sql);
         return rows;
     }
@@ -85,7 +85,7 @@ class Product {
     static async getPaginated(page, pageSize) {
         const offset = (page - 1) * pageSize;
         const sql =
-            'SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id ORDER BY products.id LIMIT ? OFFSET ?';
+            'SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id ORDER BY products.product_id LIMIT ? OFFSET ?';
         const [rows] = await pool.execute(sql, [pageSize, offset]);
         return rows;
     }
@@ -116,7 +116,7 @@ class Product {
         const placeholders = productIds.map(() => '?').join(',');
 
         // SQL query with placeholders for product IDs
-        const sql = `SELECT id, quantity FROM products WHERE id IN (${placeholders})`;
+        const sql = `SELECT product_id, quantity FROM products WHERE product_id IN (${placeholders})`;
         try {
             //   Execute SQL query with product IDs as parameters
             const [rows] = await pool.execute(sql, productIds);
@@ -138,7 +138,7 @@ class Product {
         INNER JOIN 
         products 
         ON 
-        products.id = order_items.product_id
+        products.product_id = order_items.product_id
         INNER JOIN
         categories
         ON

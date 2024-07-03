@@ -88,7 +88,7 @@ class Order {
                 const updateQuantitySql = `
                     UPDATE products
                     SET quantity = quantity - ?
-                    WHERE id = ?
+                    WHERE product_id = ?
                 `;
                 await pool.execute(updateQuantitySql, [product.quantity, product.product_id]);
 
@@ -96,7 +96,7 @@ class Order {
                 const checkQuantitySql = `
                     SELECT quantity
                     FROM products
-                    WHERE id = ?
+                    WHERE product_id = ?
                 `;
                 const [rows] = await pool.execute(checkQuantitySql, [product.product_id]);
 
@@ -104,7 +104,7 @@ class Order {
                     const updateAvailabilitySql = `
                         UPDATE products
                         SET available = false
-                        WHERE id = ?
+                        WHERE product_id = ?
                     `;
                     await pool.execute(updateAvailabilitySql, [product.product_id]);
                 }

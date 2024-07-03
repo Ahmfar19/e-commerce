@@ -54,7 +54,7 @@ const validateAndGetOrderData = async (body) => {
 
     // Compare quantities
     products.forEach(product => {
-        const dbProduct = data.find(p => p.id === product.product_id);
+        const dbProduct = data.find(p => p.product_id === product.product_id);
         if (!dbProduct) {
             validationErrors.push(`Product with ID ${product.product_id} not found in database.`);
         } else if (product.quantity > dbProduct.quantity) {
