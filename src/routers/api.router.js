@@ -12,6 +12,7 @@ const orderController = require('../controllers/order.controller');
 const resetPassword = require('../controllers/resetPassword.controller');
 const storeInformation = require('../controllers/storeInfo.controller');
 const orderItemsController = require('../controllers/orderItems.controller');
+const shippingController = require('../controllers/shipping.controller');
 
 // users
 router.post('/user/new', customerController.createUser);
@@ -74,5 +75,13 @@ router.get('/storeInfo', storeInformation.getStoreInfo);
 router.put('/storeInfo/edit/:id', storeInformation.updateStoreInformation);
 router.delete('/storeInfo/delete/:id', storeInformation.deleteStoreInfo);
 router.post('/storeInfo/new', storeInformation.createStoreInformation);
+
+
+//shipping
+router.post('/shipping/new', shippingController.createShipping);
+router.put('/shipping/edit/:id', shippingController.updateShipping);
+router.get('/shippings', shippingController.getShippings);
+router.get('/shipping/:id', shippingController.getSingleShipping);
+router.delete('/shipping/delete/:id', shippingController.deleteShipping);
 
 module.exports = router;
