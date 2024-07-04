@@ -14,7 +14,7 @@ class Shipping {
         ) VALUES (
             "${this.shipping_name}",
              ${this.shipping_price},
-            "${this.shipping_time}"
+             ${this.shipping_time}
         )`;
         const result = await pool.execute(sql);
         this.shipping_id = result[0].insertId;
@@ -34,7 +34,7 @@ class Shipping {
         const sql = `UPDATE shipping SET 
         shipping_name = "${this.shipping_name}",
         shipping_price = "${this.shipping_price}",
-        shipping_time = "${this.shipping_time}"
+        shipping_time = ${this.shipping_time}
         WHERE shipping_id = ${id}`;
         const [rows] = await pool.execute(sql);
         return rows;
