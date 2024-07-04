@@ -139,16 +139,23 @@ const login = async (req, res) => {
     try {
         const { email, password, rememberMe, fingerprint } = req.body;
         const data = await User.loginUser(email);
-        if (data.length) {
-            const match = await comparePassword(password, data[0].password);
+        
+        if (data.length === 1) {
+            const [user] = data;
+
+            if (!user.registered) {
+                return sendResponse(res, 406, 'Not Acceptable', 'User is not veriferd', null, null);
+            }
+
+            const match = await comparePassword(password, user.password);
             if (match) {
                 const expiresIn = rememberMe ? '30d' : '1d';
-                const finger_print = fingerprint + String(data[0].customer_id);
+                const finger_print = fingerprint + String(user.customer_id);
 
                 const token = jwt.sign({ id: finger_print }, JWT_SECRET_KEY, { expiresIn });
 
                 res.json({
-                    customer: data[0],
+                    customer: user,
                     authenticated: true,
                     accessToken: token,
                 });
