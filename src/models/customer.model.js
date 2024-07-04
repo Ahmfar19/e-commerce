@@ -7,6 +7,8 @@ class User {
         this.email = options.email;
         this.password = options.password || '';
         this.address = options.address || '';
+        this.zip = options.zip || '';
+        this.city = options.city || '';
         this.phone = options.phone || '';
         this.registered = options.registered || false;
     }
@@ -17,6 +19,8 @@ class User {
             email,
             password,
             address,
+            zip,
+            city,
             phone,
             registered
         ) VALUES (
@@ -25,6 +29,8 @@ class User {
             "${this.email}", 
             "${this.password}",
             "${this.address}",
+            "${this.zip}",
+            "${this.city}",
             "${this.phone}",
             ${this.registered}
         )`;
@@ -49,7 +55,9 @@ class User {
             lname = ?, 
             email = ?, 
             password = ?, 
-            address = ?, 
+            address = ?,
+            zip = ?, 
+            city = ?, 
             phone = ?, 
             registered = ?
             WHERE customer_id = ?`;
@@ -59,6 +67,8 @@ class User {
             this.email,
             this.password,
             this.address,
+            this.zip,
+            this.city,
             this.phone,
             this.registered,
             id,
