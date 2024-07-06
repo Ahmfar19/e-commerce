@@ -114,6 +114,13 @@ class Order {
             throw error;
         }
     }
+
+    static async getByType(type_id) {
+        const sql =
+            `SELECT *, DATE_FORMAT(order_date, '%Y-%m-%d %H:%i:%s') AS order_date FROM orders where type_id = ?`;
+        const [rows] = await pool.execute(sql, [type_id]);
+        return rows;
+    }
 }
 
 module.exports = Order;
