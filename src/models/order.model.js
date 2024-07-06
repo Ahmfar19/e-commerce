@@ -38,7 +38,13 @@ class Order {
     }
 
     static async getAll() {
-        const sql = `SELECT *, DATE_FORMAT(order_date, '%Y-%m-%d %H:%i:%s') AS order_date FROM orders`;
+        const sql = `SELECT orders.*, 
+       DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS formatted_order_date,
+       customers.customer_id,
+       CONCAT(customers.fname, ' ', customers.lname) AS customerName
+       FROM orders
+       INNER JOIN customers ON orders.customer_id = customers.customer_id;
+`;
         const [rows] = await pool.execute(sql);
         return rows;
     }

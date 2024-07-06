@@ -21,11 +21,10 @@ const calculateVatAmount = (totalWithVat, vatRate) => {
 
 const createOrder = async (req, res) => {
     try {
-       
         const orderData = await validateAndGetOrderData(req.body);
-       
+
         const customer = await getOrCreateCustomer(orderData);
-        
+
         const order = await createOrderAndSaveItems(orderData, customer.id);
 
         // send Email to customer
@@ -83,7 +82,7 @@ const validateAndGetOrderData = async (body) => {
     // shipping
 
     const shipping = await Shipping.getById(shipping_id);
-  
+
     const shipping_price = shipping[0].shipping_price;
 
     const vatAmount = calculateVatAmount(totalPriceBeforDiscount, tax[0].tax_percentage);
@@ -145,9 +144,9 @@ const createOrderAndSaveItems = async (orderData, customerId) => {
         vatAmount,
         shipping_id,
     } = orderData;
-   
+
     const orderType = await OrderType.getAll();
-   
+
     const order = new Order({
         customer_id: customerId,
         type_id: orderType[0].type_id,
@@ -251,7 +250,7 @@ const getOrderByType = async (req, res) => {
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
-}
+};
 
 module.exports = {
     createOrder,
@@ -261,5 +260,5 @@ module.exports = {
     deleteOrderByCustomerId,
     deleteOrderById,
     getOrderById,
-    getOrderByType
+    getOrderByType,
 };

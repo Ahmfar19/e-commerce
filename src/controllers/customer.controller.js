@@ -139,7 +139,7 @@ const login = async (req, res) => {
     try {
         const { email, password, rememberMe, fingerprint } = req.body;
         const data = await User.loginUser(email);
-        
+
         if (data.length === 1) {
             const [user] = data;
 
