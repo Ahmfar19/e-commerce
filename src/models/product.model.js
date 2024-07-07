@@ -43,6 +43,12 @@ class Product {
         return rows;
     }
 
+    static async getCount() {
+        const sql = 'SELECT COUNT(*) AS row_count FROM products';
+        const [rows] = await pool.execute(sql);
+        return rows;
+    }
+
     static async getSingleById(id) {
         const sql =
             `SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id WHERE product_id = "${id}"`;

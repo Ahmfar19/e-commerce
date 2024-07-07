@@ -40,6 +40,7 @@ router.delete('/category/delete/:id', categoryController.deleteCategory);
 
 // products
 router.get('/product/:id', productController.getProduct);
+router.get('/products/count', productController.getProductsCount);
 router.get('/products', productController.getProducts);
 router.post('/product/new', upload.array('images'), productController.createProduct);
 router.put('/product/edit/:id', upload.array('images'), productController.updateProduct);

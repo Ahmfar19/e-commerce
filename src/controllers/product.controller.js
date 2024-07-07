@@ -245,6 +245,16 @@ const getProductsByRangePrice = async (req, res) => {
     }
 };
 
+const getProductsCount = async (req, res) => {
+    try {
+        const [products] = await Product.getCount();
+        const count = products?.row_count || 0;
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved the number of products.', null, count);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
 module.exports = {
     createProduct,
     updateProduct,
@@ -257,4 +267,5 @@ module.exports = {
     getMultiProducts,
     getPopularProducts,
     getProductsByRangePrice,
+    getProductsCount,
 };
