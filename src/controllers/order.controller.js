@@ -253,6 +253,25 @@ const getOrderByType = async (req, res) => {
     }
 };
 
+const updateOrderType = async (req, res) => {
+    try {
+        const id = req.params.id;
+    
+        const data = await Order.updateOrderType(id);
+        if (data.affectedRows === 0) {
+            return res.json({
+                status: 404,
+                statusCode: 'Bad Request',
+                message: 'No order found for update',
+            });
+        }
+
+        sendResponse(res, 202, 'Accepted', 'Successfully updated a orderType.', null, null);
+    } catch (err) {
+        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+    }
+}
+
 module.exports = {
     createOrder,
     getAllOrders,
@@ -262,4 +281,5 @@ module.exports = {
     deleteOrderById,
     getOrderById,
     getOrderByType,
+    updateOrderType
 };

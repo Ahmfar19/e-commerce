@@ -84,6 +84,7 @@ class OrderItems {
             throw new Error('Failed to get the order items');
         }
     }
+
 }
 
 module.exports = OrderItems;

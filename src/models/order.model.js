@@ -149,6 +149,12 @@ class Order {
         const [rows] = await pool.execute(sql);
         return rows;
     }
+    
+    static async updateOrderType(order_id) {
+        const sql = 'UPDATE orders SET type_id = 3 WHERE order_id = ?'
+        const [rows] = await pool.execute(sql, [order_id]);
+        return rows;
+    }
 }
 
 module.exports = Order;
