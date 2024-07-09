@@ -42,7 +42,7 @@ class Order {
        DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS order_date,
        customers.customer_id,
        CONCAT(customers.fname, ' ', customers.lname) AS customerName,
-       order_type.type_name AS orderStatus,
+       order_type.type_name ,
        shipping.shipping_name,
        shipping.shipping_price
        FROM orders
@@ -134,16 +134,16 @@ class Order {
     static async getByType() {
         const sql = `
         SELECT orders.*, 
-       DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS order_date,
-       customers.customer_id,
-       CONCAT(customers.fname, ' ', customers.lname) AS customerName,
-       order_type.type_name AS orderStatus,
-       shipping.shipping_name,
-       shipping.shipping_price
-       FROM orders
-       INNER JOIN customers ON orders.customer_id = customers.customer_id
-       INNER JOIN order_type ON orders.type_id = order_type.type_id
-       INNER JOIN shipping ON orders.shipping_id = shipping.shipping_id
+         DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS order_date,
+         customers.customer_id,
+         CONCAT(customers.fname, ' ', customers.lname) AS customerName,
+         order_type.type_name ,
+         shipping.shipping_name,
+         shipping.shipping_price
+        FROM orders
+         INNER JOIN customers ON orders.customer_id = customers.customer_id
+         INNER JOIN order_type ON orders.type_id = order_type.type_id
+         INNER JOIN shipping ON orders.shipping_id = shipping.shipping_id
         WHERE orders.type_id = 2
 `;
         const [rows] = await pool.execute(sql);
