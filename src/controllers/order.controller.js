@@ -79,12 +79,12 @@ const validateAndGetOrderData = async (body) => {
 
     // clacuture vat amount
     const tax = await StoreInfo.getTax();
+    
     // shipping
-
     const shipping = await Shipping.getById(shipping_id);
 
     const shipping_price = shipping[0].shipping_price;
-
+    console.log(shipping_price);
     const vatAmount = calculateVatAmount(totalPriceBeforDiscount, tax[0].tax_percentage);
 
     // Calculate total discount
@@ -93,7 +93,7 @@ const validateAndGetOrderData = async (body) => {
     }, 0);
 
     // Calculate final price
-    const finallprice = (totalPriceBeforDiscount - totalDiscount) + (shipping_price);
+    const finallprice = (totalPriceBeforDiscount - totalDiscount) + (+shipping_price);
 
     return {
         customer,
