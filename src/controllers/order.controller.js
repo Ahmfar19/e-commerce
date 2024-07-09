@@ -125,6 +125,8 @@ const getOrCreateCustomer = async (orderData) => {
             email: customer.email,
             address: customer.address,
             phone: customer.phone,
+            zip: customer.zip,
+            city: customer.city,
             registered: false,
         });
 
