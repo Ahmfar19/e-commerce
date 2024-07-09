@@ -79,12 +79,12 @@ const validateAndGetOrderData = async (body) => {
 
     // clacuture vat amount
     const tax = await StoreInfo.getTax();
-    
+
     // shipping
     const shipping = await Shipping.getById(shipping_id);
 
     const shipping_price = shipping[0].shipping_price;
-    console.log(shipping_price);
+
     const vatAmount = calculateVatAmount(totalPriceBeforDiscount, tax[0].tax_percentage);
 
     // Calculate total discount
@@ -244,7 +244,6 @@ const getOrderById = async (req, res) => {
 
 const getOrderByType = async (req, res) => {
     try {
-        
         const orderByType = await Order.getByType();
         sendResponse(res, 202, 'Accepted', 'Successfully retrieved all the order ', null, orderByType);
     } catch (error) {
