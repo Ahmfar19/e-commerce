@@ -183,7 +183,7 @@ const deleteAllOrders = async (req, res) => {
         await Order.deleteAll();
         sendResponse(res, 202, 'Accepted', 'Successfully deleted all orders', null, null);
     } catch (error) {
-        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
 
@@ -238,17 +238,17 @@ const getOrderById = async (req, res) => {
         const order = await Order.getById(id);
         sendResponse(res, 202, 'Accepted', 'Successfully retrieved all the order ', null, order);
     } catch (error) {
-        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
 
 const getOrderByType = async (req, res) => {
     try {
-        const { id } = req.params;
-        const orderByType = await Order.getByType(id);
+        
+        const orderByType = await Order.getByType();
         sendResponse(res, 202, 'Accepted', 'Successfully retrieved all the order ', null, orderByType);
     } catch (error) {
-        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
 

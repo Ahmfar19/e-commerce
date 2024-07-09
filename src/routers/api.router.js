@@ -67,7 +67,8 @@ router.get('/orders/customer/:id', orderController.getOrderByCustomerId);
 router.delete('/orders/customer/delete/:id', orderController.deleteOrderByCustomerId);
 router.delete('/order/delete/:id', orderController.deleteOrderById);
 router.get('/order/:id', orderController.getOrderById);
-router.get('/orders/type/:id', orderController.getOrderByType);
+router.get('/orders/type', orderController.getOrderByType);
+
 // order items
 router.get('/orderitems/:id', orderItemsController.getOrderItems);
 
