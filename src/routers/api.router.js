@@ -69,6 +69,8 @@ router.delete('/order/delete/:id', orderController.deleteOrderById);
 router.get('/order/:id', orderController.getOrderById);
 router.get('/orders/type', orderController.getOrderByType);
 router.put('/order/type/edit/:id', orderController.updateOrderType)
+router.get('/orders/month', orderController.getOrdersInThisMonth)
+
 
 // order items
 router.get('/orderitems/:id', orderItemsController.getOrderItems);

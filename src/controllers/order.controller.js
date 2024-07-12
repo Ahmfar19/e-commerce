@@ -6,9 +6,10 @@ const OrderType = require('../models/orderType.model');
 const Shipping = require('../models/shipping.model');
 const { sendResponse } = require('../helpers/apiResponse');
 const { getNowDate_time } = require('../helpers/utils');
-const { sendHtmlEmail } = require('./sendEmail.controller');
+const { sendHtmlEmail, sendReqularEmail } = require('./sendEmail.controller');
 const ejs = require('ejs');
 const path = require('path');
+const mailMessags = require('../helpers/emailMessages');
 
 function getFirstImage(item) {
     const images = JSON.parse(item.image);
@@ -256,7 +257,7 @@ const getOrderByType = async (req, res) => {
 const updateOrderType = async (req, res) => {
     try {
         const id = req.params.id;
-    
+        
         const data = await Order.updateOrderType(id);
         if (data.affectedRows === 0) {
             return res.json({
@@ -265,12 +266,26 @@ const updateOrderType = async (req, res) => {
                 message: 'No order found for update',
             });
         }
+         
+        const CustomerInformation = await Order.getUserFromOrderId(id)
+        const title = mailMessags.shippingOrder.title.replace('{0}', CustomerInformation[0].customerName);;
+        const body = mailMessags.shippingOrder.body
+        sendReqularEmail(CustomerInformation[0].email, title, body);
 
         sendResponse(res, 202, 'Accepted', 'Successfully updated a orderType.', null, null);
     } catch (err) {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
 }
+
+const getOrdersInThisMonth = async (req, res) => {
+    try {
+        const ordersInThisMonth = await Order.getFilterByYearMonth();
+        sendResponse(res, 202, 'Accepted', 'Successfully retrieved all the order in this month ', null, ordersInThisMonth);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
 
 module.exports = {
     createOrder,
@@ -281,5 +296,6 @@ module.exports = {
     deleteOrderById,
     getOrderById,
     getOrderByType,
-    updateOrderType
+    updateOrderType,
+    getOrdersInThisMonth
 };

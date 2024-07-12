@@ -149,12 +149,30 @@ class Order {
         const [rows] = await pool.execute(sql);
         return rows;
     }
-    
+
     static async updateOrderType(order_id) {
-        const sql = 'UPDATE orders SET type_id = 3 WHERE order_id = ?'
+        const sql = 'UPDATE orders SET type_id = 3 WHERE order_id = ?';
         const [rows] = await pool.execute(sql, [order_id]);
         return rows;
     }
+
+    static async getFilterByYearMonth() {
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth() + 1; // Adding 1 to match SQL month format
+        const sql =
+            'SELECT * FROM orders WHERE MONTH(orders.order_date) = ? AND YEAR(orders.order_date) = ?';
+        const params = [month, year];
+        const [rows] = await pool.execute(sql, params);
+        return rows;
+    }
+
+    static async getUserFromOrderId(orderId) {
+        const sql = 'SELECT customers.email, CONCAT(customers.fname, " ", customers.lname) AS customerName FROM orders INNER JOIN customers ON orders.customer_id = customers.customer_id WHERE order_id = ?'        
+        const [rows] = await pool.execute(sql, [orderId]);
+        return rows;
+    }
+    
 }
 
 module.exports = Order;
