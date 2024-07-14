@@ -90,8 +90,6 @@ const updateProduct = async (req, res) => {
         const folderName = `product_${id}`;
         const uploadPath = path.join(__dirname, '../../public/images/', folderName);
 
-        console.error('deletedImages', deletedImages);
-
         let dImages;
         if (deletedImages) {
             dImages = deletedImages.split(',');

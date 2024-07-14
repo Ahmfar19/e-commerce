@@ -6,8 +6,7 @@ const mailMessags = {
     },
     shippingOrder: {
         title: 'My Dear : {0}',
-        body:
-            'Your Order Is Shipping',
+        body: 'Your Order Is Shipping',
     },
 };
 
