@@ -16,7 +16,6 @@ const shippingController = require('../controllers/shipping.controller');
 const unitController = require('../controllers/unit.controller');
 const staffController = require('../controllers/staff.controller');
 
-
 // users
 router.post('/user/new', customerController.createUser);
 router.get('/users', customerController.getUsers);
@@ -100,8 +99,7 @@ router.get('/unit/:id', unitController.getSingleUnit);
 router.put('/unit/edit/:id', unitController.updateUnit);
 router.delete('/unit/delete/:id', unitController.deleteUnit);
 
-
-//staff
+// staff
 router.post('/staff/new', staffController.createStaff);
 router.get('/staffs', staffController.getstaffs);
 router.get('/staff/:id', staffController.getSingleStaff);
@@ -110,6 +108,5 @@ router.put('/staff/password/:id', staffController.updateStaffPassword);
 router.delete('/staff/delete/:id', staffController.deleteStaff);
 router.post('/staff/login', staffController.login);
 router.post('/staff/verifyToken', staffController.verifyToken);
-
 
 module.exports = router;

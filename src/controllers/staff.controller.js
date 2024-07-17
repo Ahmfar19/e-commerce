@@ -1,4 +1,3 @@
-
 const Staff = require('../models/staff.model');
 var jwt = require('jsonwebtoken');
 const { hashPassword, comparePassword } = require('../helpers/utils');
@@ -6,11 +5,10 @@ const { sendResponse } = require('../helpers/apiResponse');
 const config = require('config');
 const JWT_SECRET_KEY = config.get('JWT_SECRET_KEY');
 
-
 const createStaff = async (req, res) => {
     try {
-        const { username, fname, lname, phone, email, password } = req.body
-        const checkUser = await Staff.checkIfUserExisted(email, username)
+        const { username, fname, lname, phone, email, password } = req.body;
+        const checkUser = await Staff.checkIfUserExisted(email, username);
 
         if (checkUser.length) {
             return res.status(406).send({
@@ -47,11 +45,10 @@ const createStaff = async (req, res) => {
             null,
             user,
         );
-
     } catch (err) {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
-}
+};
 
 const getstaffs = async (req, res) => {
     try {
@@ -65,12 +62,11 @@ const getstaffs = async (req, res) => {
 const getSingleStaff = async (req, res) => {
     try {
         const id = req.params.id;
-        const singleStaff = await Staff.getStaffById(id)
+        const singleStaff = await Staff.getStaffById(id);
         sendResponse(res, 200, 'Ok', 'Successfully retrieved the single staff.', null, singleStaff);
     } catch (err) {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
-
 };
 
 const updateStaff = async (req, res) => {
@@ -79,7 +75,7 @@ const updateStaff = async (req, res) => {
         const { email } = req.body;
 
         const checkUser = await Staff.checkUserUpdate(email, id);
-       
+
         if (checkUser.length) {
             return sendResponse(res, 406, 'Not Acceptable', 'ec_profile_user_editFail_Email_exsists', null, null);
         }
@@ -139,62 +135,54 @@ const login = async (req, res) => {
 
     try {
         const data = await Staff.loginUser(email_username);
-     
-        if (data.length > 0) {
 
+        if (data.length > 0) {
             const match = await comparePassword(password, data[0].password);
 
             if (match) {
-                const expiresIn = rememberMe ? "30d" : "1d";
-                const finger_print = fingerprint + String(data[0].staff_id)
+                const expiresIn = rememberMe ? '30d' : '1d';
+                const finger_print = fingerprint + String(data[0].staff_id);
                 const token = jwt.sign({ id: finger_print }, JWT_SECRET_KEY, { expiresIn });
 
                 res.json({
                     user: data[0],
                     authenticated: true,
-                    accessToken: token
+                    accessToken: token,
                 });
 
                 return res;
-
             } else {
-                return res.json({ error: "Password or Email is incorrect" });
+                return res.json({ error: 'Password or Email is incorrect' });
             }
         } else {
-            return res.json({ error: "User does not exist in the database" });
+            return res.json({ error: 'User does not exist in the database' });
         }
     } catch (error) {
-        return res.status(500).json({ error: "Internal Server Error" });
+        return res.status(500).json({ error: 'Internal Server Error' });
     }
-}
+};
 
 const verifyToken = async (req, res) => {
     const { staff_id, fingerprint } = req.body;
 
     try {
-
         if (req?.headers?.authorization?.startsWith('Bearer')) {
-            let token = req.headers.authorization.split(" ")[1]
+            let token = req.headers.authorization.split(' ')[1];
 
             if (token) {
-
                 jwt.verify(token, JWT_SECRET_KEY, (error, decoded) => {
-
                     if (error) {
                         return res.json({
                             statusCode: 401,
-                            message: "invalid token",
+                            message: 'invalid token',
                         });
-
                     } else {
-
-                        const checkUserDevice = fingerprint + staff_id
+                        const checkUserDevice = fingerprint + staff_id;
                         if (checkUserDevice === decoded.id) {
                             return res.json({
                                 statusCode: 200,
                                 authenticated: true,
                             });
-
                         } else {
                             return res.json({
                                 statusCode: 401,
@@ -203,27 +191,22 @@ const verifyToken = async (req, res) => {
                         }
                     }
                 });
-
             } else {
                 return res.json({
                     statusCode: 401,
-                    message: "Unauthorized: invalid authentication token",
+                    message: 'Unauthorized: invalid authentication token',
                 });
             }
-
         } else {
             return res.json({
                 statusCode: 401,
-                message: "Unauthorized: Missing authentication token",
+                message: 'Unauthorized: Missing authentication token',
             });
         }
-
     } catch (err) {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
-
-}
-
+};
 
 module.exports = {
     createStaff,
@@ -235,4 +218,3 @@ module.exports = {
     login,
     verifyToken,
 };
-
