@@ -208,6 +208,20 @@ class Product {
         }
         return allProducts;
     }
+
+    static async getByQuantity() {
+        const sql =
+            'SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id WHERE products.quantity <= 10 AND products.quantity > 0';
+        const [rows] = await pool.execute(sql);
+        return rows;
+    }
+
+    static async getByUnAvailable() {
+        const sql =
+            'SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id WHERE available = 0';
+        const [rows] = await pool.execute(sql);
+        return rows;
+    }
 }
 
 module.exports = Product;

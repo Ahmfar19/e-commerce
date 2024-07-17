@@ -14,6 +14,7 @@ const storeInformation = require('../controllers/storeInfo.controller');
 const orderItemsController = require('../controllers/orderItems.controller');
 const shippingController = require('../controllers/shipping.controller');
 const unitController = require('../controllers/unit.controller');
+const staffController = require('../controllers/staff.controller');
 
 // users
 router.post('/user/new', customerController.createUser);
@@ -53,6 +54,8 @@ router.get('/products/multi', productController.getMultiProducts);
 router.get('/popular-products', productController.getPopularProducts);
 router.get('/products/priceRange', productController.getProductsByRangePrice);
 router.get('/products/random', productController.getRandomCategoryProducts);
+router.get('/products/quantity', productController.getProductsByQuantity);
+router.get('/products/unavailable', productController.getProductsByUnAvailable);
 
 // orderType
 router.get('/orderTypes', orderTypeController.getOrderTypes);
@@ -95,5 +98,15 @@ router.post('/unit/new', unitController.createUnit);
 router.get('/unit/:id', unitController.getSingleUnit);
 router.put('/unit/edit/:id', unitController.updateUnit);
 router.delete('/unit/delete/:id', unitController.deleteUnit);
+
+// staff
+router.post('/staff/new', staffController.createStaff);
+router.get('/staffs', staffController.getstaffs);
+router.get('/staff/:id', staffController.getSingleStaff);
+router.put('/staff/edit/:id', staffController.updateStaff);
+router.put('/staff/password/:id', staffController.updateStaffPassword);
+router.delete('/staff/delete/:id', staffController.deleteStaff);
+router.post('/staff/login', staffController.login);
+router.post('/staff/verifyToken', staffController.verifyToken);
 
 module.exports = router;

@@ -262,6 +262,24 @@ const getRandomCategoryProducts = async (req, res) => {
     }
 };
 
+const getProductsByQuantity = async (req, res) => {
+    try {
+        const products = await Product.getByQuantity();
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the products.', null, products);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
+const getProductsByUnAvailable = async (req, res) => {
+    try {
+        const products = await Product.getByUnAvailable();
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the products.', null, products);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
 module.exports = {
     createProduct,
     updateProduct,
@@ -276,4 +294,6 @@ module.exports = {
     getProductsByRangePrice,
     getProductsCount,
     getRandomCategoryProducts,
+    getProductsByQuantity,
+    getProductsByUnAvailable,
 };
