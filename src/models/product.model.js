@@ -139,6 +139,7 @@ class Product {
         products.price,
         products.image,
         products.description,
+        products.discount,
         categories.category_name,
         SUM(order_items.quantity) AS quantity
         FROM 
@@ -155,7 +156,6 @@ class Product {
         order_items.product_id
         ORDER BY 
         quantity LIMIT ?`;
-        console.error(limit);
         const [rows] = await pool.execute(sql, [limit]);
         return rows;
     }
