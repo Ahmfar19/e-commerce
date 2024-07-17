@@ -253,6 +253,16 @@ const getProductsCount = async (req, res) => {
     }
 };
 
+const getRandomCategoryProducts = async (req, res) => {
+    try {
+        const products = await Product.getRandomProducts();
+        console.error('products', products);
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved the number of products.', null, products);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
 module.exports = {
     createProduct,
     updateProduct,
@@ -266,4 +276,5 @@ module.exports = {
     getPopularProducts,
     getProductsByRangePrice,
     getProductsCount,
+    getRandomCategoryProducts,
 };

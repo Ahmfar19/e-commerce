@@ -176,6 +176,35 @@ class Product {
             throw new Error('Failed to filter products by price range.');
         }
     }
+
+    static async getRandomProducts() {
+        // Step 1: Select 5 random categories
+        const randomCategoriesSql = `
+            SELECT category_id
+            FROM categories
+            ORDER BY RAND()
+            LIMIT 5;
+        `;
+
+        const [randomCategories] = await pool.execute(randomCategoriesSql);
+
+        const categoryIds = randomCategories.map(row => row.category_id);
+        let allProducts = [];
+
+        // Step 2: Fetch up to 10 products for each of the selected categories
+        for (const categoryId of categoryIds) {
+            const productsSql = `
+                SELECT p.*, c.*
+                FROM products p
+                INNER JOIN categories c ON p.category_id = c.category_id
+                WHERE c.category_id = ?
+                LIMIT 10;
+            `;
+            const [products] = await pool.execute(productsSql, [categoryId]);
+            allProducts = allProducts.concat(products);
+        }
+        return allProducts;
+    }
 }
 
 module.exports = Product;
