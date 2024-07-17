@@ -53,9 +53,8 @@ router.get('/products/multi', productController.getMultiProducts);
 router.get('/popular-products', productController.getPopularProducts);
 router.get('/products/priceRange', productController.getProductsByRangePrice);
 router.get('/products/random', productController.getRandomCategoryProducts);
-router.get('/products/quantity', productController.getProductsByQuantity)
-router.get('/products/unavailable', productController.getProductsByUnAvailable)
-
+router.get('/products/quantity', productController.getProductsByQuantity);
+router.get('/products/unavailable', productController.getProductsByUnAvailable);
 
 // orderType
 router.get('/orderTypes', orderTypeController.getOrderTypes);

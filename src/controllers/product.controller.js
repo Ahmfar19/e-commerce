@@ -269,7 +269,7 @@ const getProductsByQuantity = async (req, res) => {
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
-} 
+};
 
 const getProductsByUnAvailable = async (req, res) => {
     try {
@@ -278,8 +278,7 @@ const getProductsByUnAvailable = async (req, res) => {
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
-} 
-
+};
 
 module.exports = {
     createProduct,
@@ -296,5 +295,5 @@ module.exports = {
     getProductsCount,
     getRandomCategoryProducts,
     getProductsByQuantity,
-    getProductsByUnAvailable
+    getProductsByUnAvailable,
 };
