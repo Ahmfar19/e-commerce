@@ -14,13 +14,14 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-const sendHtmlEmail = async (to, subject, text, htmlTamplate) => {
+const sendHtmlEmail = async (to, subject, text, htmlTamplate, attachments) => {
     let mailOptions = {
         from: EMAIL,
         to: to,
         subject: subject,
         text: text,
         html: htmlTamplate,
+        attachments: attachments,
     };
     return sendEmail(mailOptions);
 };
