@@ -15,6 +15,8 @@ const orderItemsController = require('../controllers/orderItems.controller');
 const shippingController = require('../controllers/shipping.controller');
 const unitController = require('../controllers/unit.controller');
 const staffController = require('../controllers/staff.controller');
+const resetStaffPassword = require('../controllers/resetStaffPassword.controller');
+
 
 // users
 router.post('/user/new', customerController.createUser);
@@ -26,12 +28,20 @@ router.put('/user/password/:id', customerController.updateUserPassword);
 router.post('/user/login', customerController.login);
 router.post('/user/verifyToken', customerController.verifyToken);
 
-// Forget password
+// Forget Customer password
 router.post('/forgetPassword', resetPassword.forgetPassword);
-// Reset Password
+// Reset Customer Password
 router.post('/resetPassword', resetPassword.resetPassword);
-// pinCode for compare
+// pinCode Customer for compare
 router.post('/pinCode', resetPassword.checkPinCode);
+
+// Forget Staff password
+router.post('/staff/forgetPassword', resetStaffPassword.forgetPassword);
+// Reset Staff Password
+router.post('/staff/resetPassword', resetStaffPassword.resetPassword);
+// pinCode Staff for compare
+router.post('/staff/pinCode', resetStaffPassword.checkPinCode);
+
 
 // categories
 router.get('/categories', categoryController.getCategories);

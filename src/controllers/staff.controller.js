@@ -145,7 +145,7 @@ const login = async (req, res) => {
                 const token = jwt.sign({ id: finger_print }, JWT_SECRET_KEY, { expiresIn });
 
                 res.json({
-                    user: data[0],
+                    staff: data[0],
                     authenticated: true,
                     accessToken: token,
                 });
