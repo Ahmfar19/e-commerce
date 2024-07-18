@@ -317,6 +317,19 @@ const getOrdersInThisMonth = async (req, res) => {
     }
 };
 
+const getOrdersFilter = async (req, res) => {
+    try {
+        const { key, value } = req.query;
+        if (!key || !value) {
+            return sendResponse(res, 400, 'Bad Request', 'Please provide a key and value', null, null);
+        }
+        const orders = await Order.getOrderByFilter(key, value);
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the orders.', null, orders);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
 module.exports = {
     createOrder,
     getAllOrders,
@@ -328,4 +341,5 @@ module.exports = {
     getOrderByType,
     updateOrderType,
     getOrdersInThisMonth,
+    getOrdersFilter
 };
