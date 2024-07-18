@@ -133,19 +133,19 @@ class Order {
 
     static async getByType() {
         const sql = `
-        SELECT orders.*, 
-         DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS order_date,
-         customers.customer_id,
-         CONCAT(customers.fname, ' ', customers.lname) AS customerName,
-         order_type.type_name ,
-         shipping.shipping_name,
-         shipping.shipping_price
-        FROM orders
-         INNER JOIN customers ON orders.customer_id = customers.customer_id
-         INNER JOIN order_type ON orders.type_id = order_type.type_id
-         INNER JOIN shipping ON orders.shipping_id = shipping.shipping_id
-        WHERE orders.type_id = 2
-`;
+            SELECT orders.*, 
+            DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS order_date,
+            customers.customer_id,
+            CONCAT(customers.fname, ' ', customers.lname) AS customerName,
+            order_type.type_name ,
+            shipping.shipping_name,
+            shipping.shipping_price
+            FROM orders
+            INNER JOIN customers ON orders.customer_id = customers.customer_id
+            INNER JOIN order_type ON orders.type_id = order_type.type_id
+            INNER JOIN shipping ON orders.shipping_id = shipping.shipping_id
+            WHERE orders.type_id = 2
+        `;
         const [rows] = await pool.execute(sql);
         return rows;
     }
@@ -174,21 +174,29 @@ class Order {
     }
 
     static async getOrderByFilter(key, value) {
-        const sql = `
-        SELECT orders.*, 
-         DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS order_date,
-         customers.customer_id,
-         CONCAT(customers.fname, ' ', customers.lname) AS customerName,
-         order_type.type_name ,
-         shipping.shipping_name,
-         shipping.shipping_price
-        FROM orders
-         INNER JOIN customers ON orders.customer_id = customers.customer_id
-         INNER JOIN order_type ON orders.type_id = order_type.type_id
-         INNER JOIN shipping ON orders.shipping_id = shipping.shipping_id
-        WHERE orders.${key} = ?
-`;
-        const [rows] = await pool.execute(sql, [value]);
+        let sql = `
+            SELECT orders.*, 
+            DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS order_date,
+            customers.customer_id,
+            CONCAT(customers.fname, ' ', customers.lname) AS customerName,
+            order_type.type_name ,
+            shipping.shipping_name,
+            shipping.shipping_price
+            FROM orders
+            INNER JOIN customers ON orders.customer_id = customers.customer_id
+            INNER JOIN order_type ON orders.type_id = order_type.type_id
+            INNER JOIN shipping ON orders.shipping_id = shipping.shipping_id
+        `;
+        if (key === "order_date") {
+            const [from, to] = value.split('to').map(v => v.trim());
+            sql += `WHERE DATE_FORMAT(orders.${key}, '%Y-%m-%d') BETWEEN '${from}' AND '${to}'`;
+            const values = [from, to];
+        } else {
+            sql += `WHERE orders.${key} = ${value}`
+        }
+        console.error('sql', sql);
+        const [rows] = await pool.execute(sql);
+        console.error(rows);
         return rows;
     }
 }
