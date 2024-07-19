@@ -1,4 +1,3 @@
-
 const ResetStaffPassword = require('../models/resetStaffPassword.model');
 const { sendReqularEmail } = require('./sendEmail.controller');
 const crypto = require('crypto');

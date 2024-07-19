@@ -10,6 +10,7 @@ const { sendHtmlEmail, sendReqularEmail } = require('./sendEmail.controller');
 const ejs = require('ejs');
 const path = require('path');
 const mailMessags = require('../helpers/emailMessages');
+const fs = require('fs');
 
 function getFirstImage(item) {
     const images = JSON.parse(item.image);
@@ -23,20 +24,42 @@ const calculateVatAmount = (totalWithVat, vatRate) => {
 const createOrder = async (req, res) => {
     try {
         const orderData = await validateAndGetOrderData(req.body);
-
         const customer = await getOrCreateCustomer(orderData);
-
         const order = await createOrderAndSaveItems(orderData, customer.id);
+        const products = orderData.products;
+
+        // Construct inline images data
+        const inlineImages = products.map((product) => {
+            const firstImage = JSON.parse(product.image)[0];
+            const imagePath = path.resolve(
+                __dirname,
+                '../../public/images',
+                `product_${product.product_id}`,
+                firstImage,
+            );
+            return {
+                filename: firstImage,
+                path: imagePath,
+                cid: `${firstImage}`, // Unique CID
+            };
+        });
+
+        orderData.products.forEach(product => {
+            product.cid = getFirstImage(product);
+        });
+
+        // Get the store information to add to the email
+        const [storeInfo] = await StoreInfo.getAll();
+        orderData.storeInfo = storeInfo;
 
         // send Email to customer
         const templatePath = path.resolve(`public/orderTamplate/index.html`);
-
         const htmlTamplate = await ejs.renderFile(templatePath, { orderData, getFirstImage });
-        sendHtmlEmail(orderData.customer.email, 'hello', 'customer', htmlTamplate);
-
+        sendHtmlEmail(orderData.customer.email, 'hello', 'customer', htmlTamplate, inlineImages);
         return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, order);
     } catch (err) {
-        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+        console.error(err);
+        sendResponse(res, 500, 'Internal Server Error', null, err?.message || err, null);
     }
 };
 

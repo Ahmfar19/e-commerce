@@ -17,7 +17,6 @@ const unitController = require('../controllers/unit.controller');
 const staffController = require('../controllers/staff.controller');
 const resetStaffPassword = require('../controllers/resetStaffPassword.controller');
 
-
 // users
 router.post('/user/new', customerController.createUser);
 router.get('/users', customerController.getUsers);
@@ -41,7 +40,6 @@ router.post('/staff/forgetPassword', resetStaffPassword.forgetPassword);
 router.post('/staff/resetPassword', resetStaffPassword.resetPassword);
 // pinCode Staff for compare
 router.post('/staff/pinCode', resetStaffPassword.checkPinCode);
-
 
 // categories
 router.get('/categories', categoryController.getCategories);
