@@ -37,8 +37,6 @@ const createOrder = async (req, res) => {
                 `product_${product.product_id}`,
                 firstImage,
             );
-            console.log('Constructed image path:', imagePath);
-
             return {
                 filename: firstImage,
                 path: imagePath,
