@@ -73,6 +73,7 @@ class OrderItems {
         }
         const sql = `
             SELECT order_items.*, products.name, products.image, products.price
+            , products.description, products.discount
             FROM order_items
             JOIN products ON order_items.product_id = products.product_id
             WHERE order_items.order_id = ${orderId}

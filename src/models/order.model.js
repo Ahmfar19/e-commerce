@@ -81,7 +81,13 @@ class Order {
 
     static async getById(id) {
         const sql =
-            `SELECT *, DATE_FORMAT(order_date, '%Y-%m-%d %H:%i:%s') AS order_date FROM orders where order_id = ?`;
+            `SELECT 
+                *, 
+                DATE_FORMAT(order_date, '%Y-%m-%d %H:%i:%s') AS order_date FROM orders 
+                INNER JOIN customers ON orders.customer_id = customers.customer_id
+                INNER JOIN order_type ON orders.type_id = order_type.type_id
+                INNER JOIN shipping ON orders.shipping_id = shipping.shipping_id
+                WHERE order_id = ?`;
         const [rows] = await pool.execute(sql, [id]);
         return rows;
     }
