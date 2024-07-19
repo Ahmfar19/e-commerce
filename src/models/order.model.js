@@ -185,6 +185,8 @@ class Order {
             DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS order_date,
             customers.customer_id,
             CONCAT(customers.fname, ' ', customers.lname) AS customerName,
+            customers.email,
+            customers.phone,
             order_type.type_name ,
             shipping.shipping_name,
             shipping.shipping_price
@@ -203,7 +205,7 @@ class Order {
         console.error('sql', sql);
         const [rows] = await pool.execute(sql);
         console.error(rows);
-        return rows;
+        return rows;    
     }
 }
 
