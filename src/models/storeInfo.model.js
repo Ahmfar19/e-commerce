@@ -8,7 +8,9 @@ class StoreInfo {
         this.closing_weekend = options.closing_weekend;
         this.tax_percentage = options.tax_percentage;
         this.phone = options.phone;
-        this.adress = options.adress;
+        this.street = options.street;
+        this.city = options.city;
+        this.zip = options.zip;
         this.email = options.email;
     }
 
@@ -21,7 +23,9 @@ class StoreInfo {
             tax_percentage,
             phone,
             email,
-            adress,
+            street,
+            city,
+            zip
         ) VALUES (
             "${this.opening_day}",
             "${this.closing_day}",
@@ -30,7 +34,10 @@ class StoreInfo {
             "${this.tax_percentage}",
            " ${this.phone}",
            " ${this.email}",
-           " ${this.adress}"
+           " ${this.street}",
+           " ${this.city}",
+           " ${this.zip}"
+
         )`;
         const result = await pool.execute(sql);
         this.id = result[0].insertId;
@@ -52,7 +59,9 @@ class StoreInfo {
             tax_percentage = ?,
             phone = ?,
             email = ?,
-            adress = ?
+            street = ?,
+            city = ?,
+            zip = ?
             WHERE id = ?`;
         const values = [
             this.opening_day,
@@ -62,7 +71,9 @@ class StoreInfo {
             this.tax_percentage,
             this.phone,
             this.email,
-            this.adress,
+            this.street,
+            this.city,
+            this.zip,
             id,
         ];
         const [rows] = await pool.execute(sql, values);
