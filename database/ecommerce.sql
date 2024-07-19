@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Värd: 127.0.0.1
--- Tid vid skapande: 19 jul 2024 kl 16:47
+-- Tid vid skapande: 19 jul 2024 kl 19:52
 -- Serverversion: 10.4.32-MariaDB
 -- PHP-version: 8.2.12
 
@@ -738,6 +738,7 @@ CREATE TABLE `store_info` (
   `opening_weekend` time NOT NULL,
   `closing_weekend` time NOT NULL,
   `tax_percentage` decimal(5,2) NOT NULL,
+  `free_shipping` int(11) NOT NULL,
   `phone` varchar(20) NOT NULL,
   `email` varchar(50) NOT NULL,
   `street` varchar(50) NOT NULL,
@@ -749,8 +750,8 @@ CREATE TABLE `store_info` (
 -- Dumpning av Data i tabell `store_info`
 --
 
-INSERT INTO `store_info` (`id`, `opening_day`, `closing_day`, `opening_weekend`, `closing_weekend`, `tax_percentage`, `phone`, `email`, `street`, `city`, `zip`) VALUES
-(2, '09:00:00', '22:00:00', '10:00:00', '16:00:00', 25.00, ' 123456660', 'ahmad996cyc@gmail.com', '7563 St. Vicent Place, Glasgow, Greater Newyork', '', '');
+INSERT INTO `store_info` (`id`, `opening_day`, `closing_day`, `opening_weekend`, `closing_weekend`, `tax_percentage`, `free_shipping`, `phone`, `email`, `street`, `city`, `zip`) VALUES
+(2, '09:00:00', '22:00:00', '10:00:00', '16:00:00', 25.00, 700, ' 123456660', 'ahmad996cyc@gmail.com', 'Norrbytvärgata 32', 'Borås', '312 40');
 
 -- --------------------------------------------------------
 

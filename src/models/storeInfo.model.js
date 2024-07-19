@@ -12,6 +12,7 @@ class StoreInfo {
         this.city = options.city;
         this.zip = options.zip;
         this.email = options.email;
+        this.free_shipping = options.free_shipping;
     }
 
     async save() {
@@ -25,7 +26,8 @@ class StoreInfo {
             email,
             street,
             city,
-            zip
+            zip,
+            free_shipping
         ) VALUES (
             "${this.opening_day}",
             "${this.closing_day}",
@@ -36,8 +38,8 @@ class StoreInfo {
            " ${this.email}",
            " ${this.street}",
            " ${this.city}",
-           " ${this.zip}"
-
+           " ${this.zip}",
+           " ${this.free_shipping}"
         )`;
         const result = await pool.execute(sql);
         this.id = result[0].insertId;
@@ -61,7 +63,8 @@ class StoreInfo {
             email = ?,
             street = ?,
             city = ?,
-            zip = ?
+            zip = ?,
+            free_shipping = ?
             WHERE id = ?`;
         const values = [
             this.opening_day,
@@ -74,6 +77,7 @@ class StoreInfo {
             this.street,
             this.city,
             this.zip,
+            this.free_shipping,
             id,
         ];
         const [rows] = await pool.execute(sql, values);
