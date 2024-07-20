@@ -80,8 +80,7 @@ class Order {
     }
 
     static async getById(id) {
-        const sql =
-            `SELECT 
+        const sql = `SELECT 
                 *, 
                 DATE_FORMAT(order_date, '%Y-%m-%d %H:%i:%s') AS order_date FROM orders 
                 INNER JOIN customers ON orders.customer_id = customers.customer_id
@@ -195,17 +194,15 @@ class Order {
             INNER JOIN order_type ON orders.type_id = order_type.type_id
             INNER JOIN shipping ON orders.shipping_id = shipping.shipping_id
         `;
-        if (key === "order_date") {
+        if (key === 'order_date') {
             const [from, to] = value.split('to').map(v => v.trim());
             sql += `WHERE DATE_FORMAT(orders.${key}, '%Y-%m-%d') BETWEEN '${from}' AND '${to}'`;
             const values = [from, to];
         } else {
-            sql += `WHERE orders.${key} = ${value}`
+            sql += `WHERE orders.${key} = ${value}`;
         }
-        console.error('sql', sql);
         const [rows] = await pool.execute(sql);
-        console.error(rows);
-        return rows;    
+        return rows;
     }
 }
 

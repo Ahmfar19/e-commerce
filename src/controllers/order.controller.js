@@ -341,5 +341,5 @@ module.exports = {
     getOrderByType,
     updateOrderType,
     getOrdersInThisMonth,
-    getOrdersFilter
+    getOrdersFilter,
 };

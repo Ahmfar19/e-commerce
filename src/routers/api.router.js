@@ -85,7 +85,6 @@ router.put('/order/type/edit/:id', orderController.updateOrderType);
 router.get('/orders/month', orderController.getOrdersInThisMonth);
 router.get('/orders/filter', orderController.getOrdersFilter);
 
-
 // order items
 router.get('/orderitems/:id', orderItemsController.getOrderItems);
 
