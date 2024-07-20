@@ -1,4 +1,4 @@
-const User = require('../models/customer.model');
+const Customer = require('../models/customer.model');
 const { hashPassword, comparePassword, tokenExpireDate, encryptToken } = require('../helpers/utils');
 const { sendResponse } = require('../helpers/apiResponse');
 var jwt = require('jsonwebtoken');
@@ -10,7 +10,7 @@ const createUser = async (req, res) => {
     try {
         const { fname, lname, email, password, address, phone } = req.body;
 
-        const checkuser = await User.checkIfUserExisted(email);
+        const checkCustomer = await Customer.checkIfUserExisted(email);
 
         const hashedPassword = await hashPassword(password);
         if (!hashedPassword.success) {
@@ -19,14 +19,14 @@ const createUser = async (req, res) => {
             });
         }
 
-        if (checkuser.length && checkuser[0].registered) {
-            return sendResponse(res, 406, 'Not Acceptable', 'user already existed.', null, null);
+        if (checkCustomer.length && checkCustomer[0].registered) {
+            return sendResponse(res, 406, 'Not Acceptable', 'custoemr already existed.', null, null);
         } else {
             const tokenExpiryDate = tokenExpireDate();
             const token = `${email}$${tokenExpiryDate}`;
             const encryptedToken = encryptToken(token);
 
-            const user = new User({
+            const custoemr = new Customer({
                 fname,
                 lname,
                 email,
@@ -36,10 +36,10 @@ const createUser = async (req, res) => {
                 registered: false,
             });
 
-            if (checkuser.length && !checkuser[0].registered) {
-                await user.updateUser(checkuser[0].customer_id);
+            if (checkCustomer.length && !checkCustomer[0].registered) {
+                await custoemr.updateUser(checkCustomer[0].customer_id);
             } else {
-                await user.createUser();
+                await custoemr.createUser();
             }
 
             const verificationLink = `http://localhost:4000/api/verify-email?token=${
@@ -51,28 +51,40 @@ const createUser = async (req, res) => {
                 res,
                 201,
                 'Created',
-                'Successfully created a user. Please check your email to verify your account.',
+                'Successfully created a custoemr. Please check your email to verify your account.',
                 null,
-                user,
+                custoemr,
             );
         }
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
+
 const getUsers = async (req, res) => {
     try {
-        const users = await User.getAllUsers();
+        const users = await Customer.getAllUsers();
         sendResponse(res, 200, 'Ok', 'Successfully retrieved all the users.', null, users);
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
+
+const getCustomersCount = async (req, res) => {
+    try {
+        const [customers] = await Customer.getCount();
+        const count = customers?.row_count || 0;
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved the number of products.', null, count);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
 const getSingleUser = async (req, res) => {
     try {
         const id = req.params.id;
-        const singleUser = await User.getUserById(id);
-        sendResponse(res, 200, 'Ok', 'Successfully retrieved the single user.', null, singleUser);
+        const singleUser = await Customer.getUserById(id);
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved the single custoemr.', null, singleUser);
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
@@ -82,16 +94,16 @@ const updateUser = async (req, res) => {
         const id = req.params.id;
         const { email } = req.body;
 
-        const checkUser = await User.checkUserUpdate(email, id);
+        const checkUser = await Customer.checkUserUpdate(email, id);
 
         if (checkUser.length) {
             return sendResponse(res, 406, 'Not Acceptable', 'ec_profile_user_editFail_Email_exsists', null, null);
         }
 
-        const user = new User(req.body);
+        const custoemr = new Customer(req.body);
 
-        await user.updateUser(id);
-        sendResponse(res, 202, 'Accepted', 'Successfully updated a user.', null, null);
+        await custoemr.updateUser(id);
+        sendResponse(res, 202, 'Accepted', 'Successfully updated a custoemr.', null, null);
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
@@ -105,13 +117,13 @@ const updateUserPassword = async (req, res) => {
             return sendResponse(res, 400, 'Bad Request', 'Passwords do not match', null, null);
         }
 
-        const user = await User.getUserById(id);
+        const custoemr = await Customer.getUserById(id);
 
-        if (!user.length) {
-            return sendResponse(res, 403, 'Forbidden', 'The user does not exist', null, null);
+        if (!custoemr.length) {
+            return sendResponse(res, 403, 'Forbidden', 'The custoemr does not exist', null, null);
         }
 
-        const match = await comparePassword(password, user[0].password);
+        const match = await comparePassword(password, custoemr[0].password);
 
         if (match !== true) {
             return sendResponse(res, 400, 'Bad Request', 'Current password does not match', null, null);
@@ -119,7 +131,7 @@ const updateUserPassword = async (req, res) => {
 
         const newPaawordHash = await hashPassword(new_password);
 
-        await User.updatePassword(id, newPaawordHash.data);
+        await Customer.updatePassword(id, newPaawordHash.data);
 
         sendResponse(res, 202, 'Accepted', 'Successfully updated a password.', null, null);
     } catch (error) {
@@ -129,8 +141,8 @@ const updateUserPassword = async (req, res) => {
 const deleteUser = async (req, res) => {
     try {
         const id = req.params.id;
-        const data = await User.deleteUser(id);
-        sendResponse(res, 202, 'Ok', 'Successfully deleted a user.', null, data);
+        const data = await Customer.deleteUser(id);
+        sendResponse(res, 202, 'Ok', 'Successfully deleted a custoemr.', null, data);
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
@@ -138,24 +150,24 @@ const deleteUser = async (req, res) => {
 const login = async (req, res) => {
     try {
         const { email, password, rememberMe, fingerprint } = req.body;
-        const data = await User.loginUser(email);
+        const data = await Customer.loginUser(email);
 
         if (data.length === 1) {
-            const [user] = data;
+            const [custoemr] = data;
 
-            if (!user.registered) {
-                return sendResponse(res, 406, 'Not Acceptable', 'User is not veriferd', null, null);
+            if (!custoemr.registered) {
+                return sendResponse(res, 406, 'Not Acceptable', 'Customer is not veriferd', null, null);
             }
 
-            const match = await comparePassword(password, user.password);
+            const match = await comparePassword(password, custoemr.password);
             if (match) {
                 const expiresIn = rememberMe ? '30d' : '1d';
-                const finger_print = fingerprint + String(user.customer_id);
+                const finger_print = fingerprint + String(custoemr.customer_id);
 
                 const token = jwt.sign({ id: finger_print }, JWT_SECRET_KEY, { expiresIn });
 
                 res.json({
-                    customer: user,
+                    customer: custoemr,
                     authenticated: true,
                     accessToken: token,
                 });
@@ -226,4 +238,5 @@ module.exports = {
     updateUserPassword,
     login,
     verifyToken,
+    getCustomersCount,
 };

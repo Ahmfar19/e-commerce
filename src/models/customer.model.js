@@ -38,11 +38,19 @@ class User {
         this.customer_id = result[0].insertId;
         return this.customer_id;
     }
+
     static async getAllUsers() {
         const sql = 'SELECT * FROM customers';
         const [rows] = await pool.execute(sql);
         return rows;
     }
+
+    static async getCount() {
+        const sql = 'SELECT COUNT(*) AS row_count FROM customers';
+        const [rows] = await pool.execute(sql);
+        return rows;
+    }
+
     static async getUserById(id) {
         const sql = `SELECT * FROM customers WHERE customer_id = "${id}"`;
         const [rows] = await pool.execute(sql);

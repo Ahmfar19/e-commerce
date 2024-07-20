@@ -17,15 +17,16 @@ const unitController = require('../controllers/unit.controller');
 const staffController = require('../controllers/staff.controller');
 const resetStaffPassword = require('../controllers/resetStaffPassword.controller');
 
-// users
-router.post('/user/new', customerController.createUser);
-router.get('/users', customerController.getUsers);
-router.get('/user/:id', customerController.getSingleUser);
-router.put('/user/edit/:id', customerController.updateUser);
-router.delete('/user/delete/:id', customerController.deleteUser);
-router.put('/user/password/:id', customerController.updateUserPassword);
-router.post('/user/login', customerController.login);
-router.post('/user/verifyToken', customerController.verifyToken);
+// customers
+router.post('/customers/new', customerController.createUser);
+router.get('/customers', customerController.getUsers);
+router.get('/customers/count', customerController.getCustomersCount);
+router.get('/customers/:id', customerController.getSingleUser);
+router.put('/customers/edit/:id', customerController.updateUser);
+router.delete('/customers/delete/:id', customerController.deleteUser);
+router.put('/customers/password/:id', customerController.updateUserPassword);
+router.post('/customers/login', customerController.login);
+router.post('/customers/verifyToken', customerController.verifyToken);
 
 // Forget Customer password
 router.post('/forgetPassword', resetPassword.forgetPassword);
