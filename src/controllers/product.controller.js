@@ -71,9 +71,9 @@ const getProduct = async (req, res) => {
         if (fs.existsSync(uploadPath)) {
             const files = fs.readdirSync(uploadPath);
             const images = files.map((file) => {
-                return `${folderName}/${file}`;
+                return `${file}`;
             });
-
+            console.error('images', images);
             product[0].image = JSON.stringify(images);
         }
         sendResponse(res, 200, 'OK', 'Product retrieved successfully.', null, product);
