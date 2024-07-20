@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Värd: 127.0.0.1
--- Tid vid skapande: 19 jul 2024 kl 19:52
+-- Tid vid skapande: 20 jul 2024 kl 19:14
 -- Serverversion: 10.4.32-MariaDB
 -- PHP-version: 8.2.12
 
@@ -56,6 +56,8 @@ CREATE TABLE `customers` (
   `email` varchar(50) NOT NULL,
   `password` varchar(100) DEFAULT NULL,
   `address` varchar(50) NOT NULL,
+  `zip` varchar(10) NOT NULL,
+  `city` varchar(30) NOT NULL,
   `phone` varchar(20) NOT NULL,
   `registered` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -64,9 +66,9 @@ CREATE TABLE `customers` (
 -- Dumpning av Data i tabell `customers`
 --
 
-INSERT INTO `customers` (`customer_id`, `fname`, `lname`, `email`, `password`, `address`, `phone`, `registered`) VALUES
-(119, 'osama', 'faroun', 'osamafaroun7@gmail.com', '$2a$10$VM2iUmA/9GTDxLcrgAlvu.c4Pm2eqtot8W6zwyqUOZYib74Uaq64e', 'aaaa', '234234', 0),
-(120, 'Ahmad', 'Faroun', 'ahmad996cyc@gmail.com', '$2a$10$0TerN8ZfIHi9CItIpym7rupJW6a0iUmD8t6zMh0DHJ1uN1NrTfuf2', '', '', 0);
+INSERT INTO `customers` (`customer_id`, `fname`, `lname`, `email`, `password`, `address`, `zip`, `city`, `phone`, `registered`) VALUES
+(119, 'osama', 'faroun', 'osamafaroun7@gmail.com', '$2a$10$VM2iUmA/9GTDxLcrgAlvu.c4Pm2eqtot8W6zwyqUOZYib74Uaq64e', 'aaaa', '', '', '234234', 0),
+(120, 'Ahmad', 'Faroun', 'ahmad996cyc@gmail.com', '$2a$10$0TerN8ZfIHi9CItIpym7rupJW6a0iUmD8t6zMh0DHJ1uN1NrTfuf2', '', '', '', '', 0);
 
 -- --------------------------------------------------------
 
@@ -141,9 +143,9 @@ CREATE TABLE `products` (
 --
 
 INSERT INTO `products` (`product_id`, `category_id`, `image`, `name`, `description`, `price`, `discount`, `quantity`, `available`) VALUES
-(1, 5, '[\"p-20.jpg\",\"p-29.jpg\",\"p-18.jpg\"]', 'National Fresh Fruit', 'All products are carefully selected to ensure food safety.', 120.00, 33.00, 20, 1),
-(2, 4, '[\"p-21.jpg\",\"p-15.jpg\"]', 'National Fresh Fruit', 'All products are carefully selected to ensure food safety.', 275.00, 88.00, 20, 1),
-(3, 4, '[\"p-21.jpg\",\"p-19.jpg\"]', 'National Fresh Fruit', 'All products are carefully selected to ensure food safety.', 264.00, 62.00, 20, 1),
+(1, 5, '[\"p-20.jpg\",\"p-29.jpg\",\"p-18.jpg\"]', 'National Fresh Fruit', 'All products are carefully selected to ensure food safety.', 120.00, 33.00, 0, 0),
+(2, 4, '[\"p-21.jpg\",\"p-15.jpg\"]', 'National Fresh Fruit', 'All products are carefully selected to ensure food safety.', 275.00, 88.00, 0, 0),
+(3, 4, '[\"p-21.jpg\",\"p-19.jpg\"]', 'National Fresh Fruit', 'All products are carefully selected to ensure food safety.', 264.00, 62.00, 0, 0),
 (4, 3, '[\"p-12.jpg\"]', 'National Fresh Fruit', 'All products are carefully selected to ensure food safety.', 108.00, 53.00, 20, 1),
 (5, 1, '[\"p-30.jpg\",\"p-12.jpg\",\"p-17.jpg\"]', 'National Fresh Fruit', 'All products are carefully selected to ensure food safety.', 204.00, 40.00, 20, 1),
 (6, 2, '[\"p-05.jpg\",\"p-02.jpg\",\"p-11.jpg\"]', 'National Fresh Fruit', 'All products are carefully selected to ensure food safety.', 175.00, 34.00, 20, 1),
