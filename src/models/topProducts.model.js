@@ -3,12 +3,11 @@ const pool = require('../databases/mysql.db');
 class TopProduct {
     constructor(options) {
         this.product_id = options.product_id;
-        this.display_order = options.display_order;
     }
 
     async save() {
-        const sql = `INSERT INTO top_products (product_id, display_order) VALUES (?, ?)`;
-        const values = [this.product_id, this.display_order];
+        const sql = `INSERT INTO top_products (product_id) VALUES (?)`;
+        const values = [this.product_id];
         const result = await pool.execute(sql, values);
         this.id = result[0].insertId;
         return this.id;
@@ -16,7 +15,7 @@ class TopProduct {
 
     static async getAll() {
         const sql =
-            `SELECT * FROM top_products INNER JOIN products ON top_products.product_id = products.product_id ORDER BY top_products.display_order`;
+            `SELECT * FROM top_products INNER JOIN products ON top_products.product_id = products.product_id`;
         const [rows] = await pool.execute(sql);
         return rows;
     }
@@ -29,8 +28,8 @@ class TopProduct {
     }
 
     static async updateById(id, options) {
-        const sql = `UPDATE top_products SET product_id = ?, display_order = ? WHERE id = ?`;
-        const values = [options.product_id, options.display_order, id];
+        const sql = `UPDATE top_products SET product_id = ? WHERE id = ?`;
+        const values = [options.product_id, id];
         const [rows] = await pool.execute(sql, values);
         return rows;
     }
