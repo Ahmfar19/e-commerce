@@ -7,7 +7,9 @@ class Staff {
         this.lname = options.lname;
         this.phone = options.phone;
         this.email = options.email;
+        this.role = options.role;
         this.password = options.password;
+        this.image = options.image || '';
     }
     async save() {
         const sql = `INSERT INTO staff (
@@ -16,14 +18,18 @@ class Staff {
             lname,
             phone,
             email,
-            password
+            role,
+            password,
+            image
         ) VALUES (
             "${this.username}", 
-            "${this.fname}", 
-            "${this.lname}",
-             ${this.phone}, 
+            "${this.fname}",
+            "${this.lname}", 
+            "${this.phone}",
             "${this.email}",
-            "${this.password}"
+            ${this.role}, 
+            "${this.password}",
+            "${this.image}"
         )`;
         const result = await pool.execute(sql);
         this.staff_id = result[0].insertId;
@@ -40,28 +46,16 @@ class Staff {
         return rows;
     }
     async updateStaff(id) {
-        const sql = `
-            UPDATE staff SET 
-            username = ?,
-            fname = ?, 
-            lname = ?, 
-            phone = ?, 
-            email = ?
-            WHERE staff_id = ?`;
-        const values = [
-            this.username,
-            this.fname,
-            this.lname,
-            this.phone,
-            this.email,
-            id,
-        ];
-
-        try {
-            await pool.execute(sql, values);
-        } catch (error) {
-            throw error;
-        }
+        const sql = `UPDATE staff SET 
+        username = "${this.username}", 
+        fname = "${this.fname}",
+        lname = "${this.lname}", 
+        phone = "${this.phone}",
+        email = "${this.email}", 
+        role = "${this.role}",
+        image = "${this.image}"
+        WHERE staff_id = ${id}`;
+        await pool.execute(sql);
     }
     static async updatePassword(id, newPassword) {
         const sql = `UPDATE staff SET 
@@ -83,10 +77,10 @@ class Staff {
         const [rows] = await pool.execute(sql, [email, username]);
         return rows;
     }
-    static async checkUserUpdate(email, id) {
+    static async checkUserUpdate(username, email, id) {
         const sql = `SELECT * FROM staff WHERE 
-            (email = '${email}') 
-            AND NOT staff_id = ${id}`;
+        (username = '${username}' OR email = '${email}') 
+        AND staff_id != ${id}`;
         const [rows] = await pool.execute(sql);
         return rows;
     }
