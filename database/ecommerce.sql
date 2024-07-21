@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Värd: 127.0.0.1
--- Tid vid skapande: 21 jul 2024 kl 14:01
+-- Tid vid skapande: 21 jul 2024 kl 14:03
 -- Serverversion: 10.4.32-MariaDB
 -- PHP-version: 8.2.12
 
@@ -642,8 +642,7 @@ INSERT INTO `products` (`product_id`, `category_id`, `image`, `name`, `descripti
 (496, 2, '[\"p-03.jpg\"]', 'National Fresh Fruit', 'All products are carefully selected to ensure food safety.', 175.00, 52.00, 20, 1),
 (497, 3, '[\"p-03.jpg\",\"p-11.jpg\",\"p-12.jpg\"]', 'National Fresh Fruit', 'All products are carefully selected to ensure food safety.', 268.00, 78.00, 20, 1),
 (498, 1, '[\"p-08.jpg\",\"p-29.jpg\"]', 'National Fresh Fruit', 'All products are carefully selected to ensure food safety.', 253.00, 18.00, 20, 1),
-(499, 1, '[\"p-28.jpg\",\"p-11.jpg\"]', 'National Fresh Fruit', 'All products are carefully selected to ensure food safety.', 59.00, 39.00, 20, 1),
-(500, 4, '[\"p-17.jpg\",\"p-21.jpg\"]', 'National Fresh Fruit', 'All products are carefully selected to ensure food safety.', 54.00, 55.00, 20, 1);
+(499, 1, '[\"p-28.jpg\",\"p-11.jpg\"]', 'National Fresh Fruit', 'All products are carefully selected to ensure food safety.', 59.00, 39.00, 20, 1);
 
 -- --------------------------------------------------------
 
@@ -776,6 +775,17 @@ CREATE TABLE `top_products` (
   `id` int(11) NOT NULL,
   `product_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumpning av Data i tabell `top_products`
+--
+
+INSERT INTO `top_products` (`id`, `product_id`) VALUES
+(3, 1),
+(4, 2),
+(5, 3),
+(1, 47),
+(2, 47);
 
 -- --------------------------------------------------------
 
@@ -989,6 +999,12 @@ ALTER TABLE `store_info`
 --
 ALTER TABLE `tags`
   MODIFY `tag_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT för tabell `top_products`
+--
+ALTER TABLE `top_products`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT för tabell `transaction`
