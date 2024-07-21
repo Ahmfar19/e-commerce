@@ -204,7 +204,7 @@ const filterProductsByName = async (req, res) => {
 
 const getMultiProducts = async (req, res) => {
     try {
-        const { productIds } = req.body;
+        const productIds = req.query.productIds ? req.query.productIds.split(',') : [];
         const products = await Product.getMulti(productIds);
         sendResponse(res, 200, 'Ok', 'Successfully retrieved all the products.', null, products);
     } catch (error) {
