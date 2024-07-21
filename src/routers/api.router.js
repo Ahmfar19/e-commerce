@@ -66,6 +66,7 @@ router.get('/products/unavailable', productController.getProductsByUnAvailable);
 // Top products
 router.post('/top-products', topProductController.createTopProduct);
 router.get('/top-products', topProductController.getTopProducts);
+router.get('/custom-top-products', topProductController.getCustomTopProducts);
 router.get('/top-products/:id', topProductController.getTopProduct);
 router.put('/top-products/:id', topProductController.updateTopProduct);
 router.delete('/top-products/:id', topProductController.deleteTopProduct);

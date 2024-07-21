@@ -180,7 +180,7 @@ class Product {
         }
     }
 
-    static async getRandomProducts() {
+    static async getRandomProducts(filterIds = []) {
         // Step 1: Select 5 random categories
         const randomCategoriesSql = `
             SELECT category_id
@@ -190,20 +190,28 @@ class Product {
         `;
 
         const [randomCategories] = await pool.execute(randomCategoriesSql);
-
         const categoryIds = randomCategories.map(row => row.category_id);
         let allProducts = [];
 
         // Step 2: Fetch up to 10 products for each of the selected categories
         for (const categoryId of categoryIds) {
+            // Construct the NOT IN clause only if filterIds is provided and not empty
+            const excludeCondition = filterIds.length > 0
+                ? `AND p.product_id NOT IN (${filterIds.map(() => '?').join(',')})`
+                : '';
+
             const productsSql = `
                 SELECT p.*, c.*
                 FROM products p
                 INNER JOIN categories c ON p.category_id = c.category_id
                 WHERE c.category_id = ?
+                ${excludeCondition}
                 LIMIT 10;
             `;
-            const [products] = await pool.execute(productsSql, [categoryId]);
+            // Combine categoryId and filterIds into query parameters
+            const queryParams = [categoryId, ...filterIds];
+            // Execute the query with the constructed SQL and parameters
+            const [products] = await pool.execute(productsSql, queryParams);
             allProducts = allProducts.concat(products);
         }
         return allProducts;

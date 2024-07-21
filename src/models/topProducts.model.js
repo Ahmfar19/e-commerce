@@ -1,4 +1,5 @@
 const pool = require('../databases/mysql.db');
+const Product = require('../models/product.model');
 
 class TopProduct {
     constructor(options) {
@@ -13,9 +14,25 @@ class TopProduct {
         return this.id;
     }
 
+    static async getCustomPopular() {
+        const sql = `SELECT * FROM top_products INNER JOIN products ON top_products.product_id = products.product_id`;
+        let [rows] = await pool.execute(sql);
+        if (rows.length < 10) {
+            const popularProducts = await Product.getPopular(10) || [];
+            const leftToTeen = 10 - rows.length;
+            rows = [...rows, ...popularProducts.slice(0, leftToTeen)];
+        }
+        if (rows.length < 10) {
+            const ids = rows.map((prodcut) => prodcut.product_id);
+            const getRandomProducts = await Product.getRandomProducts(ids) || [];
+            const leftToTeen = 10 - rows.length;
+            rows = [...rows, ...getRandomProducts.slice(0, leftToTeen)];
+        }
+        return rows;
+    }
+
     static async getAll() {
-        const sql =
-            `SELECT * FROM top_products INNER JOIN products ON top_products.product_id = products.product_id`;
+        const sql = `SELECT * FROM top_products INNER JOIN products ON top_products.product_id = products.product_id`;
         const [rows] = await pool.execute(sql);
         return rows;
     }

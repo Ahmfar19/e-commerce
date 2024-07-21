@@ -1,7 +1,5 @@
 const TopProduct = require('../models/topProducts.model');
 const { sendResponse } = require('../helpers/apiResponse');
-const path = require('path');
-const fs = require('fs');
 
 // Create a new top product
 const createTopProduct = async (req, res) => {
@@ -22,6 +20,15 @@ const getTopProducts = async (req, res) => {
     try {
         const topProducts = await TopProduct.getAll();
         sendResponse(res, 200, 'OK', 'Successfully retrieved all top products.', null, topProducts);
+    } catch (err) {
+        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+    }
+};
+
+const getCustomTopProducts = async (req, res) => {
+    try {
+        const customTopProducts = await TopProduct.getCustomPopular();
+        sendResponse(res, 200, 'OK', 'Successfully retrieved all custom top products.', null, customTopProducts);
     } catch (err) {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
@@ -84,4 +91,5 @@ module.exports = {
     getTopProduct,
     updateTopProduct,
     deleteTopProduct,
+    getCustomTopProducts,
 };
