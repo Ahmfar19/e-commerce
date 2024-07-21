@@ -10,11 +10,8 @@ const forgetPassword = async (req, res) => {
     try {
         const checkUser = await ResetPassword.checkIfUserExisted(req.body.email);
 
-        console.error('checkUserw', checkUser);
-
         // check if user exists in staff (users table)
         if (checkUser.length) {
-            console.error(11);
             const [user] = checkUser;
             if (!user.registered) {
                 console.error(user.registered);
