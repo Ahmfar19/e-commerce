@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Värd: 127.0.0.1
--- Tid vid skapande: 20 jul 2024 kl 19:14
+-- Tid vid skapande: 21 jul 2024 kl 14:01
 -- Serverversion: 10.4.32-MariaDB
 -- PHP-version: 8.2.12
 
@@ -769,6 +769,17 @@ CREATE TABLE `tags` (
 -- --------------------------------------------------------
 
 --
+-- Tabellstruktur `top_products`
+--
+
+CREATE TABLE `top_products` (
+  `id` int(11) NOT NULL,
+  `product_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Tabellstruktur `transaction`
 --
 
@@ -881,6 +892,13 @@ ALTER TABLE `store_info`
 --
 ALTER TABLE `tags`
   ADD PRIMARY KEY (`tag_id`);
+
+--
+-- Index för tabell `top_products`
+--
+ALTER TABLE `top_products`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `product_id` (`product_id`);
 
 --
 -- Index för tabell `transaction`
@@ -1022,6 +1040,12 @@ ALTER TABLE `product_review`
 ALTER TABLE `product_tag`
   ADD CONSTRAINT `product_tag_ibfk_1` FOREIGN KEY (`tag_id`) REFERENCES `tags` (`tag_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `product_tag_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`);
+
+--
+-- Restriktioner för tabell `top_products`
+--
+ALTER TABLE `top_products`
+  ADD CONSTRAINT `top_products_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`);
 
 --
 -- Restriktioner för tabell `transaction`
