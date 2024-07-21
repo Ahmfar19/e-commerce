@@ -5,7 +5,6 @@ const { sendReqularEmail } = require('./sendEmail.controller');
 const crypto = require('crypto');
 const { hashPassword, getFutureDateTime, isDateTimeInPast } = require('../helpers/utils');
 
-
 const forgetPassword = async (req, res) => {
     try {
         const checkUser = await ResetPassword.checkIfUserExisted(req.body.email);

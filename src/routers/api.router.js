@@ -16,6 +16,7 @@ const shippingController = require('../controllers/shipping.controller');
 const unitController = require('../controllers/unit.controller');
 const staffController = require('../controllers/staff.controller');
 const resetStaffPassword = require('../controllers/resetStaffPassword.controller');
+const topProductController = require('../controllers/topProducts.controller');
 
 // customers
 router.post('/customers/new', customerController.createUser);
@@ -61,6 +62,13 @@ router.get('/products/priceRange', productController.getProductsByRangePrice);
 router.get('/products/random', productController.getRandomCategoryProducts);
 router.get('/products/quantity', productController.getProductsByQuantity);
 router.get('/products/unavailable', productController.getProductsByUnAvailable);
+
+// Top products
+router.post('/top-products', topProductController.createTopProduct);
+router.get('/top-products', topProductController.getTopProducts);
+router.get('/top-products/:id', topProductController.getTopProduct);
+router.put('/top-products/:id', topProductController.updateTopProduct);
+router.delete('/top-products/:id', topProductController.deleteTopProduct);
 
 // orderType
 router.get('/orderTypes', orderTypeController.getOrderTypes);
