@@ -1,15 +1,25 @@
+const mailMessags = require('../helpers/emailMessages');
+const { sendResponse } = require('../helpers/apiResponse');
 const ResetPassword = require('../models/resetPassword.model');
 const { sendReqularEmail } = require('./sendEmail.controller');
 const crypto = require('crypto');
 const { hashPassword, getFutureDateTime, isDateTimeInPast } = require('../helpers/utils');
-const mailMessags = require('../helpers/emailMessages');
+
 
 const forgetPassword = async (req, res) => {
     try {
         const checkUser = await ResetPassword.checkIfUserExisted(req.body.email);
 
+        console.error('checkUserw', checkUser);
+
         // check if user exists in staff (users table)
         if (checkUser.length) {
+            console.error(11);
+            const [user] = checkUser;
+            if (!user.registered) {
+                console.error(user.registered);
+                return sendResponse(res, 404, 'Fail', 'ec_resetPasword_userNotregistred', null, null);
+            }
             // check if user exists in reset_password table
             const checkIfExistedInResetPassword = await ResetPassword.checkIfExistedInResetTable(req.body.email);
 
@@ -23,32 +33,24 @@ const forgetPassword = async (req, res) => {
                     pinCode: pinCode,
                     expiresAt: expiresAt,
                 });
-
                 await newResetInformation.updateResetPasswordInformation(req.body.email);
-                msg = 'A new reset password PIN code has been sent to your email.';
+                msg = 'ec_resetPassword_newPinCode';
             } else {
                 const reset_password = new ResetPassword({
                     email: req.body.email,
                     pinCode: pinCode,
                     expiresAt: expiresAt,
                 });
-
                 await reset_password.save();
-                msg = 'A reset password PIN code has been sent to your email.';
+                msg = 'ec_resetPassword_newPinCode2';
             }
             const title = mailMessags.pinMessage.title;
             const body = mailMessags.pinMessage.body.replace('{0}', pinCode);
 
             sendReqularEmail(req.body.email, title, body);
-            return res.json({
-                msg: msg,
-                ok: true,
-            });
+            return sendResponse(res, 200, 'Fail', msg, null, null);
         } else {
-            return res.status(400).json({
-                error: 'User email not found.',
-                ok: false,
-            });
+            return sendResponse(res, 404, 'Fail', 'ec_resetPassword_emailNotFound', null, null);
         }
     } catch (error) {
         res.json({ error: error.message });

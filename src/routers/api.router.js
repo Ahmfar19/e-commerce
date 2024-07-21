@@ -28,18 +28,14 @@ router.put('/customer/password/:id', customerController.updateUserPassword);
 router.post('/customer/login', customerController.login);
 router.post('/customer/verifyToken', customerController.verifyToken);
 
-// Forget Customer password
+// Customer reset password
 router.post('/forgetPassword', resetPassword.forgetPassword);
-// Reset Customer Password
 router.post('/resetPassword', resetPassword.resetPassword);
-// pinCode Customer for compare
 router.post('/pinCode', resetPassword.checkPinCode);
 
-// Forget Staff password
+// Staff
 router.post('/staff/forgetPassword', resetStaffPassword.forgetPassword);
-// Reset Staff Password
 router.post('/staff/resetPassword', resetStaffPassword.resetPassword);
-// pinCode Staff for compare
 router.post('/staff/pinCode', resetStaffPassword.checkPinCode);
 
 // categories
