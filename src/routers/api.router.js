@@ -27,8 +27,6 @@ const uploadUser = multer({
     },
 });
 
-
-
 // customers
 router.post('/customers/new', customerController.createUser);
 router.get('/customers', customerController.getUsers);
@@ -101,9 +99,8 @@ router.get('/order/:id', orderController.getOrderById);
 router.get('/orders/type', orderController.getOrderByType);
 router.put('/order/type/edit/:id', orderController.updateOrderType);
 router.get('/orders/byMonth', orderController.getOrdersByMonth);
-router.get('/orders/total-price/count', orderController.getOrdersTotalPriceAndCount)
+router.get('/orders/total-price/count', orderController.getOrdersTotalPriceAndCount);
 router.get('/orders/filter', orderController.getOrdersFilter);
-
 
 // order items
 router.get('/orderitems/:id', orderItemsController.getOrderItems);

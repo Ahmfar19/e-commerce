@@ -162,9 +162,9 @@ class Order {
     }
 
     static async getOrdersByMonth(date) {
-        const [year, month] = date.split('-'); 
+        const [year, month] = date.split('-');
         const sql = 'SELECT * FROM orders WHERE MONTH(orders.order_date) = ? AND YEAR(orders.order_date) = ?';
-     
+
         const [rows] = await pool.execute(sql, [month, year]);
         return rows;
     }
@@ -205,13 +205,12 @@ class Order {
 
     static async getOrdersTotalPriceAndCount(date) {
         const [year, month] = date.split('-');
-       
-        const sql = 'SELECT SUM(total) AS total_price, COUNT(*) AS orders_count FROM orders WHERE MONTH(orders.order_date) = ? AND YEAR(orders.order_date) = ?';
+
+        const sql =
+            'SELECT SUM(total) AS total_price, COUNT(*) AS orders_count FROM orders WHERE MONTH(orders.order_date) = ? AND YEAR(orders.order_date) = ?';
         const [rows] = await pool.execute(sql, [month, year]);
         return rows;
     }
-
- 
 }
 
 module.exports = Order;

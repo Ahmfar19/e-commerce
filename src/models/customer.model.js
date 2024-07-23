@@ -123,21 +123,17 @@ class User {
 
     static async getCustomerByFilter(key, value) {
         let sql;
-     
-    
+
         if (key === 'customerName') {
             sql = `
                 SELECT * FROM customers WHERE CONCAT(fname, ' ', lname) LIKE '${`%${value}%`}'
             `;
-           
-    
         } else {
-        
             sql = `
                 SELECT * FROM customers WHERE ${key} = '${value}'
             `;
         }
-            const [rows] = await pool.execute(sql);
+        const [rows] = await pool.execute(sql);
         return rows;
     }
 }

@@ -58,8 +58,8 @@ async function uploadImage(file, userID) {
 
 const createStaff = async (req, res) => {
     try {
-        const { username, fname, lname, phone, email, role,password } = req.body;
-        
+        const { username, fname, lname, phone, email, role, password } = req.body;
+
         const checkUser = await Staff.checkIfUserExisted(email, username);
 
         if (checkUser.length) {
@@ -132,14 +132,13 @@ const updateStaff = async (req, res) => {
         if (checkUser.length) {
             return res.json({
                 status: 406,
-                ofk:false,
+                ofk: false,
                 stautsCode: 'Not Acceptable',
                 message: 'ec_alert_user_editFail_userNameOrEmail_exsists',
             });
         }
 
         const userData = req.body;
-       
 
         if (req.file) {
             const imageName = await uploadImage(req.file, id);
@@ -171,7 +170,7 @@ const updateStaffPassword = async (req, res) => {
         }
 
         const match = await comparePassword(password, user[0].password);
-       
+
         if (match !== true) {
             return sendResponse(res, 400, 'Bad Request', 'Current password does not match', null, null);
         }
@@ -289,9 +288,6 @@ const getUsersImage = async (req, res) => {
     }
 };
 
-
-
-
 module.exports = {
     createStaff,
     getstaffs,
@@ -301,5 +297,5 @@ module.exports = {
     updateStaffPassword,
     login,
     verifyToken,
-    getUsersImage
+    getUsersImage,
 };

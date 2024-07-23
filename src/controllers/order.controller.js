@@ -303,7 +303,7 @@ const updateOrderType = async (req, res) => {
 
 const getOrdersByMonth = async (req, res) => {
     try {
-        const { date } = req.query
+        const { date } = req.query;
         const ordersInThisMonth = await Order.getOrdersByMonth(date);
         sendResponse(
             res,
@@ -320,7 +320,7 @@ const getOrdersByMonth = async (req, res) => {
 
 const getOrdersTotalPriceAndCount = async (req, res) => {
     try {
-        const { date } = req.query
+        const { date } = req.query;
         const [orders] = await Order.getOrdersTotalPriceAndCount(date);
         sendResponse(
             res,
@@ -348,7 +348,6 @@ const getOrdersFilter = async (req, res) => {
     }
 };
 
-
 module.exports = {
     createOrder,
     getAllOrders,
@@ -361,5 +360,5 @@ module.exports = {
     updateOrderType,
     getOrdersByMonth,
     getOrdersFilter,
-    getOrdersTotalPriceAndCount
+    getOrdersTotalPriceAndCount,
 };

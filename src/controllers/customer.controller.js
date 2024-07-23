@@ -251,5 +251,5 @@ module.exports = {
     login,
     verifyToken,
     getCustomersCount,
-    getCustomersFilter
+    getCustomersFilter,
 };
