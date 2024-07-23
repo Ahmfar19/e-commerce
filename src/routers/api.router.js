@@ -39,6 +39,7 @@ router.delete('/customer/delete/:id', customerController.deleteUser);
 router.put('/customer/password/:id', customerController.updateUserPassword);
 router.post('/customer/login', customerController.login);
 router.post('/customer/verifyToken', customerController.verifyToken);
+router.get('/customers/filter', customerController.getCustomersFilter);
 
 // Customer reset password
 router.post('/forgetPassword', resetPassword.forgetPassword);

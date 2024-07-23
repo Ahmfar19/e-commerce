@@ -228,6 +228,18 @@ const verifyToken = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
 };
+const getCustomersFilter = async (req, res) => {
+    try {
+        const { key, value } = req.query;
+        if (!key || !value) {
+            return sendResponse(res, 400, 'Bad Request', 'Please provide a key and value', null, null);
+        }
+        const customers = await Customer.getCustomerByFilter(key, value);
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the customers.', null, customers);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
 
 module.exports = {
     createUser,
@@ -239,4 +251,5 @@ module.exports = {
     login,
     verifyToken,
     getCustomersCount,
+    getCustomersFilter
 };
