@@ -161,13 +161,11 @@ class Order {
         return rows;
     }
 
-    static async getFilterByYearMonth() {
-        const currentDate = new Date();
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth() + 1; // Adding 1 to match SQL month format
+    static async getOrdersByMonth(date) {
+        const [year, month] = date.split('-'); 
         const sql = 'SELECT * FROM orders WHERE MONTH(orders.order_date) = ? AND YEAR(orders.order_date) = ?';
-        const params = [month, year];
-        const [rows] = await pool.execute(sql, params);
+     
+        const [rows] = await pool.execute(sql, [month, year]);
         return rows;
     }
 
@@ -204,6 +202,16 @@ class Order {
         const [rows] = await pool.execute(sql);
         return rows;
     }
+
+    static async getOrdersTotalPriceAndCount(date) {
+        const [year, month] = date.split('-');
+       
+        const sql = 'SELECT SUM(total) AS total_price, COUNT(*) AS orders_count FROM orders WHERE MONTH(orders.order_date) = ? AND YEAR(orders.order_date) = ?';
+        const [rows] = await pool.execute(sql, [month, year]);
+        return rows;
+    }
+
+ 
 }
 
 module.exports = Order;

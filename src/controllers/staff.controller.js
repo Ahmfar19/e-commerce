@@ -4,7 +4,8 @@ const { hashPassword, comparePassword } = require('../helpers/utils');
 const { sendResponse } = require('../helpers/apiResponse');
 const config = require('config');
 const JWT_SECRET_KEY = config.get('JWT_SECRET_KEY');
-
+const path = require('path');
+const fs = require('fs');
 
 function searchImageByName(directoryPath, imageName) {
     const imageNameWithoutExtension = path.parse(imageName).name;
@@ -57,7 +58,8 @@ async function uploadImage(file, userID) {
 
 const createStaff = async (req, res) => {
     try {
-        const { username, fname, lname, phone, email, password } = req.body;
+        const { username, fname, lname, phone, email, role,password } = req.body;
+        
         const checkUser = await Staff.checkIfUserExisted(email, username);
 
         if (checkUser.length) {
@@ -82,6 +84,7 @@ const createStaff = async (req, res) => {
             lname,
             phone,
             email,
+            role,
             password: hashedPassword.data,
         });
 
@@ -131,11 +134,12 @@ const updateStaff = async (req, res) => {
                 status: 406,
                 ofk:false,
                 stautsCode: 'Not Acceptable',
-                message: 'dek_alert_user_editFail_userNameOrEmail_exsists',
+                message: 'ec_alert_user_editFail_userNameOrEmail_exsists',
             });
         }
 
         const userData = req.body;
+       
 
         if (req.file) {
             const imageName = await uploadImage(req.file, id);
@@ -167,7 +171,7 @@ const updateStaffPassword = async (req, res) => {
         }
 
         const match = await comparePassword(password, user[0].password);
-
+       
         if (match !== true) {
             return sendResponse(res, 400, 'Bad Request', 'Current password does not match', null, null);
         }
@@ -270,6 +274,24 @@ const verifyToken = async (req, res) => {
     }
 };
 
+const getUsersImage = async (req, res) => {
+    // Extract the file name from the request parameters
+    const filename = req.params.filename;
+    const uploadPath = 'public/users';
+    const filePath = path.join(uploadPath, filename);
+    if (fs.existsSync(filePath)) {
+        const imageBuffer = fs.readFileSync(filePath);
+        const base64Image = Buffer.from(imageBuffer).toString('base64');
+        const dataURI = `data:image/jpeg;base64,${base64Image}`;
+        res.json({ img: dataURI });
+    } else {
+        res.status(404).send('File not found');
+    }
+};
+
+
+
+
 module.exports = {
     createStaff,
     getstaffs,
@@ -279,4 +301,5 @@ module.exports = {
     updateStaffPassword,
     login,
     verifyToken,
+    getUsersImage
 };

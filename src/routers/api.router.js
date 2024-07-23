@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const upload = multer();
+const path = require('path');
 
 // import controllers
 const customerController = require('../controllers/customer.controller');
@@ -17,6 +18,16 @@ const unitController = require('../controllers/unit.controller');
 const staffController = require('../controllers/staff.controller');
 const resetStaffPassword = require('../controllers/resetStaffPassword.controller');
 const topProductController = require('../controllers/topProducts.controller');
+
+const uploadUser = multer({
+    dest: path.join(__dirname, 'public/users'),
+    limits: {
+        fileSize: 300 * 1024 * 1024, // Set the maximum file size limit in megabytes (MB)
+        fieldSize: 300 * 1024 * 1024, // Set the maximum field size limit in megabytes (MB)
+    },
+});
+
+
 
 // customers
 router.post('/customers/new', customerController.createUser);
@@ -88,8 +99,10 @@ router.delete('/order/delete/:id', orderController.deleteOrderById);
 router.get('/order/:id', orderController.getOrderById);
 router.get('/orders/type', orderController.getOrderByType);
 router.put('/order/type/edit/:id', orderController.updateOrderType);
-router.get('/orders/month', orderController.getOrdersInThisMonth);
+router.get('/orders/byMonth', orderController.getOrdersByMonth);
+router.get('/orders/total-price/count', orderController.getOrdersTotalPriceAndCount)
 router.get('/orders/filter', orderController.getOrdersFilter);
+
 
 // order items
 router.get('/orderitems/:id', orderItemsController.getOrderItems);
@@ -118,10 +131,11 @@ router.delete('/unit/delete/:id', unitController.deleteUnit);
 router.post('/staff/new', staffController.createStaff);
 router.get('/staffs', staffController.getstaffs);
 router.get('/staff/:id', staffController.getSingleStaff);
-router.put('/staff/edit/:id', staffController.updateStaff);
+router.put('/staff/edit/:id', uploadUser.single('image'), staffController.updateStaff);
 router.put('/staff/password/:id', staffController.updateStaffPassword);
 router.delete('/staff/delete/:id', staffController.deleteStaff);
 router.post('/staff/login', staffController.login);
 router.post('/staff/verifyToken', staffController.verifyToken);
+router.get('/staff/image/:filename', staffController.getUsersImage);
 
 module.exports = router;

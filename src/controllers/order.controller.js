@@ -301,16 +301,34 @@ const updateOrderType = async (req, res) => {
     }
 };
 
-const getOrdersInThisMonth = async (req, res) => {
+const getOrdersByMonth = async (req, res) => {
     try {
-        const ordersInThisMonth = await Order.getFilterByYearMonth();
+        const { date } = req.query
+        const ordersInThisMonth = await Order.getOrdersByMonth(date);
         sendResponse(
             res,
             202,
             'Accepted',
-            'Successfully retrieved all the order in this month ',
+            'Successfully retrieved all the order bymonth month ',
             null,
             ordersInThisMonth,
+        );
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
+const getOrdersTotalPriceAndCount = async (req, res) => {
+    try {
+        const { date } = req.query
+        const [orders] = await Order.getOrdersTotalPriceAndCount(date);
+        sendResponse(
+            res,
+            202,
+            'Accepted',
+            'Successfully retrieved all the orders',
+            null,
+            orders,
         );
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
@@ -330,6 +348,7 @@ const getOrdersFilter = async (req, res) => {
     }
 };
 
+
 module.exports = {
     createOrder,
     getAllOrders,
@@ -340,6 +359,7 @@ module.exports = {
     getOrderById,
     getOrderByType,
     updateOrderType,
-    getOrdersInThisMonth,
+    getOrdersByMonth,
     getOrdersFilter,
+    getOrdersTotalPriceAndCount
 };
