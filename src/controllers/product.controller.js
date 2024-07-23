@@ -30,7 +30,7 @@ const saveImagesToFolder = async (files, uploadPath) => {
 
 const createProduct = async (req, res) => {
     try {
-        const { category_id, name, description, price, discount, quantity, available } = req.body;
+        const { category_id, name, description, price, discount, quantity, available, articelNumber } = req.body;
 
         const product = new Product({
             category_id,
@@ -40,6 +40,7 @@ const createProduct = async (req, res) => {
             discount,
             quantity,
             available,
+            articelNumber,
         });
 
         const lastProduct = await product.save();
@@ -85,7 +86,8 @@ const getProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
     try {
         const id = req.params.id;
-        const { category_id, name, description, price, discount, quantity, available, deletedImages } = req.body;
+        const { category_id, name, description, price, discount, quantity, available, deletedImages, articelNumber } =
+            req.body;
 
         const folderName = `product_${id}`;
         const uploadPath = path.join(__dirname, '../../public/images/', folderName);
@@ -122,6 +124,7 @@ const updateProduct = async (req, res) => {
             discount: discount,
             quantity: quantity,
             available: available,
+            articelNumber: articelNumber,
             image: JSON.stringify(imageToKeep),
         });
 
@@ -280,6 +283,16 @@ const getProductsByUnAvailable = async (req, res) => {
     }
 };
 
+const getProductsMultiFilter = async (req, res) => {
+    try {
+        const { key, value } = req.query;
+        const products = await Product.getProductsMultiFilter(key, value);
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the products.', null, products);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
 module.exports = {
     createProduct,
     updateProduct,
@@ -296,4 +309,5 @@ module.exports = {
     getRandomCategoryProducts,
     getProductsByQuantity,
     getProductsByUnAvailable,
+    getProductsMultiFilter,
 };

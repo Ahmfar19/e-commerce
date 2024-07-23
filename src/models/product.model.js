@@ -3,6 +3,7 @@ const pool = require('../databases/mysql.db');
 class Product {
     constructor(options) {
         this.category_id = options.category_id;
+        this.articelNumber = options.articelNumber;
         this.image = options.image || '';
         this.name = options.name;
         this.description = options.description || '';
@@ -15,6 +16,7 @@ class Product {
     async save() {
         const sql = `INSERT INTO products (
             category_id,
+            articelNumber,
             image,
             name,
             description,
@@ -24,6 +26,7 @@ class Product {
             available
         ) VALUES (
            ${this.category_id}, 
+           ${this.articelNumber}, 
             '${this.image}', 
             "${this.name}",
             "${this.description}", 
@@ -59,6 +62,7 @@ class Product {
     async updateById(id) {
         const sql = `UPDATE products SET 
         category_id = ?,
+        articelNumber = ?,
         image = ?,
         name = ?,
         description = ?,
@@ -69,6 +73,7 @@ class Product {
         WHERE product_id = ?`;
         const values = [
             this.category_id,
+            this.articelNumber,
             this.image,
             this.name,
             this.description,
@@ -140,6 +145,7 @@ class Product {
         products.image,
         products.description,
         products.discount,
+        products.articelNumber,
         categories.category_name,
         SUM(order_items.quantity) AS quantity
         FROM 
@@ -227,6 +233,27 @@ class Product {
     static async getByUnAvailable() {
         const sql =
             'SELECT * FROM products INNER JOIN categories ON products.category_id = categories.category_id WHERE available = 0';
+        const [rows] = await pool.execute(sql);
+        return rows;
+    }
+
+    static async getProductsMultiFilter(key, value) {
+        let sql;
+
+        if (key === 'name') {
+            sql = `
+                SELECT * FROM products 
+                INNER JOIN categories ON products.category_id = categories.category_id 
+                WHERE products.name LIKE '${`%${value}%`}'
+            `;
+        } else {
+            sql = `
+                SELECT * FROM products 
+                INNER JOIN categories ON products.category_id = categories.category_id 
+                WHERE products.${key} = '${value}'
+            `;
+        }
+
         const [rows] = await pool.execute(sql);
         return rows;
     }

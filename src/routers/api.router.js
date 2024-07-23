@@ -72,6 +72,7 @@ router.get('/products/priceRange', productController.getProductsByRangePrice);
 router.get('/products/random', productController.getRandomCategoryProducts);
 router.get('/products/quantity', productController.getProductsByQuantity);
 router.get('/products/unavailable', productController.getProductsByUnAvailable);
+router.get('/products/multi-filter', productController.getProductsMultiFilter);
 
 // Top products
 router.post('/top-products', topProductController.createTopProduct);
