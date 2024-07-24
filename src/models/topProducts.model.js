@@ -63,6 +63,12 @@ class TopProduct {
         const [rows] = await pool.execute(sql, [id]);
         return rows;
     }
+
+    static async getIds() {
+        const sql = `SELECT product_id FROM top_products`
+        const [rows] = await pool.execute(sql);
+        return rows;
+    }
 }
 
 module.exports = TopProduct;
