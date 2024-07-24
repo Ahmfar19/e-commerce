@@ -77,7 +77,7 @@ router.get('/products/specificFields', productController.getSpecificFields);
 
 
 // Top products
-router.post('/top-products', topProductController.createTopProduct);
+router.post('/top-products/new', topProductController.createTopProduct);
 router.get('/top-products', topProductController.getTopProducts);
 router.get('/custom-top-products', topProductController.getCustomTopProducts);
 router.get('/top-products/:id', topProductController.getTopProduct);
