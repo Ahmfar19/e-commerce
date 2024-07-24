@@ -7,11 +7,18 @@ class TopProduct {
     }
 
     async save() {
-        const sql = `INSERT INTO top_products (product_id) VALUES (?)`;
-        const values = [this.product_id];
-        const result = await pool.execute(sql, values);
-        this.id = result[0].insertId;
-        return this.id;
+        
+        if (!Array.isArray(this.product_id) || this.product_id.length === 0) {
+            throw new Error('productIds must be a non-empty array');
+        }
+        const sql = `INSERT INTO top_products (product_id) VALUES ${this.product_id.map(() => '(?)').join(', ')}`;
+
+        try {
+            const result = await pool.execute(sql, this.product_id.flat());
+            return result[0].affectedRows;
+        } catch (error) {
+            throw new Error('Database execution failed');
+        }
     }
 
     static async getCustomPopular() {

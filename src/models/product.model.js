@@ -253,10 +253,17 @@ class Product {
                 WHERE products.${key} = '${value}'
             `;
         }
-
+     
         const [rows] = await pool.execute(sql);
         return rows;
     }
+    
+    static async getSpecificFields(){
+        const sql = `SELECT name, articelNumber, product_id  FROM products`
+        const [rows] = await pool.execute(sql);
+        return rows;
+    }
+
 }
 
 module.exports = Product;

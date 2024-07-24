@@ -4,11 +4,9 @@ const { sendResponse } = require('../helpers/apiResponse');
 // Create a new top product
 const createTopProduct = async (req, res) => {
     try {
-        const { product_id, display_order } = req.body;
-
-        const topProduct = new TopProduct({ product_id, display_order });
+        const { product_id } = req.body;
+        const topProduct = new TopProduct({ product_id });
         const id = await topProduct.save();
-
         sendResponse(res, 201, 'Created', 'Successfully created a top product.', null, { id });
     } catch (err) {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
