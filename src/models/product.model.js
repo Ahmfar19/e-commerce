@@ -259,7 +259,7 @@ class Product {
     }
     
     static async getSpecificFields(){
-        const sql = `SELECT name, articelNumber, product_id  FROM products`
+        const sql = `SELECT product_id as value, CONCAT(name, ' - ', articelNumber) as label FROM products`
         const [rows] = await pool.execute(sql);
         return rows;
     }
