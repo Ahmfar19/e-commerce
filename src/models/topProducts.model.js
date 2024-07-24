@@ -7,7 +7,6 @@ class TopProduct {
     }
 
     async save() {
-        
         if (!Array.isArray(this.product_id) || this.product_id.length === 0) {
             throw new Error('productIds must be a non-empty array');
         }

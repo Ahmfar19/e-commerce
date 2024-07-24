@@ -59,6 +59,59 @@ class Product {
         return rows;
     }
 
+    static async checkQuantities(products) {
+        if (!Array.isArray(products) || products.length === 0) {
+            throw new Error('Invalid products array');
+        }
+
+        const productIds = products.map(product => product.product_id);
+
+        // Create placeholders for each product ID in the SQL query
+        const placeholders = productIds.map(() => '?').join(',');
+
+        // SQL query to fetch product quantities from the database
+        const sql = `SELECT product_id, quantity FROM products WHERE product_id IN (${placeholders})`;
+
+        try {
+            // Execute SQL query with product IDs as parameters
+            const [rows] = await pool.execute(sql, productIds);
+
+            // Map rows to an object for easy access by product_id
+            const dbQuantities = rows.reduce((acc, row) => {
+                acc[row.product_id] = row.quantity;
+                return acc;
+            }, {});
+
+            // Array to hold products with insufficient quantities
+            const insufficientProducts = [];
+
+            // Check each product's requested quantity against the database quantity
+            for (const product of products) {
+                const availableQuantity = dbQuantities[product.product_id] || 0;
+                if (product.quantity > availableQuantity) {
+                    insufficientProducts.push({
+                        id: product.product_id,
+                        requested: product.quantity,
+                        available: availableQuantity,
+                    });
+                }
+            }
+
+            // Return the result
+            if (insufficientProducts.length > 0) {
+                return {
+                    success: false,
+                    message: 'Some products have insufficient quantities.',
+                    insufficientProducts,
+                };
+            }
+
+            return { success: true, message: 'All product quantities are sufficient.' };
+        } catch (error) {
+            throw new Error('Failed to check product quantities.');
+        }
+    }
+
     async updateById(id) {
         const sql = `UPDATE products SET 
         category_id = ?,
@@ -253,17 +306,16 @@ class Product {
                 WHERE products.${key} = '${value}'
             `;
         }
-     
-        const [rows] = await pool.execute(sql);
-        return rows;
-    }
-    
-    static async getSpecificFields(){
-        const sql = `SELECT product_id as value, CONCAT(name, ' - ', articelNumber) as label FROM products`
+
         const [rows] = await pool.execute(sql);
         return rows;
     }
 
+    static async getSpecificFields() {
+        const sql = `SELECT product_id as value, CONCAT(name, ' - ', articelNumber) as label FROM products`;
+        const [rows] = await pool.execute(sql);
+        return rows;
+    }
 }
 
 module.exports = Product;

@@ -48,25 +48,6 @@ class OrderItems {
         await Promise.all(insertionPromises);
     }
 
-    static async checkQuantity(productIds) {
-        if (!Array.isArray(productIds) || productIds.length === 0) {
-            throw new Error('Invalid product IDs array');
-        }
-
-        // Create placeholders for each product ID in the SQL query
-        const placeholders = productIds.map(() => '?').join(',');
-
-        // SQL query with placeholders for product IDs
-        const sql = `SELECT product_id, quantity FROM products WHERE product_id IN (${placeholders})`;
-        try {
-            //   Execute SQL query with product IDs as parameters
-            const [rows] = await pool.execute(sql, productIds);
-            return rows;
-        } catch (error) {
-            throw new Error('Failed to check product quantities.');
-        }
-    }
-
     static async getItemsByOrderId(orderId) {
         if (!orderId) {
             throw new Error('Invalid order ID');

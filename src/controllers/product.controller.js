@@ -319,5 +319,5 @@ module.exports = {
     getProductsByQuantity,
     getProductsByUnAvailable,
     getProductsMultiFilter,
-    getSpecificFields
+    getSpecificFields,
 };

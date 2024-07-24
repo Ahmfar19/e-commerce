@@ -12,6 +12,7 @@ class User {
         this.phone = options.phone || '';
         this.registered = options.registered || false;
     }
+
     async createUser() {
         const sql = `INSERT INTO customers (
             fname,
@@ -56,6 +57,7 @@ class User {
         const [rows] = await pool.execute(sql);
         return rows;
     }
+
     async updateUser(id) {
         const sql = `
             UPDATE customers SET 
@@ -88,26 +90,37 @@ class User {
             throw error;
         }
     }
+
+    static async isCustomerRegistered(email) {
+        const sql = `SELECT * FROM customers WHERE email = ?`;
+        const [rows] = await pool.execute(sql, [email]);
+        return rows;
+    }
+
     static async updatePassword(id, newPassword) {
         const sql = `UPDATE customers SET 
         password = "${newPassword}"
         WHERE customer_id = ${id}`;
         await pool.execute(sql);
     }
+
     static async deleteUser(id) {
         const sql = `DELETE FROM customers WHERE customer_id = "${id}"`;
         await pool.execute(sql);
     }
+
     static async loginUser(email) {
         const sql = `SELECT * FROM customers WHERE email ="${email}"`;
         const [rows] = await pool.execute(sql);
         return rows;
     }
+
     static async checkIfUserExisted(email) {
         const sql = `SELECT * FROM customers WHERE email = ?`;
         const [rows] = await pool.execute(sql, [email]);
         return rows;
     }
+
     static async checkUserUpdate(email, id) {
         const sql = `SELECT * FROM customers WHERE 
             (email = '${email}') 
@@ -115,6 +128,7 @@ class User {
         const [rows] = await pool.execute(sql);
         return rows;
     }
+
     static async findByVerificationToken(token) {
         const sql = `SELECT * FROM customers WHERE verificationToken = "${token}"`;
         const [rows] = await pool.execute(sql);

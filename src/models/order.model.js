@@ -91,16 +91,9 @@ class Order {
         return rows;
     }
 
-    static async checkCustomerIfExisted(email) {
-        const sql = `SELECT * FROM customers WHERE email = ?`;
-        const [rows] = await pool.execute(sql, [email]);
-        return rows;
-    }
-
     static async updateProductQuantities(products) {
         try {
             for (const product of products) {
-                // تحديث الكمية الإجمالية
                 const updateQuantitySql = `
                     UPDATE products
                     SET quantity = quantity - ?
@@ -111,7 +104,6 @@ class Order {
                     product.product_id,
                 ]);
 
-                // التحقق إذا أصبحت الكمية الإجمالية تساوي 0
                 const checkQuantitySql = `
                     SELECT quantity
                     FROM products
