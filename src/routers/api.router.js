@@ -75,7 +75,6 @@ router.get('/products/unavailable', productController.getProductsByUnAvailable);
 router.get('/products/multi-filter', productController.getProductsMultiFilter);
 router.get('/products/specificFields', productController.getSpecificFields);
 
-
 // Top products
 router.post('/top-products/new', topProductController.createTopProduct);
 router.get('/top-products', topProductController.getTopProducts);

@@ -45,6 +45,7 @@ const createUser = async (req, res) => {
             const verificationLink = `http://localhost:4000/api/verify-email?token=${
                 encodeURIComponent(encryptedToken)
             };`;
+
             await sendVerificationEmail(email, verificationLink);
 
             return sendResponse(
@@ -89,6 +90,7 @@ const getSingleUser = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
+
 const updateUser = async (req, res) => {
     try {
         const id = req.params.id;
@@ -108,6 +110,7 @@ const updateUser = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
+
 const updateUserPassword = async (req, res) => {
     const id = req.params.id;
     const { password, new_password, verify_password } = req.body;
@@ -138,6 +141,7 @@ const updateUserPassword = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
+
 const deleteUser = async (req, res) => {
     try {
         const id = req.params.id;
@@ -147,6 +151,7 @@ const deleteUser = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
+
 const login = async (req, res) => {
     try {
         const { email, password, rememberMe, fingerprint } = req.body;
@@ -183,6 +188,7 @@ const login = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
+
 const verifyToken = async (req, res) => {
     const { customer_id, fingerprint } = req.body;
 
@@ -228,6 +234,7 @@ const verifyToken = async (req, res) => {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
 };
+
 const getCustomersFilter = async (req, res) => {
     try {
         const { key, value } = req.query;

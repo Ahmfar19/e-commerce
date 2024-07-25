@@ -1,6 +1,7 @@
 const Order = require('../models/order.model');
-const User = require('../models/customer.model');
+const Customer = require('../models/customer.model');
 const OrderItems = require('../models/orderItems.model');
+const Product = require('../models/product.model');
 const StoreInfo = require('../models/storeInfo.model');
 const OrderType = require('../models/orderType.model');
 const Shipping = require('../models/shipping.model');
@@ -10,7 +11,6 @@ const { sendHtmlEmail, sendReqularEmail } = require('./sendEmail.controller');
 const ejs = require('ejs');
 const path = require('path');
 const mailMessags = require('../helpers/emailMessages');
-const fs = require('fs');
 
 function getFirstImage(item) {
     const images = JSON.parse(item.image);
@@ -21,95 +21,23 @@ const calculateVatAmount = (totalWithVat, vatRate) => {
     return totalWithVat * ((vatRate) / (100 + (+vatRate)));
 };
 
-const createOrder = async (req, res) => {
-    try {
-        const orderData = await validateAndGetOrderData(req.body);
-        const customer = await getOrCreateCustomer(orderData);
-        const order = await createOrderAndSaveItems(orderData, customer.id);
-        const products = orderData.products;
-
-        // Construct inline images data
-        const inlineImages = products.map((product) => {
-            const firstImage = JSON.parse(product.image)[0];
-            const imagePath = path.resolve(
-                __dirname,
-                '../../public/images',
-                `product_${product.product_id}`,
-                firstImage,
-            );
-            return {
-                filename: firstImage,
-                path: imagePath,
-                cid: `${firstImage}`, // Unique CID
-            };
-        });
-
-        orderData.products.forEach(product => {
-            product.cid = getFirstImage(product);
-        });
-
-        // Get the store information to add to the email
-        const [storeInfo] = await StoreInfo.getAll();
-        orderData.storeInfo = storeInfo;
-
-        // send Email to customer
-        const templatePath = path.resolve(`public/orderTamplate/index.html`);
-        const htmlTamplate = await ejs.renderFile(templatePath, { orderData, getFirstImage });
-        sendHtmlEmail(orderData.customer.email, 'hello', 'customer', htmlTamplate, inlineImages);
-        return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, order);
-    } catch (err) {
-        console.error(err);
-        sendResponse(res, 500, 'Internal Server Error', null, err?.message || err, null);
-    }
-};
-
-const validateAndGetOrderData = async (body) => {
-    const {
-        customer,
-        products,
-        shipping_id,
-    } = body;
-
-    const productIds = products.map(product => product.product_id);
-
-    const data = await OrderItems.checkQuantity(productIds);
-
-    const validationErrors = [];
-
-    // Compare quantities
-    products.forEach(product => {
-        const dbProduct = data.find(p => p.product_id === product.product_id);
-        if (!dbProduct) {
-            validationErrors.push(`Product with ID ${product.product_id} not found in database.`);
-        } else if (product.quantity > dbProduct.quantity) {
-            validationErrors.push(
-                `Insufficient quantity for product ID ${product.product_id}. Available quantity: ${dbProduct.quantity}`,
-            );
-        }
-    });
-
-    // If there are validation errors, throw an Error with all collected errors
-    if (validationErrors.length > 0) {
-        throw new Error(`Validation errors: ${validationErrors.join(', ')}`);
-    }
-
-    // Get current date
+const createOrderData = async (body) => {
+    const { customer, products, shipping_id } = body;
     const nowDate = getNowDate_time();
 
-    // Calculate total price before discount (total price with tax)
-    const totalPriceBeforDiscount = products.reduce((acc, current) => {
-        return acc + current.price * current.quantity;
-    }, 0);
-
-    // clacuture vat amount
+    // Store tax
     const tax = await StoreInfo.getTax();
 
-    // shipping
+    // Shipping info
     const shipping = await Shipping.getById(shipping_id);
+    const shipping_price = +shipping[0].shipping_price;
 
-    const shipping_price = shipping[0].shipping_price;
+    // Total price before
+    const totalPriceAfterDiscount = products.reduce((acc, product) => {
+        return acc + (product.price - product.discount) * product.quantity;
+    }, 0);
 
-    const vatAmount = calculateVatAmount(totalPriceBeforDiscount, tax[0].tax_percentage);
+    const vatAmount = calculateVatAmount(totalPriceAfterDiscount, tax[0].tax_percentage);
 
     // Calculate total discount
     const totalDiscount = products.reduce((acc, current) => {
@@ -117,13 +45,13 @@ const validateAndGetOrderData = async (body) => {
     }, 0);
 
     // Calculate final price
-    const finallprice = (totalPriceBeforDiscount - totalDiscount) + (+shipping_price);
+    const finallprice = totalPriceAfterDiscount + shipping_price;
 
     return {
         customer,
         products,
         nowDate,
-        totalPriceBeforDiscount,
+        totalPriceAfterDiscount,
         totalDiscount,
         finallprice,
         vatAmount,
@@ -132,31 +60,48 @@ const validateAndGetOrderData = async (body) => {
     };
 };
 
-const getOrCreateCustomer = async (orderData) => {
-    const { customer } = orderData;
+const sendOrderEmail = async (orderData) => {
+    // Construct inline images data
+    const inlineImages = orderData.products.map((product) => {
+        const firstImage = JSON.parse(product.image)[0];
+        const imagePath = path.resolve(
+            __dirname,
+            '../../public/images',
+            `product_${product.product_id}`,
+            firstImage,
+        );
+        return {
+            filename: firstImage,
+            path: imagePath,
+            cid: `${firstImage}`, // Unique CID
+        };
+    });
 
+    orderData.products.forEach(product => {
+        product.cid = getFirstImage(product);
+    });
+
+    // Get the store information to add to the email
+    const [storeInfo] = await StoreInfo.getAll();
+    orderData.storeInfo = storeInfo;
+
+    const templatePath = path.resolve(`public/orderTamplate/index.html`);
+    const htmlTamplate = await ejs.renderFile(templatePath, { orderData, getFirstImage });
+    sendHtmlEmail(orderData.customer.email, 'hello', 'customer', htmlTamplate, inlineImages);
+};
+
+const getOrCreateCustomer = async (customer) => {
     // Check if the user exists in the database
-    const checkCustomer = await Order.checkCustomerIfExisted(customer.email);
+    const checkCustomer = await Customer.isCustomerRegistered(customer.email);
 
     if (checkCustomer.length) {
-        // User exists, return their customer_id
-        return { id: checkCustomer[0].customer_id };
+        // Customer exists, return the customer_id
+        return checkCustomer[0].customer_id;
     } else {
-        // User does not exist, create a new customer
-        const newCustomer = new User({
-            fname: customer.fname,
-            lname: customer.lname,
-            email: customer.email,
-            address: customer.address,
-            phone: customer.phone,
-            zip: customer.zip,
-            city: customer.city,
-            registered: false,
-        });
-
+        // Customer does not exist, create a new customer
+        const newCustomer = new Customer(customer);
         const last_customer_id = await newCustomer.createUser();
-
-        return { id: last_customer_id };
+        return last_customer_id;
     }
 };
 
@@ -164,7 +109,7 @@ const createOrderAndSaveItems = async (orderData, customerId) => {
     const {
         products,
         nowDate,
-        totalPriceBeforDiscount,
+        totalPriceAfterDiscount,
         finallprice,
         totalDiscount,
         vatAmount,
@@ -178,7 +123,7 @@ const createOrderAndSaveItems = async (orderData, customerId) => {
         type_id: orderType[0].type_id,
         shipping_id: shipping_id,
         order_date: nowDate,
-        sub_total: totalPriceBeforDiscount,
+        sub_total: totalPriceAfterDiscount,
         tax: vatAmount,
         items_discount: totalDiscount,
         total: finallprice,
@@ -186,13 +131,41 @@ const createOrderAndSaveItems = async (orderData, customerId) => {
 
     const order_id = await order.save();
 
-    await OrderItems.saveMulti({
-        order_id,
-        products,
-    });
-
-    await Order.updateProductQuantities(products);
+    await Promise.all([
+        OrderItems.saveMulti({
+            order_id,
+            products,
+        }),
+        Order.updateProductQuantities(products),
+    ]);
     return order;
+};
+
+const createOrder = async (req, res) => {
+    try {
+        const { products, customer } = req.body;
+
+        // Enusre the all products are available
+        const { success, message, insufficientProducts } = await Product.checkQuantities(products);
+        if (!success) {
+            return sendResponse(res, 500, message, null, message, insufficientProducts);
+        }
+
+        // Create the order object data
+        const orderData = await createOrderData(req.body);
+        // Handle the customer
+        const customerId = await getOrCreateCustomer(customer);
+        // Create the order and the order items
+        const order = await createOrderAndSaveItems(orderData, customerId);
+
+        // Send Email to customer
+        await sendOrderEmail(orderData);
+
+        return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, order);
+    } catch (err) {
+        console.error(err);
+        sendResponse(res, 500, 'Internal Server Error', null, err?.message || err, null);
+    }
 };
 
 const getAllOrders = async (req, res) => {
