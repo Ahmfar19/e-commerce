@@ -64,7 +64,7 @@ class TopProduct {
     }
 
     static async getIds() {
-        const sql = `SELECT product_id FROM top_products`
+        const sql = `SELECT product_id FROM top_products`;
         const [rows] = await pool.execute(sql);
         return rows;
     }

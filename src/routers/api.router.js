@@ -18,6 +18,7 @@ const unitController = require('../controllers/unit.controller');
 const staffController = require('../controllers/staff.controller');
 const resetStaffPassword = require('../controllers/resetStaffPassword.controller');
 const topProductController = require('../controllers/topProducts.controller');
+const discountsController = require('../controllers/discounts.controller');
 
 const uploadUser = multer({
     dest: path.join(__dirname, 'public/users'),
@@ -137,5 +138,12 @@ router.delete('/staff/delete/:id', staffController.deleteStaff);
 router.post('/staff/login', staffController.login);
 router.post('/staff/verifyToken', staffController.verifyToken);
 router.get('/staff/image/:filename', staffController.getUsersImage);
+
+// discounts
+router.get('/discounts', discountsController.getDiscounts);
+router.post('/discount/new', discountsController.createDiscount);
+router.get('/discount/:id', discountsController.getSingleDiscount);
+router.put('/discount/edit/:id', discountsController.updateDiscount);
+router.delete('/discount/delete/:id', discountsController.deleteDiscount);
 
 module.exports = router;
