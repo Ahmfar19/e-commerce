@@ -1,10 +1,12 @@
 const Customer = require('../models/customer.model');
-const { hashPassword, comparePassword, tokenExpireDate, encryptToken } = require('../helpers/utils');
+const { hashPassword, comparePassword, tokenExpireDate } = require('../helpers/utils');
 const { sendResponse } = require('../helpers/apiResponse');
 var jwt = require('jsonwebtoken');
 const config = require('config');
 const JWT_SECRET_KEY = config.get('JWT_SECRET_KEY');
 const { sendVerificationEmail } = require('../controllers/sendEmail.controller');
+const { decodeJWTToken, handleDecrypt, handleEncrypt } = require('../authentication');
+
 const Joi = require('joi');
 
 const passwordSchema = Joi.string().min(8).max(128).required().messages({
@@ -43,7 +45,7 @@ const createUser = async (req, res) => {
         } else {
             const tokenExpiryDate = tokenExpireDate();
             const token = `${email}$${tokenExpiryDate}`;
-            const encryptedToken = encryptToken(token);
+            const encryptedToken = handleEncrypt(token, JWT_SECRET_KEY);
 
             const customer = new Customer({
                 fname,
@@ -178,31 +180,59 @@ const deleteUser = async (req, res) => {
     }
 };
 
+const logout = async (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            return res.status(500).json({ ok: false, message: 'Logout failed' });
+        }
+        res.clearCookie('connect.sid');
+        res.clearCookie('SID');
+        res.clearCookie('cidHash');
+        res.clearCookie('verifier');
+        res.json({ ok: true });
+    });
+};
+
 const login = async (req, res) => {
     try {
         const { email, password, rememberMe, fingerprint } = req.body;
         const data = await Customer.loginUser(email);
-
         if (data.length === 1) {
-            const [custoemr] = data;
+            const [customer] = data;
 
-            if (!custoemr.registered) {
+            if (!customer.registered) {
                 return sendResponse(res, 406, 'Not Acceptable', 'Customer is not veriferd', null, null);
             }
 
-            const match = await comparePassword(password, custoemr.password);
+            const match = await comparePassword(password, customer.password);
+
             if (match) {
                 const expiresIn = rememberMe ? '30d' : '1d';
-                const finger_print = fingerprint + String(custoemr.customer_id);
+                const fingerPrint = fingerprint + String(customer.customer_id);
+                const verifier = jwt.sign({ id: fingerPrint }, JWT_SECRET_KEY, { expiresIn });
 
-                const token = jwt.sign({ id: finger_print }, JWT_SECRET_KEY, { expiresIn });
+                // Authentication and user session
+                req.session.user = {
+                    email,
+                    fingerPrint,
+                    customer_id: customer.customer_id,
+                };
 
+                // Set nessery cookies when logged in
+                const cidHash = handleEncrypt(String(customer.customer_id));
+                const cookiesOption = {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: 'Lax',
+                    maxAge: 24 * 60 * 60 * 1000,
+                };
+                res.cookie('cidHash', cidHash, cookiesOption);
+                res.cookie('verifier', verifier, cookiesOption);
                 res.json({
-                    customer: custoemr,
+                    customer: customer,
                     authenticated: true,
-                    accessToken: token,
+                    accessToken: verifier,
                 });
-
                 return res;
             } else {
                 return res.json({ error: 'Password or Email is incorrect' });
@@ -216,44 +246,39 @@ const login = async (req, res) => {
 };
 
 const verifyToken = async (req, res) => {
-    const { customer_id, fingerprint } = req.body;
+    const { fingerprint } = req.body;
+    const accessToken = req.cookies?.verifier;
+    const hashedCustomerId = req.cookies?.cidHash;
 
     try {
-        if (req?.headers?.authorization?.startsWith('Bearer')) {
-            let token = req.headers.authorization.split(' ')[1];
+        if (accessToken && hashedCustomerId && fingerprint && req.session.user) {
+            const decoded = await decodeJWTToken(accessToken);
+            const customer_id = handleDecrypt(hashedCustomerId);
 
-            if (token) {
-                jwt.verify(token, JWT_SECRET_KEY, (error, decoded) => {
-                    if (error) {
-                        return res.json({
-                            statusCode: 401,
-                            message: 'invalid token',
-                        });
-                    } else {
-                        const checkUserDevice = fingerprint + customer_id;
-                        if (checkUserDevice === decoded.id) {
-                            return res.json({
-                                statusCode: 200,
-                                authenticated: true,
-                            });
-                        } else {
-                            return res.json({
-                                statusCode: 401,
-                                authenticated: false,
-                            });
-                        }
-                    }
+            if (!decoded || !customer_id) {
+                return res.json({
+                    statusCode: 401,
+                    message: 'invalid token or customer identifer',
+                });
+            }
+
+            const checkUserDevice = fingerprint + customer_id;
+            if (checkUserDevice === decoded.id) {
+                return res.json({
+                    statusCode: 200,
+                    authenticated: true,
                 });
             } else {
                 return res.json({
                     statusCode: 401,
-                    message: 'Unauthorized: invalid authentication token',
+                    authenticated: false,
                 });
             }
         } else {
             return res.json({
                 statusCode: 401,
-                message: 'Unauthorized: Missing authentication token',
+                authenticated: false,
+                message: 'Unauthorized: no authentication token provided',
             });
         }
     } catch (err) {
@@ -284,5 +309,6 @@ module.exports = {
     login,
     verifyToken,
     getCustomersCount,
+    logout,
     getCustomersFilter,
 };

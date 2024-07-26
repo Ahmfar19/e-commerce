@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const upload = multer();
 const path = require('path');
+const { isAuthenticated, initSIDSession } = require('../authentication');
 
 // import controllers
 const customerController = require('../controllers/customer.controller');
@@ -21,6 +22,7 @@ const topProductController = require('../controllers/topProducts.controller');
 const discountsController = require('../controllers/discounts.controller');
 
 const uploadUser = multer({
+    // eslint-disable-next-line no-undef
     dest: path.join(__dirname, 'public/users'),
     limits: {
         fileSize: 300 * 1024 * 1024, // Set the maximum file size limit in megabytes (MB)
@@ -28,16 +30,20 @@ const uploadUser = multer({
     },
 });
 
+// Authentication
+router.post('/auth/customer/verifyToken', customerController.verifyToken);
+router.post('/auth/initSIDSession', initSIDSession); // Middleware to initialize user session
+
 // customers
 router.post('/customers/new', customerController.createUser);
-router.get('/customers', customerController.getUsers);
+router.get('/customers', isAuthenticated, customerController.getUsers);
 router.get('/customers/count', customerController.getCustomersCount);
 router.get('/customer/:id', customerController.getSingleUser);
 router.put('/customer/edit/:id', customerController.updateUser);
 router.delete('/customer/delete/:id', customerController.deleteUser);
 router.put('/customer/password/:id', customerController.updateUserPassword);
 router.post('/customer/login', customerController.login);
-router.post('/customer/verifyToken', customerController.verifyToken);
+router.post('/customer/logout', customerController.logout);
 router.get('/customers/filter', customerController.getCustomersFilter);
 
 // Customer reset password
@@ -97,7 +103,9 @@ router.delete('/orderType/delete/:id', orderTypeController.deleteOrderType);
 router.post('/order/new', orderController.createOrder);
 router.get('/orders', orderController.getAllOrders);
 router.delete('/orders/delete', orderController.deleteAllOrders);
-router.get('/orders/customer/:id', orderController.getOrderByCustomerId);
+
+router.get('/orders/customer/:id', isAuthenticated, orderController.getOrderByCustomerId);
+
 router.delete('/orders/customer/delete/:id', orderController.deleteOrderByCustomerId);
 router.delete('/order/delete/:id', orderController.deleteOrderById);
 router.get('/order/:id', orderController.getOrderById);
@@ -108,7 +116,7 @@ router.get('/orders/total-price/count', orderController.getOrdersTotalPriceAndCo
 router.get('/orders/filter', orderController.getOrdersFilter);
 
 // order items
-router.get('/orderitems/:id', orderItemsController.getOrderItems);
+router.get('/orderitems/:id', isAuthenticated, orderItemsController.getOrderItems);
 
 // storeInfo
 router.get('/storeInfo', storeInformation.getStoreInfo);

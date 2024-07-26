@@ -4,6 +4,7 @@ const User = require('../models/customer.model');
 const config = require('config');
 const CRYPTO_SECRET_KEY = config.get('CRYPTO_SECRET_KEY');
 const { sendResponse } = require('../helpers/apiResponse');
+
 function getCurrentDateTime() {
     const now = new Date();
     const year = now.getFullYear();
@@ -71,11 +72,6 @@ function isDateTimeInPast(dateTimeToCheck) {
     return providedDateTime.getTime() < currentDateTime.getTime();
 }
 
-var encryptToken = (token) => {
-    const result = CryptoJS.AES.encrypt(token, CRYPTO_SECRET_KEY).toString();
-    return result;
-};
-
 // Decrypt
 var handleDecrypt = (encryptedText) => {
     const bytes = CryptoJS.AES.decrypt(encryptedText, CRYPTO_SECRET_KEY);
@@ -111,6 +107,11 @@ const verifyEmail = async (req, res) => {
     }
 };
 
+const isProduction = () => {
+    const NODE_ENV = process.env.NODE_ENV || 'production';
+    return NODE_ENV === 'production';
+};
+
 module.exports = {
     hashPassword,
     comparePassword,
@@ -118,7 +119,7 @@ module.exports = {
     tokenExpireDate,
     getFutureDateTime,
     isDateTimeInPast,
-    encryptToken,
     handleDecrypt,
     verifyEmail,
+    isProduction,
 };

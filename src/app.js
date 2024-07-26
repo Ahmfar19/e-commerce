@@ -1,9 +1,13 @@
 const express = require('express');
+const session = require('express-session');
 const cookieParser = require('cookie-parser');
-const apiRouter = require('./routers/api.router');
 const cors = require('cors');
 const path = require('path');
+const apiRouter = require('./routers/api.router');
 const { verifyEmail } = require('./helpers/utils');
+const { isAuthorized, initSIDSession } = require('./authentication');
+const config = require('config');
+const CRYPTO_SECRET_KEY = config.get('CRYPTO_SECRET_KEY');
 require('./databases/mysql.db');
 
 const app = express();
@@ -11,34 +15,51 @@ const app = express();
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.static(path.resolve('./public')));
-// const NODE_ENV = process.env.NODE_ENV || 'development';
-// const whitelist = [];
-// const corsOptions = {
-//     origin: function (origin = '', callback) {
-//         if (whitelist.indexOf(origin) !== -1) callback(null, true);
-//         else callback(new Error('Not allowed by CORS'));
-//     },
-//     methods: ['GET, POST'],
-//     allowedHeaders: ['Content-Type'],
-// };
 
-// app.use(NODE_ENV === 'development' ? cors() : cors(corsOptions));
+// Apply CORS middleware with the defined options
+const corsOptions = {
+    origin: (origin, callback) => {
+        const allowedOrigins = ['https://administreramer.se', 'http://localhost:3000'];
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type'],
+    credentials: true,
+};
 
-// This one or the above one
-app.use(function(req, res, next) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    next();
+app.use(cors(corsOptions));
+
+// Global error handler to catch CORS and other errors
+app.use((err, req, res, next) => {
+    if (err) {
+        console.error('Error:', err.message);
+        res.status(500).json({ error: err.message });
+    } else {
+        next();
+    }
 });
-// app.use(express.static(path.join(__dirname, '../dist')));
 
-app.use(cors());
+// Session setup
+app.use(session({
+    secret: CRYPTO_SECRET_KEY,
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true, // Prevent JavaScript access
+        sameSite: 'Lax', // Restrict cross-site
+        maxAge: 24 * 60 * 60 * 1000, // Cookie expiration (1 day)
+    },
+}));
+
+// Middleware to initialize user session
+app.post('/server/api/auth/initSIDSession', initSIDSession);
 
 app.use('/api/verify-email', verifyEmail);
-
-app.get('/', (req, res) => res.send('It, works!'));
-// app.use('/api', apiRouter);
-app.use('/server/api', apiRouter);
+app.use('/server/api', isAuthorized, apiRouter);
 
 module.exports = app;
