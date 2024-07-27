@@ -74,7 +74,9 @@ router.get('/products/random', productController.getRandomCategoryProducts);
 router.get('/products/quantity', productController.getProductsByQuantity);
 router.get('/products/unavailable', productController.getProductsByUnAvailable);
 router.get('/products/multi-filter', productController.getProductsMultiFilter);
-router.get('/products/specificFields', productController.getSpecificFields);
+router.get('/products/specificForTopProduct', productController.getSpecificForTopProduct);
+router.get('/products/specificForDiscount', productController.getSpecificForDiscount);
+router.get('/products/category/:id', productController.getProductIdsByCategoryID)
 
 // Top products
 router.post('/top-products/new', topProductController.createTopProduct);

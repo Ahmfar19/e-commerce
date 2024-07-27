@@ -293,9 +293,28 @@ const getProductsMultiFilter = async (req, res) => {
     }
 };
 
-const getSpecificFields = async (req, res) => {
+const getSpecificForTopProduct = async (req, res) => {
     try {
-        const products = await Product.getSpecificFields();
+        const products = await Product.getSpecificForTopProduct();
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the products.', null, products);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
+const getSpecificForDiscount = async (req, res) => {
+    try {
+        const products = await Product.getSpecificForDiscount();
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the products.', null, products);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
+const getProductIdsByCategoryID = async (req, res) => {
+    try {
+        id = req.params.id;
+        const products = await Product.getIdsByCategory(id);
         sendResponse(res, 200, 'Ok', 'Successfully retrieved all the products.', null, products);
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
@@ -319,5 +338,7 @@ module.exports = {
     getProductsByQuantity,
     getProductsByUnAvailable,
     getProductsMultiFilter,
-    getSpecificFields,
+    getSpecificForTopProduct,
+    getSpecificForDiscount,
+    getProductIdsByCategoryID
 };

@@ -70,6 +70,12 @@ class Discount {
         const [rows] = await pool.execute(sql);
         return rows;
     }
+
+    static async getIds() {
+        const sql = `SELECT product_id FROM discounts`;
+        const [rows] = await pool.execute(sql);
+        return rows;
+    }
 }
 
 module.exports = Discount;

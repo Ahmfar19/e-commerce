@@ -1,4 +1,5 @@
 const pool = require('../databases/mysql.db');
+const Discount = require('./discounts.model');
 const TopProduct = require('./topProducts.model');
 class Product {
     constructor(options) {
@@ -311,7 +312,7 @@ class Product {
         return rows;
     }
 
-    static async getSpecificFields() {
+    static async getSpecificForTopProduct() {
         const idsAlreadyExists = await TopProduct.getIds();
 
         // Extract the product IDs from the idsAlreadyExists array
@@ -327,6 +328,29 @@ class Product {
 
         const [rows] = await pool.execute(sql);
         return rows;
+    }
+
+    static async getSpecificForDiscount() {
+        const idsAlreadyExists = await Discount.getIds();
+
+        // Extract the product IDs from the idsAlreadyExists array
+        const existingIds = idsAlreadyExists.map(item => item.product_id);
+
+        // Check if there are any existing IDs to filter
+        let sql = `SELECT product_id as value, CONCAT(name, ' - ', articelNumber) as label FROM products`;
+
+        if (existingIds.length > 0) {
+            // Create a SQL query that excludes the existing IDs
+            sql += ` WHERE product_id NOT IN (${existingIds.join(',')})`;
+        }
+
+        const [rows] = await pool.execute(sql);
+        return rows;
+    }
+
+    static async getIdsByCategory(categoryId){
+        const sql = `SELECT product_id FROM products WHERE category_id = ? `;
+        const [rows] = await pool.execute(sql, [categoryId]);
     }
 }
 
