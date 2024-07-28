@@ -311,15 +311,7 @@ const getSpecificForDiscount = async (req, res) => {
     }
 };
 
-const getProductIdsByCategoryID = async (req, res) => {
-    try {
-        id = req.params.id;
-        const products = await Product.getIdsByCategory(id);
-        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the products.', null, products);
-    } catch (error) {
-        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
-    }
-};
+
 
 module.exports = {
     createProduct,

@@ -1,5 +1,4 @@
 const pool = require('../databases/mysql.db');
-const Product = require('./product.model');
 
 class Discount {
     constructor(options) {
