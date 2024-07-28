@@ -332,5 +332,4 @@ module.exports = {
     getProductsMultiFilter,
     getSpecificForTopProduct,
     getSpecificForDiscount,
-    getProductIdsByCategoryID,
 };
