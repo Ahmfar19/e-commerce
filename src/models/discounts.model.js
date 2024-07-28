@@ -1,16 +1,42 @@
 const pool = require('../databases/mysql.db');
+const Product = require('./product.model');
 
 class Discount {
     constructor(options) {
         this.product_id = options.product_id;
+        this.category_id = options.category_id;
         this.discount_value = options.discount_value;
         this.start_date = options.start_date;
         this.end_date = options.end_date;
     }
 
     async save() {
-        if (!Array.isArray(this.product_id)) {
-            throw new Error('product_id should be an array');
+        let productIds = [];
+        if (this.category_id && this.product_id.length === 0) {
+            const [products] = await pool.query(
+                'SELECT product_id FROM products WHERE category_id = ?',
+                [this.category_id],
+            );
+            productIds = products.map(product => product.product_id);
+        } else if (Array.isArray(this.product_id) && this.product_id.length > 0) {
+            productIds = this.product_id;
+        } else {
+            throw new Error('ec_must_have_products_or_category');
+        }
+
+        if (productIds.length === 0) {
+            throw new Error('ec_not_found_product_relationship_with_this_category_id');
+        }
+
+        // تحقق من وجود أي product_id في جدول discounts مسبقاً
+        const [existingDiscounts] = await pool.query(
+            'SELECT product_id FROM discounts WHERE product_id IN (?)',
+            [productIds],
+        );
+
+        if (existingDiscounts.length > 0) {
+            const existingProductIds = existingDiscounts.map(discount => discount.product_id);
+            throw new Error(`ec_thisProductHaveDiscountAlready`);
         }
 
         const sql = `
@@ -21,7 +47,7 @@ class Discount {
                 end_date
             ) VALUES ?`;
 
-        const values = this.product_id.map(id => [
+        const values = productIds.map(id => [
             id,
             this.discount_value,
             this.start_date,

@@ -348,9 +348,10 @@ class Product {
         return rows;
     }
 
-    static async getIdsByCategory(categoryId){
+    static async getIdsByCategory(categoryId) {
         const sql = `SELECT product_id FROM products WHERE category_id = ? `;
         const [rows] = await pool.execute(sql, [categoryId]);
+        return rows;
     }
 }
 

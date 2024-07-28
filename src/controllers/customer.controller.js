@@ -192,7 +192,6 @@ const login = async (req, res) => {
 const verifyToken = async (req, res) => {
     const { customer_id, fingerprint } = req.body;
 
-    
     try {
         if (req?.headers?.authorization?.startsWith('Bearer')) {
             let token = req.headers.authorization.split(' ')[1];
