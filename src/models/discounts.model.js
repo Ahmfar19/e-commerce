@@ -10,51 +10,17 @@ class Discount {
     }
 
     async save() {
-        let productIds = [];
-        if (this.category_id && this.product_id.length === 0) {
-            const [products] = await pool.query(
-                'SELECT product_id FROM products WHERE category_id = ?',
-                [this.category_id],
-            );
-            productIds = products.map(product => product.product_id);
-        } else if (Array.isArray(this.product_id) && this.product_id.length > 0) {
-            productIds = this.product_id;
-        } else {
-            throw new Error('ec_must_have_products_or_category');
-        }
+        const sql = `INSERT INTO discounts (
+            discount_value,
+            start_date,
+            end_date
+        ) VALUES (?, ?, ?)`;
 
-        if (productIds.length === 0) {
-            throw new Error('ec_not_found_product_relationship_with_this_category_id');
-        }
+        const values = [this.discount_value, this.start_date, this.end_date];
 
-        // تحقق من وجود أي product_id في جدول discounts مسبقاً
-        const [existingDiscounts] = await pool.query(
-            'SELECT product_id FROM discounts WHERE product_id IN (?)',
-            [productIds],
-        );
-
-        if (existingDiscounts.length > 0) {
-            const existingProductIds = existingDiscounts.map(discount => discount.product_id);
-            throw new Error(`ec_thisProductHaveDiscountAlready`);
-        }
-
-        const sql = `
-            INSERT INTO discounts (
-                product_id,
-                discount_value,
-                start_date,
-                end_date
-            ) VALUES ?`;
-
-        const values = productIds.map(id => [
-            id,
-            this.discount_value,
-            this.start_date,
-            this.end_date,
-        ]);
-
-        const [result] = await pool.query(sql, [values]);
-        return result.insertId;
+        const [result] = await pool.execute(sql, values);
+        this.discount_id = result.insertId;
+        return this.discount_id;
     }
 
     static async getAll() {
@@ -96,11 +62,112 @@ class Discount {
         return rows;
     }
 
-    static async getIds() {
-        const sql = `SELECT product_id FROM discounts`;
+    static async getAllProductIdsAndName() {
+        const sql = `SELECT products.product_id, products.name 
+              FROM discounts 
+             INNER JOIN products ON discounts.product_id = products.product_id;
+        `;
         const [rows] = await pool.execute(sql);
         return rows;
+    }
+
+    static async getDiscountFilter(key, value) {
+        const sql = `
+            SELECT 
+            discounts.discount_id,
+            discounts.product_id,
+            discounts.discount_value As discount
+            DATEFORMAT
+            FROM discounts
+            INNER JOIN products ON discounts.product_id = products.product_id
+            WHERE discounts.${key} = ?
+        `;
+        const [rows] = await pool.execute(sql, [value]);
+        return rows;
+    }
+    static async updateProductDiscountId(discountId, product_id, category_id) {
+        let productIds = [];
+        if (category_id && (!product_id || product_id.length === 0)) {
+            const [products] = await pool.query(
+                'SELECT product_id FROM products WHERE category_id = ?',
+                [category_id],
+            );
+            productIds = products.map(product => product.product_id);
+        } else if (Array.isArray(product_id) && product_id.length > 0) {
+            productIds = product_id;
+        } else {
+            throw new Error('ec_must_have_products_or_category');
+        }
+
+        if (productIds.length === 0) {
+            throw new Error('ec_not_found_product_relationship_with_this_category_id');
+        }
+
+        const placeholders = productIds.map(() => '?').join(',');
+
+        const sql = `
+            UPDATE products
+            SET discount_id = ?
+            WHERE product_id IN (${placeholders})
+            AND discount_id IS NULL
+        `;
+
+        try {
+            const [result] = await pool.execute(sql, [discountId, ...productIds]);
+
+            if (result.affectedRows === 0) {
+                throw new Error('ec_thisProductHaveDiscountAlready');
+            }
+
+            return result.affectedRows;
+        } catch (error) {
+            console.error('Error updating discount_id:', error);
+            throw error;
+        }
     }
 }
 
 module.exports = Discount;
+
+// let productIds = [];
+// if (this.category_id && this.product_id.length === 0) {
+//     const [products] = await pool.query(
+//         'SELECT product_id FROM products WHERE category_id = ?',
+//         [this.category_id],
+//     );
+//     productIds = products.map(product => product.product_id);
+// } else if (Array.isArray(this.product_id) && this.product_id.length > 0) {
+//     productIds = this.product_id;
+// } else {
+//     throw new Error('ec_must_have_products_or_category');
+// }
+
+// if (productIds.length === 0) {
+//     throw new Error('ec_not_found_product_relationship_with_this_category_id');
+// }
+
+// // تحقق من وجود أي product_id في جدول discounts مسبقاً
+// const [existingDiscounts] = await pool.query(
+//     'SELECT product_id FROM discounts WHERE product_id IN (?)',
+//     [productIds],
+// );
+
+// if (existingDiscounts.length > 0) {
+//     const existingProductIds = existingDiscounts.map(discount => discount.product_id);
+//     throw new Error(`ec_thisProductHaveDiscountAlready`);
+// }
+
+// const sql = `
+//     INSERT INTO discounts (
+//         product_id,
+//         discount_value,
+//         start_date,
+//         end_date
+//     ) VALUES ?`;
+
+// const values = productIds.map(id => [
+//     id,
+//     this.discount_value,
+//     this.start_date,
+//     this.end_date,
+// ]);

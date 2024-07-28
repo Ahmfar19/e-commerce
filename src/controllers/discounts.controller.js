@@ -22,9 +22,18 @@ const getSingleDiscount = async (req, res) => {
 
 const createDiscount = async (req, res) => {
     try {
-        const discount = new Discount(req.body);
-        await discount.save();
-        sendResponse(res, 201, 'Created', 'Successfully created a category.', null, discount);
+        const { discount_value, start_date, end_date, product_id, category_id } = req.body;
+        const discount = new Discount({
+            discount_value,
+            start_date,
+            end_date,
+        });
+
+        const discount_id = await discount.save();
+
+        await Discount.updateProductDiscountId(discount_id, product_id, category_id);
+
+        sendResponse(res, 201, 'Created', 'Successfully created a discount.', null, discount);
     } catch (err) {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
@@ -69,10 +78,34 @@ const deleteDiscount = async (req, res) => {
     }
 };
 
+const getAllProductIdsAndNames = async (req, res) => {
+    try {
+        const discounts = await Discount.getAllProductIdsAndName();
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the discounts.', null, discounts);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
+const getDiscountFilter = async (req, res) => {
+    try {
+        const { key, value } = req.query;
+        if (!key || !value) {
+            return sendResponse(res, 400, 'Bad Request', 'Please provide a key and value', null, null);
+        }
+        const discounts = await Discount.getDiscountFilter(key, value);
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the discounts.', null, discounts);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
 module.exports = {
     getDiscounts,
     getSingleDiscount,
     createDiscount,
     updateDiscount,
     deleteDiscount,
+    getAllProductIdsAndNames,
+    getDiscountFilter,
 };

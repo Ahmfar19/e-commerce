@@ -311,8 +311,6 @@ const getSpecificForDiscount = async (req, res) => {
     }
 };
 
-
-
 module.exports = {
     createProduct,
     updateProduct,

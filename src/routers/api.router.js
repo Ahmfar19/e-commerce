@@ -77,7 +77,6 @@ router.get('/products/multi-filter', productController.getProductsMultiFilter);
 router.get('/products/specificForTopProduct', productController.getSpecificForTopProduct);
 router.get('/products/specificForDiscount', productController.getSpecificForDiscount);
 
-
 // Top products
 router.post('/top-products/new', topProductController.createTopProduct);
 router.get('/top-products', topProductController.getTopProducts);
@@ -147,5 +146,7 @@ router.post('/discount/new', discountsController.createDiscount);
 router.get('/discount/:id', discountsController.getSingleDiscount);
 router.put('/discount/edit/:id', discountsController.updateDiscount);
 router.delete('/discount/delete/:id', discountsController.deleteDiscount);
+router.get('/products/discount', discountsController.getAllProductIdsAndNames);
+router.get('/discounts/product/filter', discountsController.getDiscountFilter);
 
 module.exports = router;

@@ -331,23 +331,14 @@ class Product {
     }
 
     static async getSpecificForDiscount() {
-        const idsAlreadyExists = await Discount.getIds();
-
-        // Extract the product IDs from the idsAlreadyExists array
-        const existingIds = idsAlreadyExists.map(item => item.product_id);
-
-        // Check if there are any existing IDs to filter
-        let sql = `SELECT product_id as value, CONCAT(name, ' - ', articelNumber) as label FROM products`;
-
-        if (existingIds.length > 0) {
-            // Create a SQL query that excludes the existing IDs
-            sql += ` WHERE product_id NOT IN (${existingIds.join(',')})`;
-        }
-
+        const sql = `SELECT 
+        product_id as value, CONCAT(name, ' - ', articelNumber) as label 
+        FROM products 
+        WHERE discount_id IS null
+        `;
         const [rows] = await pool.execute(sql);
         return rows;
     }
-
 }
 
 module.exports = Product;
