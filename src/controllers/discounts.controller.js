@@ -78,34 +78,10 @@ const deleteDiscount = async (req, res) => {
     }
 };
 
-const getAllProductIdsAndNames = async (req, res) => {
-    try {
-        const discounts = await Discount.getAllProductIdsAndName();
-        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the discounts.', null, discounts);
-    } catch (error) {
-        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
-    }
-};
-
-const getDiscountFilter = async (req, res) => {
-    try {
-        const { key, value } = req.query;
-        if (!key || !value) {
-            return sendResponse(res, 400, 'Bad Request', 'Please provide a key and value', null, null);
-        }
-        const discounts = await Discount.getDiscountFilter(key, value);
-        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the discounts.', null, discounts);
-    } catch (error) {
-        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
-    }
-};
-
 module.exports = {
     getDiscounts,
     getSingleDiscount,
     createDiscount,
     updateDiscount,
     deleteDiscount,
-    getAllProductIdsAndNames,
-    getDiscountFilter,
 };

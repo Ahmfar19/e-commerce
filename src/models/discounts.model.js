@@ -62,29 +62,6 @@ class Discount {
         return rows;
     }
 
-    static async getAllProductIdsAndName() {
-        const sql = `SELECT products.product_id, products.name 
-              FROM discounts 
-             INNER JOIN products ON discounts.product_id = products.product_id;
-        `;
-        const [rows] = await pool.execute(sql);
-        return rows;
-    }
-
-    static async getDiscountFilter(key, value) {
-        const sql = `
-            SELECT 
-            discounts.discount_id,
-            discounts.product_id,
-            discounts.discount_value As discount
-            DATEFORMAT
-            FROM discounts
-            INNER JOIN products ON discounts.product_id = products.product_id
-            WHERE discounts.${key} = ?
-        `;
-        const [rows] = await pool.execute(sql, [value]);
-        return rows;
-    }
     static async updateProductDiscountId(discountId, product_id, category_id) {
         let productIds = [];
         if (category_id && (!product_id || product_id.length === 0)) {

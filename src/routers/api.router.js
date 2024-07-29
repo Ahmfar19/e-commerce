@@ -146,7 +146,5 @@ router.post('/discount/new', discountsController.createDiscount);
 router.get('/discount/:id', discountsController.getSingleDiscount);
 router.put('/discount/edit/:id', discountsController.updateDiscount);
 router.delete('/discount/delete/:id', discountsController.deleteDiscount);
-router.get('/products/discount', discountsController.getAllProductIdsAndNames);
-router.get('/discounts/product/filter', discountsController.getDiscountFilter);
 
 module.exports = router;
