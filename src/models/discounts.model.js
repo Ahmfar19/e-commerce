@@ -2,8 +2,6 @@ const pool = require('../databases/mysql.db');
 
 class Discount {
     constructor(options) {
-        this.product_id = options.product_id;
-        this.category_id = options.category_id;
         this.discount_value = options.discount_value;
         this.start_date = options.start_date;
         this.end_date = options.end_date;
@@ -38,14 +36,12 @@ class Discount {
 
     async updateById(id) {
         const sql = `UPDATE discounts SET 
-            product_id = ?, 
             discount_value = ?, 
             start_date = ?, 
             end_date = ?
             WHERE discount_id = ?`;
 
         const params = [
-            this.product_id,
             this.discount_value,
             this.start_date,
             this.end_date,
