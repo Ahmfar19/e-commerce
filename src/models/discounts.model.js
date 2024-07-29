@@ -25,7 +25,7 @@ class Discount {
 
     static async getAll() {
         const sql =
-            'SELECT discount_id, product_id, discount_value,  DATE_FORMAT(start_date, "%Y-%m-%d") As start_date ,DATE_FORMAT(end_date, "%Y-%m-%d") As end_date FROM discounts';
+            'SELECT discount_id, discount_value,  DATE_FORMAT(start_date, "%Y-%m-%d") As start_date ,DATE_FORMAT(end_date, "%Y-%m-%d") As end_date FROM discounts';
         const [rows] = await pool.execute(sql);
         return rows;
     }

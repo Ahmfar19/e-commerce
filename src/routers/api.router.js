@@ -76,6 +76,7 @@ router.get('/products/unavailable', productController.getProductsByUnAvailable);
 router.get('/products/multi-filter', productController.getProductsMultiFilter);
 router.get('/products/specificForTopProduct', productController.getSpecificForTopProduct);
 router.get('/products/specificForDiscount', productController.getSpecificForDiscount);
+router.get('/products/discountId/:id', productController.getProductsByDiscountId);
 
 // Top products
 router.post('/top-products/new', topProductController.createTopProduct);

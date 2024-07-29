@@ -339,6 +339,25 @@ class Product {
         const [rows] = await pool.execute(sql);
         return rows;
     }
+
+    static async getProductsByDiscountId(discountId) { 
+        const sql = `SELECT 
+          products.product_id,
+          products.category_id,
+          products.discount_id,
+          products.articelNumber,
+          products.name,
+          products.price,
+          products.quantity,
+          discounts.discount_value As discount,
+          DATE_FORMAT(discounts.start_date, "%Y-%m-%d") As start_date,
+          DATE_FORMAT(discounts.end_date, "%Y-%m-%d") As end_date
+          FROM products
+          INNER JOIN discounts ON products.discount_id = discounts.discount_id 
+          WHERE products.discount_id =?`;
+        const [rows] = await pool.execute(sql, [discountId]);
+        return rows;
+    }
 }
 
 module.exports = Product;

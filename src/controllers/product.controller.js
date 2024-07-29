@@ -311,6 +311,16 @@ const getSpecificForDiscount = async (req, res) => {
     }
 };
 
+const getProductsByDiscountId = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const products = await Product.getProductsByDiscountId(id);
+        sendResponse(res, 200, 'OK', 'Product retrieved successfully.', null, products);
+    } catch (err) {
+        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+    }
+};
+
 module.exports = {
     createProduct,
     updateProduct,
@@ -330,4 +340,5 @@ module.exports = {
     getProductsMultiFilter,
     getSpecificForTopProduct,
     getSpecificForDiscount,
+    getProductsByDiscountId
 };
