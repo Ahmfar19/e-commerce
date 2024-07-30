@@ -2,6 +2,7 @@ const Staff = require('../models/staff.model');
 var jwt = require('jsonwebtoken');
 const { hashPassword, comparePassword } = require('../helpers/utils');
 const { sendResponse } = require('../helpers/apiResponse');
+const { decodeJWTToken, handleDecrypt, generateUniqueUserId, handleEncrypt } = require('../authentication');
 const config = require('config');
 const JWT_SECRET_KEY = config.get('JWT_SECRET_KEY');
 const path = require('path');
@@ -199,23 +200,45 @@ const login = async (req, res) => {
     const { email_username, password, rememberMe, fingerprint } = req.body;
 
     try {
-        const data = await Staff.loginUser(email_username);
+        const [staff] = await Staff.loginUser(email_username);
 
-        if (data.length > 0) {
-            const match = await comparePassword(password, data[0].password);
+        if (staff) {
+            const match = await comparePassword(password, staff.password);
 
             if (match) {
                 const expiresIn = rememberMe ? '30d' : '1d';
-                const finger_print = fingerprint + String(data[0].staff_id);
-                const token = jwt.sign({ id: finger_print }, JWT_SECRET_KEY, { expiresIn });
+                const finger_print = fingerprint + String(staff.staff_id);
+                const verifier = jwt.sign({ id: finger_print }, JWT_SECRET_KEY, { expiresIn });
 
-                res.json({
-                    staff: data[0],
+                // Authentication and user session
+                const sessionID = generateUniqueUserId();
+                const cidHash = handleEncrypt(String(staff.staff_id));
+                req.session.staff = {
+                    email: email_username,
+                    fingerPrint: finger_print,
+                    staff_id: staff.staff_id,
+                }
+                req.session.SID = sessionID;
+                req.session.ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress
+
+                const cookiesOption = {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: 'Lax',
+                    maxAge: 24 * 60 * 60 * 1000,
+                };
+
+                res.cookie('SID', sessionID, cookiesOption);
+                res.cookie('verifier', verifier, cookiesOption);
+                res.cookie('cidHash', cidHash, cookiesOption);
+
+                // Remove the password hash from the returned datars
+                delete staff.password;
+                return res.status(200).json({
+                    staff: staff,
                     authenticated: true,
-                    accessToken: token,
+                    accessToken: verifier,
                 });
-
-                return res;
             } else {
                 return res.json({ error: 'Password or Email is incorrect' });
             }
@@ -227,39 +250,47 @@ const login = async (req, res) => {
     }
 };
 
+const logout = async (req, res) => {
+    req.session.destroy(err => {
+        res.clearCookie('connect.sid');
+        res.clearCookie('SID');
+        res.clearCookie('cidHash');
+        res.clearCookie('verifier');
+        if (err) {
+            return res.status(500).json({ ok: false, message: 'Logout failed' });
+        }
+        res.json({ ok: true });
+    });
+};
+
 const verifyToken = async (req, res) => {
-    const { staff_id, fingerprint } = req.body;
+    const { fingerprint } = req.body;
+    const accessToken = req.cookies?.verifier;
+    const cidHash = req.cookies?.cidHash;
 
     try {
-        if (req?.headers?.authorization?.startsWith('Bearer')) {
-            let token = req.headers.authorization.split(' ')[1];
+        if (accessToken && cidHash && fingerprint && req.session.staff) {
 
-            if (token) {
-                jwt.verify(token, JWT_SECRET_KEY, (error, decoded) => {
-                    if (error) {
-                        return res.json({
-                            statusCode: 401,
-                            message: 'invalid token',
-                        });
-                    } else {
-                        const checkUserDevice = fingerprint + staff_id;
-                        if (checkUserDevice === decoded.id) {
-                            return res.json({
-                                statusCode: 200,
-                                authenticated: true,
-                            });
-                        } else {
-                            return res.json({
-                                statusCode: 401,
-                                authenticated: false,
-                            });
-                        }
-                    }
+            const decoded = await decodeJWTToken(accessToken);
+            const cid = handleDecrypt(cidHash);
+
+            if (!decoded || !cid) {
+                return res.json({
+                    statusCode: 401,
+                    message: 'invalid token or customer identifer',
+                });
+            }
+            const checkUserDevice = fingerprint + cid;
+            if (checkUserDevice === decoded.id) {
+                return res.json({
+                    statusCode: 200,
+                    staff_id: cid,
+                    authenticated: true,
                 });
             } else {
                 return res.json({
                     statusCode: 401,
-                    message: 'Unauthorized: invalid authentication token',
+                    authenticated: false,
                 });
             }
         } else {
@@ -296,6 +327,7 @@ module.exports = {
     deleteStaff,
     updateStaffPassword,
     login,
+    logout,
     verifyToken,
     getUsersImage,
 };

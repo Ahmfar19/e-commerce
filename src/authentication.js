@@ -65,7 +65,7 @@ function generateUniqueUserId() {
     return `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 }
 
-async function isAuthorized(req, res, next) {
+const isAuthorized = (req, res, next) => {
     const reqIpAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     if (reqIpAddress !== req.session.ipAddress) {
         return res.status(401).json({ ok: false, message: 'Unauthorized' });
@@ -145,6 +145,31 @@ const logUserActivity = (req, res, next) => {
 };
 // app.use(logUserActivity);
 
+const isAdmin = (req, res, next) => {
+    const whiteList = ['/staff/login', '/staff/logout']
+    if (whiteList.includes(req.path))  {
+        return next();
+    }
+
+    const reqIpAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    // eslint-disable-next-line no-unused-vars
+    const accessToken = req.cookies?.verifier;
+    const hashedCustomerId = req.cookies?.cidHash;
+    const staff_id = handleDecrypt(hashedCustomerId);
+
+    if (req.session && req.session.staff) {
+        if (reqIpAddress !== req.session.ipAddress) {
+            return res.status(401).json({ ok: false, message: 'Unauthenticated' });
+        }
+        if (+staff_id !== +req.session.staff.staff_id) {
+            return res.status(401).json({ ok: false, message: 'Unauthenticated' });
+        }
+        return next();
+    }
+    return res.status(401).json({ ok: false, message: 'Unauthenticated' });
+}
+
+
 module.exports = {
     isAuthenticated,
     isAuthorized,
@@ -153,4 +178,5 @@ module.exports = {
     handleEncrypt,
     generateUniqueUserId,
     initSIDSession,
+    isAdmin,
 };

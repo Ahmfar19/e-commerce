@@ -4,8 +4,9 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const path = require('path');
 const apiRouter = require('./routers/api.router');
+const apiAdminRouter = require('./routers/api.admin.router');
 const { verifyEmail } = require('./helpers/utils');
-const { isAuthorized, initSIDSession } = require('./authentication');
+const { isAdmin, isAuthorized, initSIDSession } = require('./authentication');
 const config = require('config');
 const CRYPTO_SECRET_KEY = config.get('CRYPTO_SECRET_KEY');
 require('./databases/mysql.db');
@@ -56,10 +57,13 @@ app.use(session({
     },
 }));
 
+
 // Middleware to initialize user session
 app.post('/server/api/auth/initSIDSession', initSIDSession);
 
 app.use('/api/verify-email', verifyEmail);
-app.use('/server/api', isAuthorized, apiRouter);
+
+app.use('/server/api/admin', isAdmin, apiAdminRouter);
+app.use('/server/api', apiRouter);
 
 module.exports = app;
