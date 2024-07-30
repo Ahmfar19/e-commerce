@@ -21,7 +21,24 @@ class TopProduct {
     }
 
     static async getCustomPopular() {
-        const sql = `SELECT * FROM top_products INNER JOIN products ON top_products.product_id = products.product_id`;
+        const sql = `SELECT 
+        top_products.id,
+        products.product_id,
+        products.category_id,
+        discounts.discount_id,
+        name,
+        description,
+        price,
+        quantity,
+        image,
+        available,
+        articelNumber,
+        discount_value As discount
+        FROM top_products 
+        INNER JOIN products ON top_products.product_id = products.product_id
+        LEFT JOIN discounts ON products.discount_id = discounts.discount_id
+        `;
+
         let [rows] = await pool.execute(sql);
         if (rows.length < 10) {
             const popularProducts = await Product.getPopular(10) || [];
@@ -38,14 +55,44 @@ class TopProduct {
     }
 
     static async getAll() {
-        const sql = `SELECT * FROM top_products INNER JOIN products ON top_products.product_id = products.product_id`;
+        const sql = `SELECT 
+        top_products.id,
+        products.product_id,
+        products.category_id,
+        discounts.discount_id,
+        name,
+        description,
+        price,
+        quantity,
+        image,
+        available,
+        articelNumber,
+        discount_value As discount
+        FROM top_products 
+        INNER JOIN products ON top_products.product_id = products.product_id
+        LEFT JOIN discounts ON products.discount_id = discounts.discount_id`;
         const [rows] = await pool.execute(sql);
         return rows;
     }
 
     static async getById(id) {
-        const sql =
-            `SELECT * FROM top_products INNER JOIN products ON top_products.product_id = products.product_id WHERE top_products.id = ?`;
+        const sql = `SELECT 
+        top_products.id,
+        products.product_id,
+        products.category_id,
+        discounts.discount_id,
+        name,
+        description,
+        price,
+        quantity,
+        image,
+        available,
+        articelNumber,
+        discount_value As discount
+        FROM top_products 
+        INNER JOIN products ON top_products.product_id = products.product_id
+        LEFT JOIN discounts ON products.discount_id = discounts.discount_id  
+        WHERE top_products.id = ?`;
         const [rows] = await pool.execute(sql, [id]);
         return rows[0];
     }
