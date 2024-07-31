@@ -38,7 +38,7 @@ app.use(cors(corsOptions));
 app.use((err, req, res, next) => {
     if (err) {
         // res.status(403).json({ error: err.message });
-        return res.status(403).send("Forbidden");
+        return res.status(403).send('Forbidden');
     } else {
         next();
     }
