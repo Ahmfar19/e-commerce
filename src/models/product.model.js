@@ -301,7 +301,6 @@ class Product {
         ORDER BY 
         quantity LIMIT ?`;
         const [rows] = await pool.execute(sql, [limit]);
-        console.error('rows', rows);
         return rows;
     }
 

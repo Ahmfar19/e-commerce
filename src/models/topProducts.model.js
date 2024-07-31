@@ -39,10 +39,8 @@ class TopProduct {
         LEFT JOIN discounts ON products.discount_id = discounts.discount_id
         `;
 
-
         let [rows] = await pool.execute(sql);
-
-        console.error('rows.length', rows.length);
+        
         if (rows.length < 10) {
             console.error(1);
             const popularProducts = await Product.getPopular(10) || [];
