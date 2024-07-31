@@ -68,10 +68,10 @@ function generateUniqueUserId() {
 const isAuthorized = (req, res, next) => {
     const reqIpAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     if (reqIpAddress !== req.session.ipAddress) {
-        return res.status(401).json({ ok: false, message: 'Unauthorized' });
+        return res.status(401).json({ ok: false, message: 'Unauthorized 1' });
     }
     if (req.get('User-Agent') !== req.session.userAgent) {
-        return res.status(401).json({ ok: false, message: 'Unauthorized' });
+        return res.status(401).json({ ok: false, message: 'Unauthorized 2' });
     }
     return next();
 };
