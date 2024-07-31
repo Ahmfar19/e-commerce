@@ -201,7 +201,7 @@ const login = async (req, res) => {
             const [customer] = data;
 
             if (!customer.registered) {
-                return sendResponse(res, 406, 'Not Acceptable', 'Customer is not veriferd', null, null);
+                return sendResponse(res, 406, 'Not Acceptable', 'ec_alter_user_notExsists', null, null);
             }
 
             const match = await comparePassword(password, customer.password);
@@ -235,10 +235,10 @@ const login = async (req, res) => {
                 });
                 return res;
             } else {
-                return res.json({ error: 'Password or Email is incorrect' });
+                return res.json({ error: 'ec_alter_passwrodOrEmail_wrong' });
             }
         } else {
-            return sendResponse(res, 406, 'Not Acceptable', 'User does not exist in the database', null, null);
+            return sendResponse(res, 406, 'Not Acceptable', 'ec_alter_user_notExsists', null, null);
         }
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
