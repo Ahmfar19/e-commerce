@@ -47,9 +47,6 @@ router.get('/popular-products', productController.getPopularProducts);
 router.get('/products/priceRange', productController.getProductsByRangePrice);
 router.get('/products/random', productController.getRandomCategoryProducts);
 
-router.get('/products/specificForDiscount', productController.getSpecificForDiscount);
-router.get('/products/discountId/:id', productController.getProductsByDiscountId);
-
 // Top products
 router.get('/top-products', topProductController.getTopProducts);
 router.get('/custom-top-products', topProductController.getCustomTopProducts);

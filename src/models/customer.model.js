@@ -48,13 +48,11 @@ const userSchema = Joi.object({
 
 class User {
     constructor(options) {
-        // Validate options using Joi
         const { error, value } = userSchema.validate(options);
         if (error) {
             throw new Error(`${error.details.map(err => err.message).join(', ')}`);
         }
 
-        // Assign properties from validated options
         this.fname = value.fname;
         this.lname = value.lname;
         this.email = value.email;

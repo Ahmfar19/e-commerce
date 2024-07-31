@@ -20,7 +20,6 @@ const createUser = async (req, res) => {
     try {
         const { fname, lname, email, password, address, phone } = req.body;
 
-        // Validate the password using Joi
         const { error } = passwordSchema.validate(password);
         if (error) {
             return res.status(400).json({

@@ -69,10 +69,12 @@ router.get('/products/multi-filter', productController.getProductsMultiFilter);
 router.get('/products/specificForTopProduct', productController.getSpecificForTopProduct);
 router.get('/products/quantity', productController.getProductsByQuantity);
 router.get('/products/unavailable', productController.getProductsByUnAvailable);
+router.get('/products/specificForDiscount', productController.getSpecificForDiscount);
+router.get('/products/discountId/:id', productController.getProductsByDiscountId);
 
 // Top products
 router.put('/top-products/:id', topProductController.updateTopProduct);
-router.delete('/top-products/:id', topProductController.deleteTopProduct);
+router.delete('/top-products/delete/:id', topProductController.deleteTopProduct);
 router.post('/top-products/new', topProductController.createTopProduct);
 
 // Staff
