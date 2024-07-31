@@ -20,7 +20,7 @@ app.use(express.static(path.resolve('./public')));
 // Apply CORS middleware with the defined options
 const corsOptions = {
     origin: (origin, callback) => {
-        const allowedOrigins = ['https://administreramer.se', 'http://localhost:3000'];
+        const allowedOrigins = ['https://administreramer.se', 'http://localhost:3000', 'http://localhost:3001'];
         if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
