@@ -1,7 +1,5 @@
 const pool = require('../databases/mysql.db');
 
-const TopProduct = require('./topProducts.model');
-
 class Product {
     constructor(options) {
         this.category_id = options.category_id;
@@ -140,7 +138,7 @@ class Product {
             }
 
             return { success: true, message: 'All product quantities are sufficient.' };
-        } catch (error) {
+        } catch {
             throw new Error('Failed to check product quantities.');
         }
     }
@@ -277,7 +275,7 @@ class Product {
             //   Execute SQL query with product IDs as parameters
             const [rows] = await pool.execute(sql, productIds);
             return rows;
-        } catch (error) {
+        } catch {
             throw new Error('Failed to check product quantities.');
         }
     }
@@ -289,7 +287,7 @@ class Product {
         products.price,
         products.image,
         products.description,
-        discounts.discount_value As discount
+        discounts.discount_value As discount,
         products.articelNumber,
         categories.category_name,
         SUM(order_items.quantity) AS quantity
@@ -303,6 +301,7 @@ class Product {
         ORDER BY 
         quantity LIMIT ?`;
         const [rows] = await pool.execute(sql, [limit]);
+        console.error('rows', rows);
         return rows;
     }
 
@@ -321,7 +320,7 @@ class Product {
         try {
             const [rows] = await pool.execute(sql, [minPrice, maxPrice]);
             return rows;
-        } catch (error) {
+        } catch {
             throw new Error('Failed to filter products by price range.');
         }
     }
@@ -458,6 +457,7 @@ class Product {
     }
 
     static async getSpecificForTopProduct() {
+        const TopProduct = require('./topProducts.model');
         const idsAlreadyExists = await TopProduct.getIds();
 
         // Extract the product IDs from the idsAlreadyExists array
