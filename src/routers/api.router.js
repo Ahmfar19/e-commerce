@@ -74,5 +74,4 @@ router.get('/shipping/:id', shippingController.getSingleShipping);
 // units
 router.get('/units', unitController.getUnits);
 
-
 module.exports = router;

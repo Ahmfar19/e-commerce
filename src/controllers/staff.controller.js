@@ -217,9 +217,9 @@ const login = async (req, res) => {
                     email: email_username,
                     fingerPrint: finger_print,
                     staff_id: staff.staff_id,
-                }
+                };
                 req.session.SID = sessionID;
-                req.session.ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress
+                req.session.ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
                 const cookiesOption = {
                     httpOnly: true,
@@ -270,7 +270,6 @@ const verifyToken = async (req, res) => {
 
     try {
         if (accessToken && cidHash && fingerprint && req.session.staff) {
-
             const decoded = await decodeJWTToken(accessToken);
             const cid = handleDecrypt(cidHash);
 

@@ -48,7 +48,6 @@ const userSchema = Joi.object({
 
 class User {
     constructor(options) {
-       
         // Validate options using Joi
         const { error, value } = userSchema.validate(options);
         if (error) {

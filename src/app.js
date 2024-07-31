@@ -57,7 +57,6 @@ app.use(session({
     },
 }));
 
-
 // Middleware to initialize user session
 app.post('/server/api/auth/initSIDSession', initSIDSession);
 

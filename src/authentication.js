@@ -74,7 +74,7 @@ const isAuthorized = (req, res, next) => {
         return res.status(401).json({ ok: false, message: 'Unauthorized' });
     }
     return next();
-}
+};
 
 async function isAuthenticated(req, res, next) {
     const reqIpAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -146,8 +146,8 @@ const logUserActivity = (req, res, next) => {
 // app.use(logUserActivity);
 
 const isAdmin = (req, res, next) => {
-    const whiteList = ['/staff/login', '/staff/logout']
-    if (whiteList.includes(req.path))  {
+    const whiteList = ['/staff/login', '/staff/logout'];
+    if (whiteList.includes(req.path)) {
         return next();
     }
 
@@ -167,8 +167,7 @@ const isAdmin = (req, res, next) => {
         return next();
     }
     return res.status(401).json({ ok: false, message: 'Unauthenticated' });
-}
-
+};
 
 module.exports = {
     isAuthenticated,
