@@ -66,6 +66,10 @@ router.delete('/product/delete/:id', productController.deleteProduct);
 router.post('/product/new', upload.array('images'), productController.createProduct);
 router.put('/product/edit/:id', upload.array('images'), productController.updateProduct);
 router.get('/products/multi-filter', productController.getProductsMultiFilter);
+router.get('/products/specificForTopProduct', productController.getSpecificForTopProduct);
+router.get('/products/quantity', productController.getProductsByQuantity);
+router.get('/products/unavailable', productController.getProductsByUnAvailable);
+
 
 // Top products
 router.put('/top-products/:id', topProductController.updateTopProduct);
