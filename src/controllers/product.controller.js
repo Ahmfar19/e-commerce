@@ -30,10 +30,11 @@ const saveImagesToFolder = async (files, uploadPath) => {
 
 const createProduct = async (req, res) => {
     try {
-        const { category_id, name, description, price, quantity, available, articelNumber } = req.body;
-
+        const { category_id, discount_id, name, description, price, quantity, available, articelNumber } = req.body;
+       
         const product = new Product({
             category_id,
+            discount_id,
             name,
             description,
             price,
@@ -73,7 +74,6 @@ const getProduct = async (req, res) => {
             const images = files.map((file) => {
                 return `${file}`;
             });
-            console.error('images', images);
             product[0].image = JSON.stringify(images);
         }
         sendResponse(res, 200, 'OK', 'Product retrieved successfully.', null, product);

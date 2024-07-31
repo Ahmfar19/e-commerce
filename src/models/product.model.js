@@ -1,15 +1,16 @@
 const pool = require('../databases/mysql.db');
-const Discount = require('./discounts.model');
+
 const TopProduct = require('./topProducts.model');
+
 class Product {
     constructor(options) {
         this.category_id = options.category_id;
+        this.discount_id = options.discount_id || null;
         this.articelNumber = options.articelNumber;
-        this.image = options.image || '';
+        this.image = options.image;
         this.name = options.name;
-        this.description = options.description || '';
+        this.description = options.description;
         this.price = options.price;
-        this.discount = options.discount || 0; // Set default discount to 0 if not provided
         this.quantity = options.quantity;
         this.available = options.available;
     }
@@ -17,22 +18,22 @@ class Product {
     async save() {
         const sql = `INSERT INTO products (
             category_id,
+            discount_id,
             articelNumber,
             image,
             name,
             description,
             price,
-            discount,
             quantity,
             available
         ) VALUES (
            ${this.category_id}, 
+           ${this.discount_id}, 
            ${this.articelNumber}, 
             '${this.image}', 
             "${this.name}",
             "${this.description}", 
             ${this.price},
-            ${this.discount},
             ${this.quantity},
             ${this.available}
         )`;
