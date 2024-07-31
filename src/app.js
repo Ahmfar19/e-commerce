@@ -37,8 +37,8 @@ app.use(cors(corsOptions));
 // Global error handler to catch CORS and other errors
 app.use((err, req, res, next) => {
     if (err) {
-        console.error('Error:', err.message);
-        res.status(500).json({ error: err.message });
+        // res.status(403).json({ error: err.message });
+        return res.status(403).send("Forbidden");
     } else {
         next();
     }
@@ -63,6 +63,6 @@ app.post('/server/api/auth/initSIDSession', initSIDSession);
 app.use('/api/verify-email', verifyEmail);
 
 app.use('/server/api/admin', isAdmin, apiAdminRouter);
-app.use('/server/api', apiRouter);
+app.use('/server/api', isAuthorized, apiRouter);
 
 module.exports = app;
