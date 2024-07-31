@@ -5,13 +5,31 @@ var jwt = require('jsonwebtoken');
 const config = require('config');
 const JWT_SECRET_KEY = config.get('JWT_SECRET_KEY');
 const { sendVerificationEmail } = require('../controllers/sendEmail.controller');
+const Joi = require('joi');
+
+const passwordSchema = Joi.string().min(8).max(128).required().messages({
+    'string.base': 'ec_validation_customer_password_mustBeString',
+    'string.min': 'ec_validation_customer_password_minLength',
+    'string.max': 'ec_validation_customer_password_maxLength',
+    'any.required': 'ec_validation_customer_password_required',
+});
 
 const createUser = async (req, res) => {
     try {
         const { fname, lname, email, password, address, phone } = req.body;
 
+        // Validate the password using Joi
+        const { error } = passwordSchema.validate(password);
+        if (error) {
+            return res.status(400).json({
+                error: `${error.details[0].message}`,
+            });
+        }
+
+        // Check if the customer already exists
         const checkCustomer = await Customer.checkIfUserExisted(email);
 
+        // Hash the password
         const hashedPassword = await hashPassword(password);
         if (!hashedPassword.success) {
             return res.json({
@@ -19,14 +37,15 @@ const createUser = async (req, res) => {
             });
         }
 
+        // If the customer already exists and is registered
         if (checkCustomer.length && checkCustomer[0].registered) {
-            return sendResponse(res, 406, 'Not Acceptable', 'custoemr already existed.', null, null);
+            return sendResponse(res, 406, 'Not Acceptable', 'Customer already exists.', null, null);
         } else {
             const tokenExpiryDate = tokenExpireDate();
             const token = `${email}$${tokenExpiryDate}`;
             const encryptedToken = encryptToken(token);
 
-            const custoemr = new Customer({
+            const customer = new Customer({
                 fname,
                 lname,
                 email,
@@ -36,10 +55,11 @@ const createUser = async (req, res) => {
                 registered: false,
             });
 
+            // If the customer exists but is not registered, update the existing record
             if (checkCustomer.length && !checkCustomer[0].registered) {
-                await custoemr.updateUser(checkCustomer[0].customer_id);
+                await customer.updateUser(checkCustomer[0].customer_id);
             } else {
-                await custoemr.createUser();
+                await customer.createUser();
             }
 
             const verificationLink = `http://localhost:4000/api/verify-email?token=${
@@ -52,9 +72,9 @@ const createUser = async (req, res) => {
                 res,
                 201,
                 'Created',
-                'Successfully created a custoemr. Please check your email to verify your account.',
+                'Successfully created a customer. Please check your email to verify your account.',
                 null,
-                custoemr,
+                customer,
             );
         }
     } catch (error) {
@@ -114,7 +134,13 @@ const updateUser = async (req, res) => {
 const updateUserPassword = async (req, res) => {
     const id = req.params.id;
     const { password, new_password, verify_password } = req.body;
-
+    // Validate the password using Joi
+    const { error } = passwordSchema.validate(new_password);
+    if (error) {
+        return res.status(400).json({
+            error: `${error.details[0].message}`,
+        });
+    }
     try {
         if (new_password !== verify_password) {
             return sendResponse(res, 400, 'Bad Request', 'Passwords do not match', null, null);
