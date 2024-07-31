@@ -67,6 +67,7 @@ function generateUniqueUserId() {
 
 const isAuthorized = (req, res, next) => {
     const reqIpAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
     if (reqIpAddress !== req.session.ipAddress) {
         return res.status(401).json({ ok: false, message: 'Unauthorized 1' });
     }
@@ -108,28 +109,20 @@ async function isAuthenticated(req, res, next) {
 }
 
 const initSIDSession = (req, res) => {
-    if (!req.session?.SID) {
-        const sessionID = generateUniqueUserId();
-        const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-        req.session.ipAddress = ipAddress;
-        req.session.SID = sessionID;
-        req.session.userAgent = req.get('User-Agent');
-        res.cookie('SID', sessionID, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 24 * 60 * 60 * 1000,
-        });
-        return res.status(200).json({
-            message: 'Session established',
-            SID: sessionID,
-        });
-    } else {
-        return res.status(200).json({
-            message: 'Session already exists',
-            SID: req.session.SID,
-            user: req.session.user,
-        });
-    }
+    const sessionID = generateUniqueUserId();
+    const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    req.session.ipAddress = ipAddress;
+    req.session.SID = sessionID;
+    req.session.userAgent = req.get('User-Agent');
+    res.cookie('SID', sessionID, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 24 * 60 * 60 * 1000,
+    });
+    return res.status(200).json({
+        message: 'Session established',
+        SID: sessionID,
+    });
 };
 
 // Middleware to log user activity

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { isAuthenticated, initSIDSession } = require('../authentication');
+const { initSIDSession } = require('../authentication');
 
 // import controllers
 const customerController = require('../controllers/customer.controller');
@@ -57,10 +57,10 @@ router.get('/top-products/:id', topProductController.getTopProduct);
 
 // orders
 router.post('/order/new', orderController.createOrder);
-router.get('/orders/customer/:id', isAuthenticated, orderController.getOrderByCustomerId);
+router.get('/orders/customer/:id', orderController.getOrderByCustomerId);
 
 // order items
-router.get('/orderitems/:id', isAuthenticated, orderItemsController.getOrderItems);
+router.get('/orderitems/:id', orderItemsController.getOrderItems);
 
 // storeInfo
 router.get('/storeInfo', storeInformation.getStoreInfo);
