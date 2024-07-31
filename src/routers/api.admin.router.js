@@ -70,7 +70,6 @@ router.get('/products/specificForTopProduct', productController.getSpecificForTo
 router.get('/products/quantity', productController.getProductsByQuantity);
 router.get('/products/unavailable', productController.getProductsByUnAvailable);
 
-
 // Top products
 router.put('/top-products/:id', topProductController.updateTopProduct);
 router.delete('/top-products/:id', topProductController.deleteTopProduct);
