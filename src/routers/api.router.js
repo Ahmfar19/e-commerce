@@ -13,7 +13,6 @@ const orderItemsController = require('../controllers/orderItems.controller');
 const shippingController = require('../controllers/shipping.controller');
 const unitController = require('../controllers/unit.controller');
 const topProductController = require('../controllers/topProducts.controller');
-const discountsController = require('../controllers/discounts.controller');
 
 // Authentication
 router.post('/auth/customer/verifyToken', customerController.verifyToken);
@@ -76,11 +75,5 @@ router.get('/shipping/:id', shippingController.getSingleShipping);
 // units
 router.get('/units', unitController.getUnits);
 
-// discounts
-router.get('/discounts', discountsController.getDiscounts);
-router.post('/discount/new', discountsController.createDiscount);
-router.get('/discount/:id', discountsController.getSingleDiscount);
-router.put('/discount/edit/:id', discountsController.updateDiscount);
-router.delete('/discount/delete/:id', discountsController.deleteDiscount);
 
 module.exports = router;

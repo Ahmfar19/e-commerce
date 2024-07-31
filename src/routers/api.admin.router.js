@@ -16,6 +16,7 @@ const unitController = require('../controllers/unit.controller');
 const topProductController = require('../controllers/topProducts.controller');
 const orderTypeController = require('../controllers/orderType.controller');
 const shippingController = require('../controllers/shipping.controller');
+const discountsController = require('../controllers/discounts.controller');
 
 const uploadUser = multer({
     dest: path.join(__dirname, 'public/users'),
@@ -97,5 +98,12 @@ router.post('/unit/new', unitController.createUnit);
 router.get('/unit/:id', unitController.getSingleUnit);
 router.put('/unit/edit/:id', unitController.updateUnit);
 router.delete('/unit/delete/:id', unitController.deleteUnit);
+
+// Discounts
+router.get('/discounts', discountsController.getDiscounts);
+router.post('/discount/new', discountsController.createDiscount);
+router.get('/discount/:id', discountsController.getSingleDiscount);
+router.put('/discount/edit/:id', discountsController.updateDiscount);
+router.delete('/discount/delete/:id', discountsController.deleteDiscount);
 
 module.exports = router;
