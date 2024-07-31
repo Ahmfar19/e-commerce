@@ -1,21 +1,7 @@
 const pool = require('../databases/mysql.db');
-const Joi = require('joi');
+
 class Category {
     constructor(options) {
-        const schema = Joi.object({
-            category_name: Joi.string().min(1).required().messages({
-                'string.base': 'ec_validation_category_mustBeString',
-                'string.empty': 'ec_validation_category_cantBeEmpty',
-                'any.required': 'ec_validation_category_required',
-            }),
-        });
-        const { error } = schema.validate(options);
-
-        if (error) {
-            throw new Error(error.details.map(detail => detail.message).join(', '));
-        }
-
-        // If validation passes, assign the properties
         this.category_name = options.category_name;
     }
     async save() {
