@@ -44,7 +44,7 @@ const createUser = async (req, res) => {
         } else {
             const tokenExpiryDate = tokenExpireDate();
             const token = `${email}$${tokenExpiryDate}`;
-            const encryptedToken = handleEncrypt(token, JWT_SECRET_KEY);
+            const encryptedToken = handleEncrypt(token);
 
             const customer = new Customer({
                 fname,
@@ -66,7 +66,7 @@ const createUser = async (req, res) => {
                 await customer.createUser();
             }
 
-            const verificationLink = `http://localhost:4000/api/verify-email?token=${
+            const verificationLink = `http://localhost:3000/customer/verification?token=${
                 encodeURIComponent(encryptedToken)
             };`;
 

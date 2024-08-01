@@ -1,9 +1,7 @@
 const bcrypt = require('bcryptjs');
-var CryptoJS = require('crypto-js');
 const User = require('../models/customer.model');
-const config = require('config');
-const CRYPTO_SECRET_KEY = config.get('CRYPTO_SECRET_KEY');
 const { sendResponse } = require('../helpers/apiResponse');
+const { handleDecrypt } = require('../authentication');
 
 function getCurrentDateTime() {
     const now = new Date();
@@ -72,21 +70,18 @@ function isDateTimeInPast(dateTimeToCheck) {
     return providedDateTime.getTime() < currentDateTime.getTime();
 }
 
-// Decrypt
-var handleDecrypt = (encryptedText) => {
-    const bytes = CryptoJS.AES.decrypt(encryptedText, CRYPTO_SECRET_KEY);
-    const originalText = bytes.toString(CryptoJS.enc.Utf8);
-    return originalText;
-};
 
 const verifyEmail = async (req, res) => {
-    const { token } = req.query;
+    const { token } = req.body;
     try {
+
         const decrypted = handleDecrypt(token);
-
+        if (!decrypted) {
+            return sendResponse(res, 400, 'Bad Request', 'Invalid or expired token.', null, null);
+        }
+        
         const [email, tokenExpiryDate] = decrypted.split('$');
-
-        const user = await User.checkIfUserExisted(email);
+        const [user] = await User.checkIfUserExisted(email);
 
         if (!user) {
             return sendResponse(res, 400, 'Bad Request', 'Invalid or expired token.', null, null);
@@ -95,15 +90,12 @@ const verifyEmail = async (req, res) => {
         if (tokenExpiryDate < Date.now()) {
             return sendResponse(res, 401, 'Unauthorized', 'invalid authentication token', null, null);
         }
-
-        user[0].registered = true;
-
-        const newuser = new User(user[0]);
-        await newuser.updateUser(user[0].customer_id);
-
-        res.redirect('http://localhost:3000/login');
+        user.registered = true;
+        const newuser = new User(user);
+        await newuser.updateUser(user.customer_id);
+        return sendResponse(res, 200, 'Verified', 'The customer is verified', null, null);
     } catch (error) {
-        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+        sendResponse(res, 500, 'Internal Server Error', 'An error occurred during verification.', error.message || error, null);
     }
 };
 

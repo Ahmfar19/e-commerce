@@ -2,6 +2,11 @@ const pool = require('../databases/mysql.db');
 const Joi = require('joi');
 
 const userSchema = Joi.object({
+    customer_id: Joi.number().integer().positive().optional().messages({
+        'number.base': 'ec_validation_customer_id_mustBeNumber',
+        'number.integer': 'ec_validation_customer_id_mustBeInteger',
+        'number.positive': 'ec_validation_customer_id_mustBePositive',
+    }),
     fname: Joi.string().trim().min(1).max(50).required().messages({
         'string.base': 'ec_validation_customer_fname_beString',
         'string.empty': 'ec_validation_customer_fname_cantBeEmpty',
@@ -138,12 +143,7 @@ class User {
             this.registered,
             id,
         ];
-
-        try {
-            await pool.execute(sql, values);
-        } catch {
-            throw Error('Failed to update User');
-        }
+        await pool.execute(sql, values);
     }
 
     static async isCustomerRegistered(email) {
