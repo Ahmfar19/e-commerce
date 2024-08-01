@@ -60,7 +60,7 @@ app.use(session({
 // Middleware to initialize user session
 app.post('/server/api/auth/initSIDSession', initSIDSession);
 
-app.use('/api/verify-email', verifyEmail);
+app.use('/server/api/verify-customer', verifyEmail);
 
 app.use('/server/api/admin', isAdmin, apiAdminRouter);
 app.use('/server/api', isAuthorized, apiRouter);
