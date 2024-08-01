@@ -42,16 +42,13 @@ class TopProduct {
         let [rows] = await pool.execute(sql);
         
         if (rows.length < 10) {
-            console.error(1);
             const popularProducts = await Product.getPopular(10) || [];
-            console.error('popularProducts', popularProducts);
             const leftToTeen = 10 - rows.length;
             rows = [...rows, ...popularProducts.slice(0, leftToTeen)];
         }
         if (rows.length < 10) {
             const ids = rows.map((prodcut) => prodcut.product_id);
             const getRandomProducts = await Product.getRandomProducts(ids) || [];
-            console.error('getRandomProducts', getRandomProducts);
             const leftToTeen = 10 - rows.length;
             rows = [...rows, ...getRandomProducts.slice(0, leftToTeen)];
         }

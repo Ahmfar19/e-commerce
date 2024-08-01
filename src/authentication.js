@@ -67,37 +67,27 @@ function generateUniqueUserId() {
 
 const isAuthorized = (req, res, next) => {
     const reqIpAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-
     if (reqIpAddress !== req.session.ipAddress) {
-        return res.status(401).json({ ok: false, message: 'Unauthorized 1' });
-    }
-    if (req.get('User-Agent') !== req.session.userAgent) {
-        return res.status(401).json({ ok: false, message: 'Unauthorized 2' });
+        return res.status(401).json({ ok: false, message: 'Unauthorized' });
     }
     return next();
 };
 
 async function isAuthenticated(req, res, next) {
     const reqIpAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-
-    // eslint-disable-next-line no-unused-vars
-    const accessToken = req.cookies?.verifier;
     const hashedCustomerId = req.cookies?.cidHash;
     const customer_id = handleDecrypt(hashedCustomerId);
 
-    if (req.session && req.session.user) {
+    if (req.session && req.session.customer) {
         if (reqIpAddress !== req.session.ipAddress) {
-            return res.status(401).json({ ok: false, message: 'Unauthorized' });
+            return res.status(401).json({ ok: false, message: 'Unauthenticated' });
         }
-        if (req.get('User-Agent') !== req.session.userAgent) {
-            return res.status(401).json({ ok: false, message: 'Unauthorized' });
-        }
-        if (+customer_id !== +req.session.user.customer_id) {
-            return res.status(401).json({ ok: false, message: 'Unauthorized' });
+        if (+customer_id !== +req.session.customer.customer_id) {
+            return res.status(401).json({ ok: false, message: 'Unauthenticated' });
         }
         return next();
     }
-    return res.status(401).json({ ok: false, message: 'Unauthorized' });
+    return res.status(401).json({ ok: false, message: 'Unauthenticated' });
 
     // The use of the fingerprint.
     // const authenticated = await verifyFingerprint(fingerprint, token);
@@ -109,20 +99,27 @@ async function isAuthenticated(req, res, next) {
 }
 
 const initSIDSession = (req, res) => {
-    const sessionID = generateUniqueUserId();
-    const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    req.session.ipAddress = ipAddress;
-    req.session.SID = sessionID;
-    req.session.userAgent = req.get('User-Agent');
-    res.cookie('SID', sessionID, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 24 * 60 * 60 * 1000,
-    });
-    return res.status(200).json({
-        message: 'Session established',
-        SID: sessionID,
-    });
+    if (!req.session.SID) {
+        const sessionID = generateUniqueUserId();
+        const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+        req.session.ipAddress = ipAddress;
+        req.session.SID = sessionID;
+        res.cookie('SID', sessionID, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 24 * 60 * 60 * 1000,
+        });
+        return res.status(200).json({
+            message: 'Session established',
+            SID: sessionID,
+        });
+    } else {
+        return res.status(200).json({
+            message: 'Session already established',
+            SID: req.session.SID,
+            next: true
+        });
+    }
 };
 
 // Middleware to log user activity

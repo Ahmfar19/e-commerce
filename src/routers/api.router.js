@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { initSIDSession } = require('../authentication');
+const { initSIDSession, isAuthenticated } = require('../authentication');
 
 // import controllers
 const customerController = require('../controllers/customer.controller');
@@ -25,7 +25,7 @@ router.get('/customer/:id', customerController.getSingleUser);
 router.put('/customer/edit/:id', customerController.updateUser);
 router.put('/customer/password/:id', customerController.updateUserPassword);
 router.post('/customer/login', customerController.login);
-router.post('/customer/logout', customerController.logout);
+router.post('/customer/logout', isAuthenticated, customerController.logout);
 
 // Customer reset password
 router.post('/forgetPassword', resetPassword.forgetPassword);

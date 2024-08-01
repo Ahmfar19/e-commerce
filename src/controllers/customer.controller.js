@@ -214,7 +214,8 @@ const login = async (req, res) => {
                 const verifier = jwt.sign({ id: fingerPrint }, JWT_SECRET_KEY, { expiresIn });
 
                 // Authentication and user session
-                req.session.user = {
+                req.session.ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+                req.session.customer = {
                     email,
                     fingerPrint,
                     customer_id: customer.customer_id,
@@ -253,7 +254,7 @@ const verifyToken = async (req, res) => {
     const hashedCustomerId = req.cookies?.cidHash;
 
     try {
-        if (accessToken && hashedCustomerId && fingerprint && req.session.user) {
+        if (accessToken && hashedCustomerId && fingerprint && req.session.customer) {
             const decoded = await decodeJWTToken(accessToken);
             const customer_id = handleDecrypt(hashedCustomerId);
 
@@ -269,6 +270,7 @@ const verifyToken = async (req, res) => {
                 return res.json({
                     statusCode: 200,
                     authenticated: true,
+                    customer_id
                 });
             } else {
                 return res.json({
