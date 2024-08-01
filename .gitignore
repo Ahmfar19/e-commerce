@@ -1,2 +1,21 @@
+# Compiled Output
 /node_modules
+/dist
+# OS
+.DS_Store
 
+/assets/files/* 
+/assets/images/*
+
+# ENV
+.env*
+*.env
+
+/config
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
