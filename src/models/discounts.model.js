@@ -98,6 +98,12 @@ class Discount {
             throw error;
         }
     }
+
+    static async deleteDiscountByEndDate(year, month, day){
+        const sql = `DELETE FROM discounts WHERE end_date < '${year}-${month}-${day}'`
+        const [rows] = await pool.execute(sql);
+        return rows;
+    }
 }
 
 module.exports = Discount;

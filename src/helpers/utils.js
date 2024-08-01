@@ -113,6 +113,15 @@ const isProduction = () => {
     return NODE_ENV === 'production';
 };
 
+
+ function getNowDateForDeleteDiscount() {
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1; // Adding 1 to match SQL month format
+    const day = currentDate.getDate();
+    const formattedDateTime = `${year}-${month}-${day}`;
+    return formattedDateTime;
+}
 module.exports = {
     hashPassword,
     comparePassword,
@@ -123,4 +132,5 @@ module.exports = {
     handleDecrypt,
     verifyEmail,
     isProduction,
+    getNowDateForDeleteDiscount
 };
