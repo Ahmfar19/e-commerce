@@ -67,8 +67,8 @@ const createUser = async (req, res) => {
             } else {
                 await customer.createUser();
             }
-
-            const verificationLink = `http://localhost:3000/customer/verification?token=${
+            const WEBSITE_URL = config.get('WEBSITE_URL');
+            const verificationLink = `${WEBSITE_URL}/customer/verification?token=${
                 encodeURIComponent(encryptedToken)
             };`;
 
@@ -76,10 +76,10 @@ const createUser = async (req, res) => {
             const htmlContent = await ejs.renderFile('public/htmlTemplates/customerVerfication.ejs', {
                 customerName: fname + '' + lname,
                 verificationLink,
-                companyName: 'test this now',
+                companyName: storeInformation.name,
                 supportEmail: storeInformation.email,
                 supportPhoneNumber: storeInformation.phone,
-                companyWebsiteUrl: 'www.test.com',
+                companyWebsiteUrl: WEBSITE_URL,
             });
 
             await sendVerificationEmail(email, htmlContent);
