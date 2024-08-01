@@ -42,7 +42,7 @@ const createUser = async (req, res) => {
 
         // If the customer already exists and is registered
         if (checkCustomer.length && checkCustomer[0].registered) {
-            return sendResponse(res, 406, 'Not Acceptable', 'Customer already exists.', null, null);
+            return sendResponse(res, 406, 'Not Acceptable', 'ec_customer_alert_customerAlreadyExsists', null, null);
         } else {
             const tokenExpiryDate = tokenExpireDate();
             const token = `${email}$${tokenExpiryDate}`;

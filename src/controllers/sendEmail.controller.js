@@ -48,7 +48,6 @@ const sendReqularEmail = async (to, subject, text) => {
 
 const sendEmail = async (mailOptions) => {
     return new Promise((resolve) => {
-        // eslint-disable-next-line no-unused-vars
         transporter.sendMail(mailOptions, function(error, info) {
             if (error) {
                 console.log('Error sending email', error);
