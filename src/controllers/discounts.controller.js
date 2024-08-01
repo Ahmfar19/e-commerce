@@ -1,5 +1,7 @@
 const Discount = require('../models/discounts.model');
 const { sendResponse } = require('../helpers/apiResponse');
+const cron = require('node-cron');
+const moment = require('moment-timezone');
 
 const getDiscounts = async (req, res) => {
     try {
@@ -78,10 +80,21 @@ const deleteDiscount = async (req, res) => {
     }
 };
 
+const deleteEndedDiscount = () => {
+    cron.schedule('0 0 * * *', async () => {
+        const swedenTime = moment.tz('Europe/Stockholm').format('YYYY-MM-DD');
+        const [year, month, day] = swedenTime.split('-');
+        await Discount.deleteDiscountByEndDate(year, month, day);
+    }, {
+        timezone: 'Europe/Stockholm',
+    });
+};
+
 module.exports = {
     getDiscounts,
     getSingleDiscount,
     createDiscount,
     updateDiscount,
     deleteDiscount,
+    deleteEndedDiscount,
 };

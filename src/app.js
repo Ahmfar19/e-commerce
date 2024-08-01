@@ -8,11 +8,12 @@ const apiAdminRouter = require('./routers/api.admin.router');
 const { verifyEmail } = require('./helpers/utils');
 const { isAdmin, isAuthorized, initSIDSession } = require('./authentication');
 const config = require('config');
+const { deleteEndedDiscount } = require('./controllers/discounts.controller');
 const CRYPTO_SECRET_KEY = config.get('CRYPTO_SECRET_KEY');
 require('./databases/mysql.db');
 
 const app = express();
-
+deleteEndedDiscount();
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.static(path.resolve('./public')));
