@@ -55,9 +55,12 @@ class OrderItems {
         const sql = `
             SELECT order_items.*, name, image, price
             , description, discount_value As discount,
-            articelNumber
+            articelNumber,
+            unit_name,
+            units.unit_id
             FROM order_items
             JOIN products ON order_items.product_id = products.product_id
+            INNER JOIN units ON products.unit_id = units.unit_id
             LEFT JOIN discounts ON products.discount_id = discounts.discount_id
             WHERE order_items.order_id = ${orderId}
         `;
