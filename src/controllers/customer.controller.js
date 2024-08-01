@@ -1,7 +1,9 @@
 const Customer = require('../models/customer.model');
+const StoreInfo = require('../models/storeInfo.model');
 const { hashPassword, comparePassword, tokenExpireDate } = require('../helpers/utils');
 const { sendResponse } = require('../helpers/apiResponse');
 var jwt = require('jsonwebtoken');
+const ejs = require('ejs');
 const config = require('config');
 const JWT_SECRET_KEY = config.get('JWT_SECRET_KEY');
 const { sendVerificationEmail } = require('../controllers/sendEmail.controller');
@@ -70,7 +72,17 @@ const createUser = async (req, res) => {
                 encodeURIComponent(encryptedToken)
             };`;
 
-            await sendVerificationEmail(email, verificationLink);
+            const [storeInformation] = await StoreInfo.getAll();
+            const htmlContent = await ejs.renderFile('public/htmlTemplates/customerVerfication.ejs', {
+                customerName: fname + '' + lname,
+                verificationLink,
+                companyName: 'test this now',
+                supportEmail: storeInformation.email,
+                supportPhoneNumber: storeInformation.phone,
+                companyWebsiteUrl: 'www.test.com',
+            });
+
+            await sendVerificationEmail(email, htmlContent);
 
             return sendResponse(
                 res,

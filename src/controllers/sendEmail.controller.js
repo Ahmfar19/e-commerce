@@ -26,14 +26,12 @@ const sendHtmlEmail = async (to, subject, text, htmlTamplate, attachments) => {
     return sendEmail(mailOptions);
 };
 
-const sendVerificationEmail = async (email, verificationLink) => {
+const sendVerificationEmail = async (email, template) => {
     const mailOptions = {
         from: EMAIL,
         to: email,
-        subject: 'Email Verification',
-        text: `Please verify your email by clicking the following link: ${verificationLink}`,
-        html:
-            `<p>Please verify your email by clicking the following link: <a href="${verificationLink}">${verificationLink}</a></p>`,
+        subject: 'Verify Your Email Address',
+        html: template,
     };
     return sendEmail(mailOptions);
 };

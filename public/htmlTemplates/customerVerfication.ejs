@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your Email</title>
+    <style>
+        .body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+            color: #333333;
+        }
+
+        .wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .link {
+            overflow-wrap: break-word;
+        }
+
+        .header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #dddddd;
+        }
+
+        .header img {
+            max-width: 150px;
+            margin-bottom: 20px;
+        }
+
+        .content {
+            padding: 20px 0;
+        }
+
+        .button {
+            background-color: #4CAF50; /* Green */
+            border: none;
+            color: white !important;
+            padding: 12px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 0;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: #45a049;
+        }
+
+        a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        h3 {
+            color: #333333;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        ul li {
+            background-color: #f9f9f9;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #777777;
+            padding-top: 20px;
+            border-top: 1px solid #dddddd;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="body">
+        <div class="wrapper">
+            <div class="header">
+                <!-- Optionally include a logo here -->
+                <!-- <img src="your-logo-url.png" alt="Your Company Logo"> -->
+                <h1>Verify Your Email</h1>
+            </div>
+            <div class="content">
+                <p>Hello <%= customerName %>,</p>
+
+                <p>Thank you for signing up with <%= companyName %>! To complete your registration, please verify your
+                    email address by clicking the button below:</p>
+
+                <a href="<%= verificationLink %>" class="button">Verify Your Email</a>
+
+                <p>If the button above does not work, please copy and paste the following link into your browser's
+                    address bar:</p>
+
+                <p class="link"><a href="<%= verificationLink %>"><%= verificationLink %></a></p>
+
+                <h3>Why verify your email?</h3>
+
+                <ul>
+                    <li>To ensure the security of your account.</li>
+                    <li>To receive important updates and notifications.</li>
+                    <li>To complete your registration process.</li>
+                </ul>
+
+                <p>If you did not create an account with us, please ignore this email.</p>
+
+                <p>For any questions or assistance, feel free to contact our support team at <%= supportEmail %> or <%= supportPhoneNumber %>.</p>
+
+                <p>Best regards,</p>
+                <p><%= companyName %></p>
+                <p><a href="<%= companyWebsiteUrl %>"><%= companyWebsiteUrl %></a></p>
+            </div>
+            <div class="footer">
+                <p><%= companyWebsiteUrl %></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
