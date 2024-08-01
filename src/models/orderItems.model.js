@@ -54,7 +54,8 @@ class OrderItems {
         }
         const sql = `
             SELECT order_items.*, name, image, price
-            , description, discount_value As discount
+            , description, discount_value As discount,
+            articelNumber
             FROM order_items
             JOIN products ON order_items.product_id = products.product_id
             LEFT JOIN discounts ON products.discount_id = discounts.discount_id
@@ -63,7 +64,7 @@ class OrderItems {
         try {
             const [rows] = await pool.execute(sql);
             return rows;
-        } catch (error) {
+        } catch  {
             throw new Error('Failed to get the order items');
         }
     }

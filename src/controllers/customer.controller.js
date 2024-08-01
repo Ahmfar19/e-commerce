@@ -18,7 +18,7 @@ const passwordSchema = Joi.string().min(8).max(128).required().messages({
 
 const createUser = async (req, res) => {
     try {
-        const { fname, lname, email, password, address, phone } = req.body;
+        const { fname, lname, email, password, address, phone ,zip , city, isCompany} = req.body;
 
         const { error } = passwordSchema.validate(password);
         if (error) {
@@ -53,6 +53,9 @@ const createUser = async (req, res) => {
                 password: hashedPassword.data,
                 address,
                 phone,
+                zip,
+                city,
+                isCompany,
                 registered: false,
             });
 

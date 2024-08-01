@@ -44,6 +44,9 @@ const userSchema = Joi.object({
     registered: Joi.boolean().messages({
         'boolean.base': 'ec_validation_customer_resgistered_mustBeBoolean',
     }),
+    isCompany: Joi.boolean().messages({
+        'boolean.base': 'ec_validation_customer_isCompany_mustBeBoolean',
+    }),
 });
 
 class User {
@@ -62,6 +65,7 @@ class User {
         this.city = value.city || '';
         this.phone = value.phone || '';
         this.registered = value.registered || false;
+        this.isCompany = value.isCompany || false;
     }
 
     async createUser() {
@@ -74,7 +78,8 @@ class User {
             zip,
             city,
             phone,
-            registered
+            registered,
+            isCompany
         ) VALUES (
             "${this.fname}", 
             "${this.lname}",
@@ -84,7 +89,8 @@ class User {
             "${this.zip}",
             "${this.city}",
             "${this.phone}",
-            ${this.registered}
+            ${this.registered},
+            ${this.isCompany}
         )`;
         const result = await pool.execute(sql);
         this.customer_id = result[0].insertId;
@@ -135,8 +141,8 @@ class User {
 
         try {
             await pool.execute(sql, values);
-        } catch (error) {
-            throw error;
+        } catch  {
+            throw Error('Failed to update User');
         }
     }
 

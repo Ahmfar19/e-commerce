@@ -139,7 +139,7 @@ const logUserActivity = (req, res, next) => {
 // app.use(logUserActivity);
 
 const isAdmin = (req, res, next) => {
-    console.error('req', req.path);
+    
     const whiteList = ['/staff/login', '/staff/logout', '/staff/forgetPassword', '/staff/pinCode', '/staff/resetPassword'];
     if (whiteList.includes(req.path)) {
         return next();
