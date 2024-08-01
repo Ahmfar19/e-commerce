@@ -141,7 +141,7 @@ class User {
 
         try {
             await pool.execute(sql, values);
-        } catch  {
+        } catch {
             throw Error('Failed to update User');
         }
     }

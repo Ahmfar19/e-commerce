@@ -18,7 +18,7 @@ const passwordSchema = Joi.string().min(8).max(128).required().messages({
 
 const createUser = async (req, res) => {
     try {
-        const { fname, lname, email, password, address, phone ,zip , city, isCompany} = req.body;
+        const { fname, lname, email, password, address, phone, zip, city, isCompany } = req.body;
 
         const { error } = passwordSchema.validate(password);
         if (error) {
@@ -270,7 +270,7 @@ const verifyToken = async (req, res) => {
                 return res.json({
                     statusCode: 200,
                     authenticated: true,
-                    customer_id
+                    customer_id,
                 });
             } else {
                 return res.json({

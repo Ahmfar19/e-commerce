@@ -245,7 +245,7 @@ const login = async (req, res) => {
         } else {
             return res.json({ error: 'User does not exist in the database' });
         }
-    } catch (error) {
+    } catch {
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 };

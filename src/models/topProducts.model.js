@@ -40,7 +40,7 @@ class TopProduct {
         `;
 
         let [rows] = await pool.execute(sql);
-        
+
         if (rows.length < 10) {
             const popularProducts = await Product.getPopular(10) || [];
             const leftToTeen = 10 - rows.length;

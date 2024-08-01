@@ -64,7 +64,7 @@ class OrderItems {
         try {
             const [rows] = await pool.execute(sql);
             return rows;
-        } catch  {
+        } catch {
             throw new Error('Failed to get the order items');
         }
     }

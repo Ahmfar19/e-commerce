@@ -114,11 +114,11 @@ const initSIDSession = (req, res) => {
             SID: sessionID,
         });
     } else {
-        return res.status(200).json({
-            message: 'Session already established',
-            SID: req.session.SID,
-            next: true
-        });
+        const response = { message: 'Session already established', SID: req.session.SID };
+        if (req.session.staff || req.session.customer) {
+            response.verifyToken = true;
+        }
+        return res.status(200).json(response);
     }
 };
 
@@ -136,8 +136,13 @@ const logUserActivity = (req, res, next) => {
 // app.use(logUserActivity);
 
 const isAdmin = (req, res, next) => {
-    
-    const whiteList = ['/staff/login', '/staff/logout', '/staff/forgetPassword', '/staff/pinCode', '/staff/resetPassword'];
+    const whiteList = [
+        '/staff/login',
+        '/staff/logout',
+        '/staff/forgetPassword',
+        '/staff/pinCode',
+        '/staff/resetPassword',
+    ];
     if (whiteList.includes(req.path)) {
         return next();
     }
