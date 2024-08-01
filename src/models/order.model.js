@@ -176,6 +176,7 @@ class Order {
             CONCAT(customers.fname, ' ', customers.lname) AS customerName,
             customers.email,
             customers.phone,
+            customers.isCompany,
             order_type.type_name ,
             shipping.shipping_name,
             shipping.shipping_price
@@ -187,7 +188,7 @@ class Order {
         if (key === 'order_date') {
             const [from, to] = value.split('to').map(v => v.trim());
             sql += `WHERE DATE_FORMAT(orders.${key}, '%Y-%m-%d') BETWEEN '${from}' AND '${to}'`;
-            const values = [from, to];
+            // const values = [from, to];
         } else {
             sql += `WHERE orders.${key} = ${value}`;
         }
