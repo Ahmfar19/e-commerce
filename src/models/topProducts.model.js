@@ -26,6 +26,8 @@ class TopProduct {
         products.product_id,
         products.category_id,
         discounts.discount_id,
+        units.unit_id,
+        unit_name,
         name,
         description,
         price,
@@ -36,6 +38,7 @@ class TopProduct {
         discount_value As discount
         FROM top_products 
         INNER JOIN products ON top_products.product_id = products.product_id
+        INNER JOIN units ON products.unit_id = units.unit_id
         LEFT JOIN discounts ON products.discount_id = discounts.discount_id
         `;
 
@@ -61,6 +64,8 @@ class TopProduct {
         products.product_id,
         products.category_id,
         discounts.discount_id,
+        units.unit_id,
+        unit_name,
         name,
         description,
         price,
@@ -71,6 +76,7 @@ class TopProduct {
         discount_value As discount
         FROM top_products 
         INNER JOIN products ON top_products.product_id = products.product_id
+        INNER JOIN units ON products.unit_id = units.unit_id
         LEFT JOIN discounts ON products.discount_id = discounts.discount_id`;
         const [rows] = await pool.execute(sql);
         return rows;
@@ -82,6 +88,8 @@ class TopProduct {
         products.product_id,
         products.category_id,
         discounts.discount_id,
+        units.unit_id,
+        unit_name,
         name,
         description,
         price,
@@ -92,6 +100,7 @@ class TopProduct {
         discount_value As discount
         FROM top_products 
         INNER JOIN products ON top_products.product_id = products.product_id
+        INNER JOIN units ON products.unit_id = units.unit_id
         LEFT JOIN discounts ON products.discount_id = discounts.discount_id  
         WHERE top_products.id = ?`;
         const [rows] = await pool.execute(sql, [id]);
