@@ -1,6 +1,9 @@
 # Compiled Output
 /node_modules
 /dist
+
+/database
+
 # OS
 .DS_Store
 
