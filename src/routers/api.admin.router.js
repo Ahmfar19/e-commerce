@@ -45,7 +45,6 @@ router.get('/orders/filter', orderController.getOrdersFilter);
 router.get('/orders', orderController.getAllOrders);
 
 // OrderType
-router.get('/orderTypes', orderTypeController.getOrderTypes);
 router.get('/orderType/:id', orderTypeController.getSingleOrderType);
 router.put('/orderType/edit/:id', orderTypeController.updateOrderType);
 router.delete('/orderType/delete/:id', orderTypeController.deleteOrderType);

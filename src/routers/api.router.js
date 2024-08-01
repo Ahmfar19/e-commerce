@@ -13,6 +13,7 @@ const orderItemsController = require('../controllers/orderItems.controller');
 const shippingController = require('../controllers/shipping.controller');
 const unitController = require('../controllers/unit.controller');
 const topProductController = require('../controllers/topProducts.controller');
+const orderTypeController = require('../controllers/orderType.controller');
 
 // Authentication
 router.post('/auth/customer/verifyToken', customerController.verifyToken);
@@ -55,6 +56,9 @@ router.get('/top-products/:id', topProductController.getTopProduct);
 // orders
 router.post('/order/new', orderController.createOrder);
 router.get('/orders/customer/:id', orderController.getOrderByCustomerId);
+
+// OrderType
+router.get('/orderTypes', orderTypeController.getOrderTypes);
 
 // order items
 router.get('/orderitems/:id', orderItemsController.getOrderItems);
