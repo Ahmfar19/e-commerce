@@ -4,6 +4,7 @@ class Product {
     constructor(options) {
         this.category_id = options.category_id;
         this.discount_id = options.discount_id || null;
+        this.unit_id = options.unit_id;
         this.articelNumber = options.articelNumber;
         this.image = options.image;
         this.name = options.name;
@@ -17,6 +18,7 @@ class Product {
         const sql = `INSERT INTO products (
             category_id,
             discount_id,
+            unit_id,
             articelNumber,
             image,
             name,
@@ -27,6 +29,7 @@ class Product {
         ) VALUES (
            ${this.category_id}, 
            ${this.discount_id}, 
+           ${this.unit_id}, 
            ${this.articelNumber}, 
             '${this.image}', 
             "${this.name}",
@@ -45,6 +48,8 @@ class Product {
                  product_id, 
                  categories.category_id, 
                  discounts.discount_id, 
+                 units.unit_id,
+                 unit_name, 
                  articelNumber, 
                  image,
                  name, 
@@ -56,6 +61,7 @@ class Product {
                  discounts.discount_value As discount
                  FROM products 
                  INNER JOIN categories ON products.category_id = categories.category_id
+                 INNER JOIN units ON products.unit_id = units.unit_id
                  LEFT JOIN discounts ON products.discount_id = discounts.discount_id
                  `;
         const [rows] = await pool.execute(sql);
@@ -73,6 +79,8 @@ class Product {
                  product_id, 
                  categories.category_id, 
                  discounts.discount_id, 
+                 units.unit_id,
+                 unit_name,
                  articelNumber, 
                  image,
                  name, 
@@ -84,6 +92,7 @@ class Product {
                  discounts.discount_value As discount
                  FROM products 
                  INNER JOIN categories ON products.category_id = categories.category_id
+                 INNER JOIN units ON products.unit_id = units.unit_id
                  LEFT JOIN discounts ON products.discount_id = discounts.discount_id
                  WHERE products.product_id = "${id}"`;
         const [rows] = await pool.execute(sql);
@@ -146,6 +155,7 @@ class Product {
     async updateById(id) {
         const sql = `UPDATE products SET 
         category_id = ?,
+        unit_id = ?,
         articelNumber = ?,
         image = ?,
         name = ?,
@@ -156,6 +166,7 @@ class Product {
         WHERE product_id = ?`;
         const values = [
             this.category_id,
+            this.unit_id,
             this.articelNumber,
             this.image,
             this.name,
@@ -181,6 +192,8 @@ class Product {
                  product_id, 
                  categories.category_id, 
                  discounts.discount_id, 
+                 units.unit_id,
+                 unit_name,
                  articelNumber, 
                  image,
                  name, 
@@ -192,6 +205,7 @@ class Product {
                  discounts.discount_value As discount
                  FROM products 
                  INNER JOIN categories ON products.category_id = categories.category_id
+                 INNER JOIN units ON products.unit_id = units.unit_id
                  LEFT JOIN discounts ON products.discount_id = discounts.discount_id
                  ORDER BY products.product_id LIMIT ? OFFSET ?`;
         const [rows] = await pool.execute(sql, [pageSize, offset]);
@@ -203,6 +217,8 @@ class Product {
                  product_id, 
                  categories.category_id, 
                  discounts.discount_id, 
+                 units.unit_id,
+                 unit_name,
                  articelNumber, 
                  image,
                  name, 
@@ -214,6 +230,7 @@ class Product {
                  discounts.discount_value As discount
                  FROM products 
                  INNER JOIN categories ON products.category_id = categories.category_id
+                 INNER JOIN units ON products.unit_id = units.unit_id
                  LEFT JOIN discounts ON products.discount_id = discounts.discount_id 
                  WHERE products.name LIKE ?`;
         const [rows] = await pool.execute(sql, [`%${searchTerm}%`]);
@@ -226,6 +243,8 @@ class Product {
                  product_id, 
                  categories.category_id, 
                  discounts.discount_id, 
+                 units.unit_id,
+                 unit_name,
                  articelNumber, 
                  image,
                  name, 
@@ -237,6 +256,7 @@ class Product {
                  discounts.discount_value As discount
                  FROM products 
                  INNER JOIN categories ON products.category_id = categories.category_id
+                 INNER JOIN units ON products.unit_id = units.unit_id
                  LEFT JOIN discounts ON products.discount_id = discounts.discount_id 
                 WHERE products.${key} = '${value}'
             `;
@@ -258,6 +278,8 @@ class Product {
                  product_id, 
                  categories.category_id, 
                  discounts.discount_id, 
+                 units.unit_id,
+                 unit_name,
                  articelNumber, 
                  image,
                  name, 
@@ -269,6 +291,7 @@ class Product {
                  discounts.discount_value As discount
                  FROM products 
                  INNER JOIN categories ON products.category_id = categories.category_id
+                 INNER JOIN units ON products.unit_id = units.unit_id
                  LEFT JOIN discounts ON products.discount_id = discounts.discount_id 
         WHERE product_id IN (${placeholders})`;
         try {
@@ -283,6 +306,8 @@ class Product {
     static async getPopular(limit) {
         const sql = `SELECT 
         order_items.product_id,
+        units.unit_id,
+        units.unit_name,
         products.name,
         products.price,
         products.image,
@@ -295,6 +320,7 @@ class Product {
         order_items
         INNER JOIN products ON products.product_id = order_items.product_id
         INNER JOIN categories ON products.category_id = categories.category_id
+        INNER JOIN units ON products.unit_id = units.unit_id
         LEFT JOIN discounts ON products.discount_id = discounts.discount_id
         GROUP BY 
         order_items.product_id
@@ -306,13 +332,15 @@ class Product {
 
     static async filterByPriceRange(minPrice, maxPrice) {
         const sql = `
-        SELECT 
-            p.*, 
-            c.category_name ,
-            d.discount_value As discount
+         SELECT 
+        p.*, 
+        c.category_name,
+        d.discount_value AS discount,
+        u.unit_name
         FROM 
-            products p
+        products p
         INNER JOIN categories c ON p.category_id = c.category_id
+        INNER JOIN units u ON p.unit_id = u.unit_id
         LEFT JOIN discounts d ON p.discount_id = d.discount_id
         WHERE p.price BETWEEN ? AND ?`;
 
@@ -345,9 +373,10 @@ class Product {
                 : '';
 
             const productsSql = `
-                SELECT p.*, c.*, d.discount_value AS discount
+                SELECT p.*, c.*, d.discount_value AS discount, u.unit_name
                 FROM products p
                 INNER JOIN categories c ON p.category_id = c.category_id
+                INNER JOIN units u ON p.unit_id = u.unit_id
                 LEFT JOIN discounts d ON p.discount_id = d.discount_id
                 WHERE c.category_id = ?
                 ${excludeCondition}
@@ -367,6 +396,8 @@ class Product {
                  product_id, 
                  categories.category_id, 
                  discounts.discount_id, 
+                 units.unit_id,
+                 unit_name,
                  articelNumber, 
                  image,
                  name, 
@@ -378,6 +409,7 @@ class Product {
                  discounts.discount_value As discount
                  FROM products 
                  INNER JOIN categories ON products.category_id = categories.category_id
+                 INNER JOIN units ON products.unit_id = units.unit_id             
                  LEFT JOIN discounts ON products.discount_id = discounts.discount_id
             WHERE products.quantity <= 10 AND products.quantity > 0`;
         const [rows] = await pool.execute(sql);
@@ -389,6 +421,8 @@ class Product {
                  product_id, 
                  categories.category_id, 
                  discounts.discount_id, 
+                 units.unit_id,
+                 unit_name,
                  articelNumber, 
                  image,
                  name, 
@@ -400,6 +434,7 @@ class Product {
                  discounts.discount_value As discount
                  FROM products 
                  INNER JOIN categories ON products.category_id = categories.category_id
+                 INNER JOIN units ON products.unit_id = units.unit_id                             
                  LEFT JOIN discounts ON products.discount_id = discounts.discount_id 
             WHERE available = 0`;
         const [rows] = await pool.execute(sql);
@@ -414,7 +449,9 @@ class Product {
                  SELECT 
                  product_id, 
                  categories.category_id, 
-                 discounts.discount_id, 
+                 discounts.discount_id,
+                 units.unit_id,
+                 unit_name, 
                  articelNumber, 
                  image,
                  name, 
@@ -426,6 +463,7 @@ class Product {
                  discounts.discount_value As discount
                  FROM products 
                  INNER JOIN categories ON products.category_id = categories.category_id
+                 INNER JOIN units ON products.unit_id = units.unit_id                                          
                  LEFT JOIN discounts ON products.discount_id = discounts.discount_id
                 WHERE products.name LIKE '${`%${value}%`}'
             `;
@@ -434,7 +472,9 @@ class Product {
                  SELECT 
                  product_id, 
                  categories.category_id, 
-                 discounts.discount_id, 
+                 discounts.discount_id,
+                 units.unit_id,
+                 unit_name, 
                  articelNumber, 
                  image,
                  name, 
@@ -446,6 +486,7 @@ class Product {
                  discounts.discount_value As discount
                  FROM products 
                  INNER JOIN categories ON products.category_id = categories.category_id
+                 INNER JOIN units ON products.unit_id = units.unit_id                                                     
                  LEFT JOIN discounts ON products.discount_id = discounts.discount_id
                 WHERE products.${key} = '${value}'
             `;
@@ -489,6 +530,8 @@ class Product {
           products.product_id,
           products.category_id,
           products.discount_id,
+          products.unit_id,
+          units.unit_name,
           products.articelNumber,
           products.name,
           products.price,
@@ -497,7 +540,8 @@ class Product {
           DATE_FORMAT(discounts.start_date, "%Y-%m-%d") As start_date,
           DATE_FORMAT(discounts.end_date, "%Y-%m-%d") As end_date
           FROM products
-          INNER JOIN discounts ON products.discount_id = discounts.discount_id 
+          INNER JOIN discounts ON products.discount_id = discounts.discount_id
+          INNER JOIN units ON products.unit_id = units.unit_id 
           WHERE products.discount_id =?`;
         const [rows] = await pool.execute(sql, [discountId]);
         return rows;
