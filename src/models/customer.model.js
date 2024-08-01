@@ -46,7 +46,7 @@ const userSchema = Joi.object({
         'string.base': 'ec_validation_customer_phone_mustBeString',
         'string.pattern.base': 'ec_validation_customer_phone_pattern',
     }),
-    registered: Joi.boolean().messages({
+    registered: Joi.boolean().optional().messages({
         'boolean.base': 'ec_validation_customer_resgistered_mustBeBoolean',
     }),
     isCompany: Joi.boolean().messages({

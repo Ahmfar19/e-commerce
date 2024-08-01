@@ -70,21 +70,23 @@ function isDateTimeInPast(dateTimeToCheck) {
     return providedDateTime.getTime() < currentDateTime.getTime();
 }
 
-
 const verifyEmail = async (req, res) => {
     const { token } = req.body;
     try {
-
         const decrypted = handleDecrypt(token);
         if (!decrypted) {
             return sendResponse(res, 400, 'Bad Request', 'Invalid or expired token.', null, null);
         }
-        
+
         const [email, tokenExpiryDate] = decrypted.split('$');
         const [user] = await User.checkIfUserExisted(email);
 
         if (!user) {
             return sendResponse(res, 400, 'Bad Request', 'Invalid or expired token.', null, null);
+        }
+
+        if (user.registered) {
+            return sendResponse(res, 400, 'Bad Request', 'Email already verified', null, null);
         }
 
         if (tokenExpiryDate < Date.now()) {
@@ -95,7 +97,14 @@ const verifyEmail = async (req, res) => {
         await newuser.updateUser(user.customer_id);
         return sendResponse(res, 200, 'Verified', 'The customer is verified', null, null);
     } catch (error) {
-        sendResponse(res, 500, 'Internal Server Error', 'An error occurred during verification.', error.message || error, null);
+        sendResponse(
+            res,
+            500,
+            'Internal Server Error',
+            'An error occurred during verification.',
+            error.message || error,
+            null,
+        );
     }
 };
 

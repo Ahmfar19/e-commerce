@@ -1,7 +1,9 @@
 const Customer = require('../models/customer.model');
+const StoreInfo = require('../models/storeInfo.model');
 const { hashPassword, comparePassword, tokenExpireDate } = require('../helpers/utils');
 const { sendResponse } = require('../helpers/apiResponse');
 var jwt = require('jsonwebtoken');
+const ejs = require('ejs');
 const config = require('config');
 const JWT_SECRET_KEY = config.get('JWT_SECRET_KEY');
 const { sendVerificationEmail } = require('../controllers/sendEmail.controller');
@@ -40,7 +42,7 @@ const createUser = async (req, res) => {
 
         // If the customer already exists and is registered
         if (checkCustomer.length && checkCustomer[0].registered) {
-            return sendResponse(res, 406, 'Not Acceptable', 'Customer already exists.', null, null);
+            return sendResponse(res, 406, 'Not Acceptable', 'ec_customer_alert_customerAlreadyExsists', null, null);
         } else {
             const tokenExpiryDate = tokenExpireDate();
             const token = `${email}$${tokenExpiryDate}`;
@@ -70,7 +72,17 @@ const createUser = async (req, res) => {
                 encodeURIComponent(encryptedToken)
             };`;
 
-            await sendVerificationEmail(email, verificationLink);
+            const [storeInformation] = await StoreInfo.getAll();
+            const htmlContent = await ejs.renderFile('public/htmlTemplates/customerVerfication.ejs', {
+                customerName: fname + '' + lname,
+                verificationLink,
+                companyName: 'test this now',
+                supportEmail: storeInformation.email,
+                supportPhoneNumber: storeInformation.phone,
+                companyWebsiteUrl: 'www.test.com',
+            });
+
+            await sendVerificationEmail(email, htmlContent);
 
             return sendResponse(
                 res,

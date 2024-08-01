@@ -26,14 +26,12 @@ const sendHtmlEmail = async (to, subject, text, htmlTamplate, attachments) => {
     return sendEmail(mailOptions);
 };
 
-const sendVerificationEmail = async (email, verificationLink) => {
+const sendVerificationEmail = async (email, template) => {
     const mailOptions = {
         from: EMAIL,
         to: email,
-        subject: 'Email Verification',
-        text: `Please verify your email by clicking the following link: ${verificationLink}`,
-        html:
-            `<p>Please verify your email by clicking the following link: <a href="${verificationLink}">${verificationLink}</a></p>`,
+        subject: 'Verify Your Email Address',
+        html: template,
     };
     return sendEmail(mailOptions);
 };
@@ -50,7 +48,6 @@ const sendReqularEmail = async (to, subject, text) => {
 
 const sendEmail = async (mailOptions) => {
     return new Promise((resolve) => {
-        // eslint-disable-next-line no-unused-vars
         transporter.sendMail(mailOptions, function(error, info) {
             if (error) {
                 console.log('Error sending email', error);
