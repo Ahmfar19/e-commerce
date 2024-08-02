@@ -3,6 +3,7 @@ const pool = require('../databases/mysql.db');
 class OrderItems {
     constructor(options) {
         this.order_id = options.order_id;
+        this.product_id = options.product_id;
         this.product_name = options.product_name;
         this.articelNumber = options.articelNumber;
         this.price = options.price;
@@ -15,6 +16,7 @@ class OrderItems {
     async save() {
         const sql = `INSERT INTO order_items (
             order_id,
+            product_id,
             product_name,
             articelNumber,
             price,
@@ -30,10 +32,12 @@ class OrderItems {
             ?,
             ?,
             ?,
+            ?,
             ?
         )`;
         const values = [
             this.order_id,
+            this.product_id,
             this.product_name,
             this.articelNumber,
             this.price,
@@ -48,16 +52,18 @@ class OrderItems {
     }
 
     static async saveMulti(product_items) {
+     
         if (!Array.isArray(product_items.products) || product_items.products.length === 0) {
             throw new Error('Invalid report items data');
         }
         // Create an array of promises for report item insertion
         const insertionPromises = product_items.products.map(async (product) => {
             const sql = `INSERT INTO order_items 
-            (order_id, product_name, articelNumber, price, unit_name, discount, image, quantity) 
-            VALUES (?, ?, ?, ?, ?, ?, ?,?)`;
+            (order_id, product_id ,product_name, articelNumber, price, unit_name, discount, image, quantity) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
             const values = [
                 product_items.order_id,
+                product.product_id,
                 product.name,
                 product.articelNumber,
                 product.price,
