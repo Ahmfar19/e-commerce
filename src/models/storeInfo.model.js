@@ -7,12 +7,15 @@ class StoreInfo {
         this.opening_weekend = options.opening_weekend;
         this.closing_weekend = options.closing_weekend;
         this.tax_percentage = options.tax_percentage;
+        this.free_shipping = options.free_shipping;
+        this.name = options.name;
+        this.webSite = options.webSite;
         this.phone = options.phone;
         this.street = options.street;
         this.city = options.city;
         this.zip = options.zip;
         this.email = options.email;
-        this.free_shipping = options.free_shipping;
+        
     }
 
     async save() {
@@ -22,12 +25,14 @@ class StoreInfo {
             opening_weekend,
             closing_weekend,
             tax_percentage,
+            free_shipping,
+            name,
+            webSite,
             phone,
             email,
             street,
             city,
-            zip,
-            free_shipping
+            zip
         ) VALUES (
             "${this.opening_day}",
             "${this.closing_day}",
@@ -59,12 +64,15 @@ class StoreInfo {
             opening_weekend = ?,
             closing_weekend = ?,
             tax_percentage = ?,
+            free_shipping = ?,
+            name = ?,
+            webSite = ?,
             phone = ?,
             email = ?,
             street = ?,
             city = ?,
-            zip = ?,
-            free_shipping = ?
+            zip = ?
+           
             WHERE id = ?`;
         const values = [
             this.opening_day,
@@ -72,12 +80,14 @@ class StoreInfo {
             this.opening_weekend,
             this.closing_weekend,
             this.tax_percentage,
+            this.free_shipping,
+            this.name,
+            this.webSite,
             this.phone,
             this.email,
             this.street,
             this.city,
             this.zip,
-            this.free_shipping,
             id,
         ];
         const [rows] = await pool.execute(sql, values);
