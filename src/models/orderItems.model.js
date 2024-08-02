@@ -3,20 +3,29 @@ const pool = require('../databases/mysql.db');
 class OrderItems {
     constructor(options) {
         this.order_id = options.order_id;
-        this.product_id = options.product_id;
-        this.quantity = options.quantity;
+        this.product_name = options.product_name;
+        this.articelNumber = options.articelNumber;
         this.price = options.price;
+        this.unit_name = options.unit_name;
         this.discount = options.discount;
+        this.image = options.image;
+        this.quantity = options.quantity;
     }
 
     async save() {
         const sql = `INSERT INTO order_items (
             order_id,
-            product_id,
-            quantity,
+            product_name,
+            articelNumber,
             price,
-            discount
+            unit_name,
+            discount,
+            image,
+            quantity
         ) VALUES (
+            ?,
+            ?,
+            ?,
             ?,
             ?,
             ?,
@@ -25,10 +34,13 @@ class OrderItems {
         )`;
         const values = [
             this.order_id,
-            this.product_id,
-            this.quantity,
+            this.product_name,
+            this.articelNumber,
             this.price,
+            this.unit_name,
             this.discount,
+            this.image,
+            this.quantity,
         ];
         const result = await pool.execute(sql, values);
         this.item_id = result[0].insertId;
@@ -41,8 +53,19 @@ class OrderItems {
         }
         // Create an array of promises for report item insertion
         const insertionPromises = product_items.products.map(async (product) => {
-            const sql = `INSERT INTO order_items (order_id, product_id, quantity) VALUES (?, ?, ?)`;
-            const values = [product_items.order_id, product.product_id, product.quantity];
+            const sql = `INSERT INTO order_items 
+            (order_id, product_name, articelNumber, price, unit_name, discount, image, quantity) 
+            VALUES (?, ?, ?, ?, ?, ?, ?,?)`;
+            const values = [
+                product_items.order_id,
+                product.name,
+                product.articelNumber,
+                product.price,
+                product.unit_name,
+                product.discount,
+                product.image,
+                product.quantity,
+            ];
             return await pool.execute(sql, values);
         });
         await Promise.all(insertionPromises);
