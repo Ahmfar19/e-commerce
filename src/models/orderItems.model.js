@@ -76,15 +76,7 @@ class OrderItems {
             throw new Error('Invalid order ID');
         }
         const sql = `
-            SELECT order_items.*, name, image, price
-            , description, discount_value As discount,
-            articelNumber,
-            unit_name,
-            units.unit_id
-            FROM order_items
-            JOIN products ON order_items.product_id = products.product_id
-            INNER JOIN units ON products.unit_id = units.unit_id
-            LEFT JOIN discounts ON products.discount_id = discounts.discount_id
+            SELECT * FROM order_items
             WHERE order_items.order_id = ${orderId}
         `;
         try {
