@@ -30,8 +30,11 @@ const createOrderData = async (body) => {
 
     // Shipping info
     const shipping = await Shipping.getById(shipping_id);
-    const shipping_price = +shipping[0].shipping_price;
 
+    const shipping_price = +shipping[0].shipping_price;
+    const shipping_name = shipping[0].shipping_name;
+    const shipping_time = shipping[0].shipping_time;
+   
     // Total price before
     const totalPriceAfterDiscount = products.reduce((acc, product) => {
         return acc + (product.price - product.discount) * product.quantity;
@@ -56,7 +59,8 @@ const createOrderData = async (body) => {
         finallprice,
         vatAmount,
         shipping_price,
-        shipping_id,
+        shipping_name,
+        shipping_time
     };
 };
 
@@ -106,6 +110,7 @@ const getOrCreateCustomer = async (customer) => {
 };
 
 const createOrderAndSaveItems = async (orderData, customerId) => {
+
     const {
         products,
         nowDate,
@@ -113,7 +118,9 @@ const createOrderAndSaveItems = async (orderData, customerId) => {
         finallprice,
         totalDiscount,
         vatAmount,
-        shipping_id,
+        shipping_price,
+        shipping_name,
+        shipping_time
     } = orderData;
 
     const orderType = await OrderType.getAll();
@@ -121,7 +128,9 @@ const createOrderAndSaveItems = async (orderData, customerId) => {
     const order = new Order({
         customer_id: customerId,
         type_id: orderType[0].type_id,
-        shipping_id: shipping_id,
+        shipping_price: shipping_price,
+        shipping_name: shipping_name,
+        shipping_time: shipping_time,
         order_date: nowDate,
         sub_total: totalPriceAfterDiscount,
         tax: vatAmount,
@@ -153,15 +162,15 @@ const createOrder = async (req, res) => {
 
         // Create the order object data
         const orderData = await createOrderData(req.body);
-        // Handle the customer
-        const customerId = await getOrCreateCustomer(customer);
-        // Create the order and the order items
-        const order = await createOrderAndSaveItems(orderData, customerId);
+        // // Handle the customer
+         const customerId = await getOrCreateCustomer(customer);
+        // // Create the order and the order items
+         const order = await createOrderAndSaveItems(orderData, customerId);
 
         // Send Email to customer
-        await sendOrderEmail(orderData);
+         await sendOrderEmail(orderData);
 
-        return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, order);
+         return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, order);
     } catch (err) {
         console.error(err);
         sendResponse(res, 500, 'Internal Server Error', null, err?.message || err, null);
