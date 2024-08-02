@@ -4,8 +4,10 @@ class Order {
     constructor(options) {
         this.customer_id = options.customer_id;
         this.type_id = options.type_id;
-        this.shipping_id = options.shipping_id;
         this.order_date = options.order_date;
+        this.shipping_name = options.shipping_name;
+        this.shipping_price = options.shipping_price;
+        this.shipping_time = options.shipping_time;
         this.sub_total = options.sub_total;
         this.tax = options.tax;
         this.items_discount = options.items_discount;
@@ -16,8 +18,10 @@ class Order {
         const sql = `INSERT INTO orders (
             customer_id,
             type_id,
-            shipping_id,
             order_date,
+            shipping_name,
+            shipping_price,
+            shipping_time,
             sub_total,
             tax,
             items_discount,
@@ -25,8 +29,10 @@ class Order {
         ) VALUES (
             ${this.customer_id},
             ${this.type_id},
-            ${this.shipping_id},
             "${this.order_date}",
+            "${this.shipping_name}",
+            ${this.shipping_price},
+            ${this.shipping_time},
             ${this.sub_total},
             ${this.tax},
             ${this.items_discount},
@@ -42,13 +48,10 @@ class Order {
        DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS order_date,
        customers.customer_id,
        CONCAT(customers.fname, ' ', customers.lname) AS customerName,
-       order_type.type_name ,
-       shipping.shipping_name,
-       shipping.shipping_price
+       order_type.type_name 
        FROM orders
        INNER JOIN customers ON orders.customer_id = customers.customer_id
        INNER JOIN order_type ON orders.type_id = order_type.type_id
-       INNER JOIN shipping ON orders.shipping_id = shipping.shipping_id
 `;
         const [rows] = await pool.execute(sql);
         return rows;
@@ -85,7 +88,6 @@ class Order {
                 DATE_FORMAT(order_date, '%Y-%m-%d %H:%i:%s') AS order_date FROM orders 
                 INNER JOIN customers ON orders.customer_id = customers.customer_id
                 INNER JOIN order_type ON orders.type_id = order_type.type_id
-                INNER JOIN shipping ON orders.shipping_id = shipping.shipping_id
                 WHERE order_id = ?`;
         const [rows] = await pool.execute(sql, [id]);
         return rows;
@@ -134,13 +136,10 @@ class Order {
             DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS order_date,
             customers.customer_id,
             CONCAT(customers.fname, ' ', customers.lname) AS customerName,
-            order_type.type_name ,
-            shipping.shipping_name,
-            shipping.shipping_price
+            order_type.type_name 
             FROM orders
             INNER JOIN customers ON orders.customer_id = customers.customer_id
             INNER JOIN order_type ON orders.type_id = order_type.type_id
-            INNER JOIN shipping ON orders.shipping_id = shipping.shipping_id
             WHERE orders.type_id = 2
         `;
         const [rows] = await pool.execute(sql);
@@ -177,13 +176,10 @@ class Order {
             customers.email,
             customers.phone,
             customers.isCompany,
-            order_type.type_name ,
-            shipping.shipping_name,
-            shipping.shipping_price
+            order_type.type_name
             FROM orders
             INNER JOIN customers ON orders.customer_id = customers.customer_id
             INNER JOIN order_type ON orders.type_id = order_type.type_id
-            INNER JOIN shipping ON orders.shipping_id = shipping.shipping_id
         `;
         if (key === 'order_date') {
             const [from, to] = value.split('to').map(v => v.trim());
