@@ -9,13 +9,11 @@ class StoreInfo {
         this.tax_percentage = options.tax_percentage;
         this.free_shipping = options.free_shipping;
         this.name = options.name;
-        this.webSite = options.webSite;
         this.phone = options.phone;
         this.street = options.street;
         this.city = options.city;
         this.zip = options.zip;
         this.email = options.email;
-        
     }
 
     async save() {
@@ -27,7 +25,6 @@ class StoreInfo {
             tax_percentage,
             free_shipping,
             name,
-            webSite,
             phone,
             email,
             street,
@@ -39,12 +36,13 @@ class StoreInfo {
             "${this.opening_weekend}",
             "${this.closing_weekend}",
             "${this.tax_percentage}",
+            "${this.free_shipping}",
+            "${this.name}",
            " ${this.phone}",
            " ${this.email}",
            " ${this.street}",
            " ${this.city}",
-           " ${this.zip}",
-           " ${this.free_shipping}"
+           " ${this.zip}"
         )`;
         const result = await pool.execute(sql);
         this.id = result[0].insertId;
@@ -66,7 +64,6 @@ class StoreInfo {
             tax_percentage = ?,
             free_shipping = ?,
             name = ?,
-            webSite = ?,
             phone = ?,
             email = ?,
             street = ?,
@@ -82,7 +79,6 @@ class StoreInfo {
             this.tax_percentage,
             this.free_shipping,
             this.name,
-            this.webSite,
             this.phone,
             this.email,
             this.street,
