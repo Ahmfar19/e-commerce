@@ -41,6 +41,7 @@ router.get('/order/:id', orderController.getOrderById);
 router.get('/orders/type', orderController.getOrderByType);
 router.get('/orders/byMonth', orderController.getOrdersByMonth);
 router.get('/orders/total-price/count', orderController.getOrdersTotalPriceAndCount);
+router.get('/orders/total-price/count/chart', orderController.getOrdersTotalPriceForChart);
 router.get('/orders/filter', orderController.getOrdersFilter);
 router.get('/orders', orderController.getAllOrders);
 

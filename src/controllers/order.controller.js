@@ -34,7 +34,7 @@ const createOrderData = async (body) => {
     const shipping_price = +shipping[0].shipping_price;
     const shipping_name = shipping[0].shipping_name;
     const shipping_time = shipping[0].shipping_time;
-   
+
     // Total price before
     const totalPriceAfterDiscount = products.reduce((acc, product) => {
         return acc + (product.price - product.discount) * product.quantity;
@@ -60,7 +60,7 @@ const createOrderData = async (body) => {
         vatAmount,
         shipping_price,
         shipping_name,
-        shipping_time
+        shipping_time,
     };
 };
 
@@ -110,7 +110,6 @@ const getOrCreateCustomer = async (customer) => {
 };
 
 const createOrderAndSaveItems = async (orderData, customerId) => {
-
     const {
         products,
         nowDate,
@@ -120,7 +119,7 @@ const createOrderAndSaveItems = async (orderData, customerId) => {
         vatAmount,
         shipping_price,
         shipping_name,
-        shipping_time
+        shipping_time,
     } = orderData;
 
     const orderType = await OrderType.getAll();
@@ -163,14 +162,14 @@ const createOrder = async (req, res) => {
         // Create the order object data
         const orderData = await createOrderData(req.body);
         // // Handle the customer
-         const customerId = await getOrCreateCustomer(customer);
+        const customerId = await getOrCreateCustomer(customer);
         // // Create the order and the order items
-         const order = await createOrderAndSaveItems(orderData, customerId);
+        const order = await createOrderAndSaveItems(orderData, customerId);
 
         // Send Email to customer
-         await sendOrderEmail(orderData);
+        await sendOrderEmail(orderData);
 
-         return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, order);
+        return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, order);
     } catch (err) {
         console.error(err);
         sendResponse(res, 500, 'Internal Server Error', null, err?.message || err, null);
@@ -330,6 +329,23 @@ const getOrdersFilter = async (req, res) => {
     }
 };
 
+const getOrdersTotalPriceForChart = async (req, res) => {
+    try {
+        const { date } = req.query;
+        const orders = await Order.getOrdersTotalPriceForChart(date);
+        sendResponse(
+            res,
+            202,
+            'Accepted',
+            'Successfully retrieved all the orders',
+            null,
+            orders,
+        );
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
 module.exports = {
     createOrder,
     getAllOrders,
@@ -343,4 +359,5 @@ module.exports = {
     getOrdersByMonth,
     getOrdersFilter,
     getOrdersTotalPriceAndCount,
+    getOrdersTotalPriceForChart,
 };

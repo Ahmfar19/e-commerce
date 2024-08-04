@@ -200,6 +200,26 @@ class Order {
         const [rows] = await pool.execute(sql, [month, year]);
         return rows;
     }
+
+    static async getOrdersTotalPriceForChart(year) {
+        const sql = `
+             SELECT
+                 MONTH(order_date) AS month,
+                 SUM(total) AS total_price,
+                 COUNT(*) AS orders_count
+             FROM
+                 orders
+             WHERE
+                 YEAR(order_date) = ?
+             GROUP BY
+                 MONTH(order_date)
+             ORDER BY
+                 MONTH(order_date) ASC
+         `;
+
+        const [rows] = await pool.execute(sql, [year]);
+        return rows;
+    }
 }
 
 module.exports = Order;

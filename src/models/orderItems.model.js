@@ -52,7 +52,6 @@ class OrderItems {
     }
 
     static async saveMulti(product_items) {
-     
         if (!Array.isArray(product_items.products) || product_items.products.length === 0) {
             throw new Error('Invalid report items data');
         }
