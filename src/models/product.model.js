@@ -546,6 +546,15 @@ class Product {
         const [rows] = await pool.execute(sql, [discountId]);
         return rows;
     }
+
+    static async getProductCountByCategory() {
+        const sql = `SELECT c.category_name, COUNT(*) AS product_count
+              FROM products AS p
+              INNER JOIN categories AS c ON p.category_id = c.category_id
+              GROUP BY p.category_id;`;
+        const [rows] = await pool.execute(sql);
+        return rows;
+    }
 }
 
 module.exports = Product;

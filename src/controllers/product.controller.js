@@ -322,6 +322,15 @@ const getProductsByDiscountId = async (req, res) => {
     }
 };
 
+const getProductsCountByCategory = async (req, res) => {
+    try {
+        const products = await Product.getProductCountByCategory();
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the products.', null, products);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
 module.exports = {
     createProduct,
     updateProduct,
@@ -342,4 +351,5 @@ module.exports = {
     getSpecificForTopProduct,
     getSpecificForDiscount,
     getProductsByDiscountId,
+    getProductsCountByCategory
 };

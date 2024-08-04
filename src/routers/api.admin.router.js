@@ -71,6 +71,7 @@ router.get('/products/quantity', productController.getProductsByQuantity);
 router.get('/products/unavailable', productController.getProductsByUnAvailable);
 router.get('/products/specificForDiscount', productController.getSpecificForDiscount);
 router.get('/products/discountId/:id', productController.getProductsByDiscountId);
+router.get('/productCount/category', productController.getProductsCountByCategory);
 
 // Top products
 router.put('/top-products/:id', topProductController.updateTopProduct);
