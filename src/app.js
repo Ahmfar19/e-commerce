@@ -5,7 +5,7 @@ const cors = require('cors');
 const path = require('path');
 const apiRouter = require('./routers/api.router');
 const apiAdminRouter = require('./routers/api.admin.router');
-const { verifyEmail } = require('./helpers/utils');
+const { verifyEmail, isProduction } = require('./helpers/utils');
 const { isAdmin, isAuthorized, initSIDSession } = require('./authentication');
 const config = require('config');
 const { deleteEndedDiscount } = require('./controllers/discounts.controller');
@@ -24,7 +24,7 @@ app.use(express.static(path.resolve('./public')));
 // Apply CORS middleware with the defined options
 const corsOptions = {
     origin: (origin, callback) => {
-        const allowedOrigins = ['https://administreramer.se', 'http://localhost:3000', 'https://misk-anbar.administreramer.se'];
+        const allowedOrigins = ['http://localhost:3000']
         if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
@@ -35,6 +35,13 @@ const corsOptions = {
     allowedHeaders: ['Content-Type'],
     credentials: true,
 };
+
+app.use(function (req, res, next) {
+    if(isProduction()) {
+        req.headers.origin = req.headers.host;
+    }
+    next();
+});
 
 app.use(cors(corsOptions));
 
@@ -54,9 +61,9 @@ app.use(session({
     store: sessionStore,
     secret: CRYPTO_SECRET_KEY,
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: false,
         httpOnly: true, // Prevent JavaScript access
         sameSite: 'Lax', // Restrict cross-site
         maxAge: 24 * 60 * 60 * 1000, // Cookie expiration (1 day)
