@@ -351,5 +351,5 @@ module.exports = {
     getSpecificForTopProduct,
     getSpecificForDiscount,
     getProductsByDiscountId,
-    getProductsCountByCategory
+    getProductsCountByCategory,
 };

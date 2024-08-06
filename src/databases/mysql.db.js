@@ -22,9 +22,8 @@ const connectToMySQL = async () => {
         await pool.getConnection();
 
         console.log('MySQL database connected!');
-    } catch (err) {
+    } catch {
         console.log('MySQL database connection error!');
-
         process.exit(1);
     }
 };
