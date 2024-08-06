@@ -30,4 +30,7 @@ const connectToMySQL = async () => {
 
 connectToMySQL().then();
 
-module.exports = pool;
+module.exports = {
+    pool,              
+    connectionOptions
+};

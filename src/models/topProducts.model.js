@@ -1,4 +1,4 @@
-const pool = require('../databases/mysql.db');
+const { pool } = require('../databases/mysql.db');
 const Product = require('../models/product.model');
 
 class TopProduct {

@@ -1,4 +1,4 @@
-const pool = require('../databases/mysql.db');
+const { pool } = require('../databases/mysql.db');
 const Joi = require('joi');
 
 const userSchema = Joi.object({

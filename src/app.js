@@ -10,7 +10,10 @@ const { isAdmin, isAuthorized, initSIDSession } = require('./authentication');
 const config = require('config');
 const { deleteEndedDiscount } = require('./controllers/discounts.controller');
 const CRYPTO_SECRET_KEY = config.get('CRYPTO_SECRET_KEY');
-require('./databases/mysql.db');
+const { connectionOptions } = require('./databases/mysql.db');
+const MySQLStore = require('express-mysql-session')(session);
+const sessionStore = new MySQLStore(connectionOptions);
+
 
 const app = express();
 deleteEndedDiscount();
@@ -21,7 +24,7 @@ app.use(express.static(path.resolve('./public')));
 // Apply CORS middleware with the defined options
 const corsOptions = {
     origin: (origin, callback) => {
-        const allowedOrigins = ['https://administreramer.se', 'http://localhost:3000', 'http://localhost:3001'];
+        const allowedOrigins = ['https://administreramer.se', 'http://localhost:3000', 'https://misk-anbar.administreramer.se'];
         if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
@@ -45,11 +48,13 @@ app.use((err, req, res, next) => {
     }
 });
 
+
 // Session setup
 app.use(session({
+    store: sessionStore,
     secret: CRYPTO_SECRET_KEY,
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true, // Prevent JavaScript access

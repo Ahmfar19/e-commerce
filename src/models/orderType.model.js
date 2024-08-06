@@ -1,4 +1,4 @@
-const pool = require('../databases/mysql.db');
+const { pool } = require('../databases/mysql.db');
 
 class OrderType {
     constructor(options) {
