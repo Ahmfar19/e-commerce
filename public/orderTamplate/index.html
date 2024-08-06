@@ -126,7 +126,9 @@
                         <div class="description"><%= item.description %></div>
                         <div>
                             <span class="discounted-price"><%= (item.quantity * item.price - item.quantity * item.discount).toFixed(2) %> Kr</span>
-                            <span class="price"><%= (item.quantity * item.price).toFixed(2) %> Kr</span>
+                            <% if (item.discount) { %>
+                                <span class="price"><%= (item.quantity * item.price).toFixed(2) %> Kr</span>
+                            <% } %>
                         </div>
                     </div>
                 </div>
