@@ -250,7 +250,7 @@ const login = async (req, res) => {
                 });
                 return res;
             } else {
-                return res.json({ error: 'ec_alter_passwrodOrEmail_wrong' });
+                return sendResponse(res, 406, 'Not Acceptable', 'ec_alter_passwrodOrEmail_wrong', null, null);
             }
         } else {
             return sendResponse(res, 406, 'Not Acceptable', 'ec_alter_user_notExsists', null, null);
