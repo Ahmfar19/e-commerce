@@ -6,7 +6,7 @@ const getStoreInfo = async (req, res) => {
         const storeInfo = await StoreInfo.getAll();
         sendResponse(res, 200, 'Ok', 'Successfully retrieved all the storeInfo.', null, storeInfo);
     } catch (error) {
-        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
 
