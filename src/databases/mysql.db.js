@@ -31,6 +31,6 @@ const connectToMySQL = async () => {
 connectToMySQL().then();
 
 module.exports = {
-    pool,              
-    connectionOptions
+    pool,
+    connectionOptions,
 };

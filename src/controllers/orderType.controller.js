@@ -38,6 +38,7 @@ const updateOrderType = async (req, res) => {
         if (data.affectedRows === 0) {
             return res.json({
                 status: 404,
+                ok: false,
                 statusCode: 'Bad Request',
                 message: 'No orderType found for update',
             });
@@ -55,6 +56,7 @@ const deleteOrderType = async (req, res) => {
         if (data.affectedRows === 0) {
             return res.json({
                 status: 404,
+                ok: false,
                 statusCode: 'Bad Request',
                 message: 'No orderType found for delete',
             });

@@ -238,12 +238,19 @@ const login = async (req, res) => {
                     staff: staff,
                     authenticated: true,
                     accessToken: verifier,
+                    ok: true,
                 });
             } else {
-                return res.json({ error: 'Password or Email is incorrect' });
+                return res.json({
+                    error: 'Password or Email is incorrect',
+                    ok: false,
+                });
             }
         } else {
-            return res.json({ error: 'User does not exist in the database' });
+            return res.json({
+                error: 'User does not exist in the database',
+                ok: false,
+            });
         }
     } catch {
         return res.status(500).json({ error: 'Internal Server Error' });
@@ -277,6 +284,7 @@ const verifyToken = async (req, res) => {
                 return res.json({
                     statusCode: 401,
                     message: 'invalid token or customer identifer',
+                    ok: false,
                 });
             }
             const checkUserDevice = fingerprint + cid;
@@ -296,6 +304,7 @@ const verifyToken = async (req, res) => {
             return res.json({
                 statusCode: 401,
                 message: 'Unauthorized: Missing authentication token',
+                ok: false,
             });
         }
     } catch (err) {

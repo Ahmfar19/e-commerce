@@ -3,6 +3,7 @@ const { sendReqularEmail } = require('./sendEmail.controller');
 const crypto = require('crypto');
 const { hashPassword, getFutureDateTime, isDateTimeInPast } = require('../helpers/utils');
 const mailMessags = require('../helpers/emailMessages');
+const { sendResponse } = require('../helpers/apiResponse');
 
 const forgetPassword = async (req, res) => {
     try {
@@ -51,7 +52,7 @@ const forgetPassword = async (req, res) => {
             });
         }
     } catch (error) {
-        res.json({ error: error.message });
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
 
@@ -83,7 +84,7 @@ const checkPinCode = async (req, res) => {
             });
         }
     } catch (error) {
-        res.json({ error: error.message });
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
 
@@ -114,7 +115,7 @@ const resetPassword = async (req, res) => {
             ok: true,
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
 

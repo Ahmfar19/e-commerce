@@ -26,6 +26,7 @@ const createUser = async (req, res) => {
         if (error) {
             return res.status(400).json({
                 error: `${error.details[0].message}`,
+                ok: false,
             });
         }
 
@@ -37,6 +38,7 @@ const createUser = async (req, res) => {
         if (!hashedPassword.success) {
             return res.json({
                 error: hashedPassword.error,
+                ok: false,
             });
         }
 
@@ -155,6 +157,7 @@ const updateUserPassword = async (req, res) => {
     if (error) {
         return res.status(400).json({
             error: `${error.details[0].message}`,
+            ok: false,
         });
     }
     try {
@@ -273,6 +276,7 @@ const verifyToken = async (req, res) => {
             if (!decoded || !customer_id) {
                 return res.json({
                     statusCode: 401,
+                    ok: false,
                     message: 'invalid token or customer identifer',
                 });
             }
@@ -282,18 +286,21 @@ const verifyToken = async (req, res) => {
                 return res.json({
                     statusCode: 200,
                     authenticated: true,
+                    ok: true,
                     customer_id,
                 });
             } else {
                 return res.json({
                     statusCode: 401,
                     authenticated: false,
+                    ok: false,
                 });
             }
         } else {
             return res.json({
                 statusCode: 401,
                 authenticated: false,
+                ok: false,
                 message: 'Unauthorized: no authentication token provided',
             });
         }

@@ -1,7 +1,6 @@
 const TopProduct = require('../models/topProducts.model');
 const { sendResponse } = require('../helpers/apiResponse');
 
-// Create a new top product
 const createTopProduct = async (req, res) => {
     try {
         const { product_id } = req.body;
@@ -13,7 +12,6 @@ const createTopProduct = async (req, res) => {
     }
 };
 
-// Get all top products
 const getTopProducts = async (req, res) => {
     try {
         const topProducts = await TopProduct.getAll();
@@ -32,7 +30,6 @@ const getCustomTopProducts = async (req, res) => {
     }
 };
 
-// Get a single top product by ID
 const getTopProduct = async (req, res) => {
     try {
         const { id } = req.params;
@@ -48,7 +45,6 @@ const getTopProduct = async (req, res) => {
     }
 };
 
-// Update a top product by ID
 const updateTopProduct = async (req, res) => {
     try {
         const id = req.params.id;
@@ -66,7 +62,6 @@ const updateTopProduct = async (req, res) => {
     }
 };
 
-// Delete a top product by ID
 const deleteTopProduct = async (req, res) => {
     try {
         const id = req.params.id;

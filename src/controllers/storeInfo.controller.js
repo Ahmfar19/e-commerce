@@ -31,6 +31,7 @@ const updateStoreInformation = async (req, res) => {
         if (data.affectedRows === 0) {
             return res.json({
                 status: 404,
+                ok: false,
                 statusCode: 'Bad Request',
                 message: 'No storeInfo found for update',
             });
@@ -49,6 +50,7 @@ const deleteStoreInfo = async (req, res) => {
         if (data.affectedRows === 0) {
             return res.json({
                 status: 404,
+                ok: false,
                 statusCode: 'Bad Request',
                 message: 'No storeInfo found for delete',
             });

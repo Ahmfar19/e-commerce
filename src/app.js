@@ -14,7 +14,6 @@ const { connectionOptions } = require('./databases/mysql.db');
 const MySQLStore = require('express-mysql-session')(session);
 const sessionStore = new MySQLStore(connectionOptions);
 
-
 const app = express();
 deleteEndedDiscount();
 app.use(cookieParser());
@@ -24,7 +23,7 @@ app.use(express.static(path.resolve('./public')));
 // Apply CORS middleware with the defined options
 const corsOptions = {
     origin: (origin, callback) => {
-        const allowedOrigins = ['http://localhost:3000']
+        const allowedOrigins = ['http://localhost:3000'];
         if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
@@ -36,8 +35,8 @@ const corsOptions = {
     credentials: true,
 };
 
-app.use(function (req, res, next) {
-    if(isProduction()) {
+app.use(function(req, res, next) {
+    if (isProduction()) {
         req.headers.origin = req.headers.host;
     }
     next();
@@ -54,7 +53,6 @@ app.use((err, req, res, next) => {
         next();
     }
 });
-
 
 // Session setup
 app.use(session({

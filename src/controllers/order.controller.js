@@ -212,6 +212,7 @@ const deleteOrderByCustomerId = async (req, res) => {
         if (data.affectedRows === 0) {
             return res.json({
                 status: 404,
+                ok: false,
                 statusCode: 'Bad Request',
                 message: 'No orders found for delete',
             });
@@ -229,6 +230,7 @@ const deleteOrderById = async (req, res) => {
         if (data.affectedRows === 0) {
             return res.json({
                 status: 404,
+                ok: false,
                 statusCode: 'Bad Request',
                 message: 'No order found for delete',
             });
@@ -266,6 +268,7 @@ const updateOrderType = async (req, res) => {
         if (data.affectedRows === 0) {
             return res.json({
                 status: 404,
+                ok: false,
                 statusCode: 'Bad Request',
                 message: 'No order found for update',
             });

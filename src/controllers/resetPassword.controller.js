@@ -13,7 +13,6 @@ const forgetPassword = async (req, res) => {
         if (checkUser.length) {
             const [user] = checkUser;
             if (!user.registered) {
-                console.error(user.registered);
                 return sendResponse(res, 404, 'Fail', 'ec_resetPasword_userNotregistred', null, null);
             }
             // check if user exists in reset_password table
@@ -49,7 +48,7 @@ const forgetPassword = async (req, res) => {
             return sendResponse(res, 404, 'Fail', 'ec_resetPassword_emailNotFound', null, null);
         }
     } catch (error) {
-        res.json({ error: error.message });
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
 
@@ -81,7 +80,7 @@ const checkPinCode = async (req, res) => {
             });
         }
     } catch (error) {
-        res.json({ error: error.message });
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
 
@@ -112,7 +111,7 @@ const resetPassword = async (req, res) => {
             ok: true,
         });
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
     }
 };
 

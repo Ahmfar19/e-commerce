@@ -38,6 +38,7 @@ const updateCategory = async (req, res) => {
         if (data.affectedRows === 0) {
             return res.json({
                 status: 404,
+                ok: false,
                 statusCode: 'Bad Request',
                 message: 'No category found for update',
             });
@@ -55,6 +56,7 @@ const deleteCategory = async (req, res) => {
         if (data.affectedRows === 0) {
             return res.json({
                 status: 404,
+                ok: false,
                 statusCode: 'Bad Request',
                 message: 'No category found for delete',
             });
