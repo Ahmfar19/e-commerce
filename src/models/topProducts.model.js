@@ -115,7 +115,7 @@ class TopProduct {
     }
 
     static async deleteById(id) {
-        const sql = `DELETE FROM top_products WHERE id = ?`;
+        const sql = `DELETE FROM top_products WHERE product_id = ?`;
         const [rows] = await pool.execute(sql, [id]);
         return rows;
     }
