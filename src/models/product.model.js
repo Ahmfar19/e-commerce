@@ -555,6 +555,12 @@ class Product {
         const [rows] = await pool.execute(sql);
         return rows;
     }
+
+    static async updateProductDiscountId(productId) {
+        const sql = `UPDATE products SET discount_id = NULL WHERE product_id = ?`;
+        const [rows] = await pool.execute(sql, [productId]);
+        return rows;
+    }
 }
 
 module.exports = Product;
