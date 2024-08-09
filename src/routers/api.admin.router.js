@@ -72,8 +72,7 @@ router.get('/products/unavailable', productController.getProductsByUnAvailable);
 router.get('/products/specificForDiscount', productController.getSpecificForDiscount);
 router.get('/products/discountId/:id', productController.getProductsByDiscountId);
 router.get('/productCount/category', productController.getProductsCountByCategory);
-router.put('/product/discountId/productId/edit/:id', productController.updateDiscountId)
-
+router.put('/product/discountId/productId/edit/:id', productController.updateDiscountId);
 
 // Top products
 router.put('/top-products/:id', topProductController.updateTopProduct);

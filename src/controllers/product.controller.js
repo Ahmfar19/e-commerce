@@ -332,7 +332,6 @@ const getProductsCountByCategory = async (req, res) => {
     }
 };
 
-
 const updateDiscountId = async (req, res) => {
     try {
         const { id } = req.params;
@@ -364,5 +363,5 @@ module.exports = {
     getSpecificForDiscount,
     getProductsByDiscountId,
     getProductsCountByCategory,
-    updateDiscountId
+    updateDiscountId,
 };

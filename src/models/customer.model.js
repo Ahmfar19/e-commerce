@@ -42,15 +42,25 @@ const userSchema = Joi.object({
         'string.base': 'ec_validation_customer_city_mustBeString',
         'string.max': 'ec_validation_customer_city_maxlength',
     }),
-    phone: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).allow('').messages({
+    phone: Joi.string().pattern(/^\+?[0-9]\d{1,14}$/).allow('').messages({
         'string.base': 'ec_validation_customer_phone_mustBeString',
         'string.pattern.base': 'ec_validation_customer_phone_pattern',
     }),
-    registered: Joi.boolean().optional().messages({
-        'boolean.base': 'ec_validation_customer_resgistered_mustBeBoolean',
-    }),
-    isCompany: Joi.boolean().messages({
+    registered: Joi.alternatives().try(
+        Joi.boolean(),
+        Joi.number().valid(0, 1),
+    ).messages({
         'boolean.base': 'ec_validation_customer_isCompany_mustBeBoolean',
+        'number.base': 'ec_validation_customer_isCompany_mustBeNumber',
+        'number.only': 'ec_validation_customer_isCompany_mustBeZeroOrOne',
+    }),
+    isCompany: Joi.alternatives().optional().try(
+        Joi.boolean(),
+        Joi.number().valid(0, 1),
+    ).messages({
+        'boolean.base': 'ec_validation_customer_isCompany_mustBeBoolean',
+        'number.base': 'ec_validation_customer_isCompany_mustBeNumber',
+        'number.only': 'ec_validation_customer_isCompany_mustBeZeroOrOne',
     }),
 });
 
@@ -70,7 +80,7 @@ class User {
         this.city = value.city || '';
         this.phone = value.phone || '';
         this.registered = value.registered || false;
-        this.isCompany = value.isCompany || false;
+        this.isCompany = value.isCompany || 0;
     }
 
     async createUser() {
