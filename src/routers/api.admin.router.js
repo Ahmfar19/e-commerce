@@ -17,6 +17,7 @@ const topProductController = require('../controllers/topProducts.controller');
 const orderTypeController = require('../controllers/orderType.controller');
 const shippingController = require('../controllers/shipping.controller');
 const discountsController = require('../controllers/discounts.controller');
+const swishController = require('../controllers/swish.controller');
 
 const uploadUser = multer({
     dest: path.join(__dirname, 'public/users'),
@@ -25,6 +26,10 @@ const uploadUser = multer({
         fieldSize: 300 * 1024 * 1024, // Set the maximum field size limit in megabytes (MB)
     },
 });
+
+// Payments
+router.post('/swish/refunds', swishController.refunds);
+router.get('/swish/refunds/:refundId', swishController.getRefunds);
 
 // Customers
 router.get('/customers', customerController.getUsers);

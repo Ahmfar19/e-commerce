@@ -4,12 +4,15 @@ const OrderItems = require('../models/orderItems.model');
 const Product = require('../models/product.model');
 const StoreInfo = require('../models/storeInfo.model');
 const OrderType = require('../models/orderType.model');
+const Payments = require('../models/payments.model');
 const Shipping = require('../models/shipping.model');
 const { sendResponse } = require('../helpers/apiResponse');
 const { getNowDate_time, roundToTwoDecimals } = require('../helpers/utils');
 const { sendHtmlEmail } = require('./sendEmail.controller');
 const ejs = require('ejs');
 const path = require('path');
+const { sequelize } = require('../databases/mysql.db');
+const { paymentrequests } = require('./swish.controller');
 
 function getFirstImage(item) {
     const images = JSON.parse(item.image);
@@ -110,7 +113,7 @@ const getOrCreateCustomer = async (customer) => {
     }
 };
 
-const createOrderAndSaveItems = async (orderData, customerId) => {
+const createOrderAndSaveItems = async (orderData, customerId, transaction) => {
     const {
         products,
         nowDate,
@@ -138,42 +141,60 @@ const createOrderAndSaveItems = async (orderData, customerId) => {
         total: finallprice,
     });
 
-    const order_id = await order.save();
+    const order_id = await order.save(transaction);
 
-    await Promise.all([
-        OrderItems.saveMulti({
-            order_id,
-            products,
-        }),
-        Order.updateProductQuantities(products),
-    ]);
+    await OrderItems.saveMulti({ order_id, products }, transaction);
     return order;
 };
 
 const createOrder = async (req, res) => {
+    const transaction = await sequelize.transaction();
+
+    console.error(1);
+
     try {
         const { products, customer } = req.body;
 
         // Enusre the all products are available
         const { success, message, insufficientProducts } = await Product.checkQuantities(products);
         if (!success) {
+            await transaction.rollback();
             return sendResponse(res, 500, message, null, message, insufficientProducts);
         }
 
         // Create the order object data
         const orderData = await createOrderData(req.body);
-        // // Handle the customer
+        // Handle the customer
         const customerId = await getOrCreateCustomer(customer);
-        // // Create the order and the order items
-        const order = await createOrderAndSaveItems(orderData, customerId);
+        // Create the order and the order items
+        const order = await createOrderAndSaveItems(orderData, customerId, transaction);
+
+        const payData = {
+            payerAlias: '46700240563',
+            amount: '1.00',
+            message: 'test this amount',
+        };
+        const paymentResponse = await paymentrequests(payData);
+        console.error(paymentResponse);
+        if (paymentResponse && paymentResponse?.id) {
+            await transaction.commit();
+            (new Payments({
+                payment_type_id: 2,
+                customer_id: customerId,
+                order_id: order.order_id,
+                payment_id: paymentResponse.id,
+                status: 1,
+            })).createPayment();
+        }
 
         // Send Email to customer
-        const templatePath = path.resolve(`public/orderTamplate/index.html`);
-        await sendOrderEmail(orderData, templatePath);
+        // const templatePath = path.resolve(`public/orderTamplate/index.html`);
+        // await sendOrderEmail(orderData, templatePath);
 
         return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, order);
     } catch (err) {
         console.error(err);
+        await transaction.rollback();
         sendResponse(res, 500, 'Internal Server Error', null, err?.message || err, null);
     }
 };

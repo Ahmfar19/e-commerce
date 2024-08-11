@@ -1,4 +1,4 @@
-const { pool } = require('../databases/mysql.db');
+const { pool, sequelize } = require('../databases/mysql.db');
 
 class Order {
     constructor(options) {
@@ -14,7 +14,7 @@ class Order {
         this.total = options.total;
     }
 
-    async save() {
+    async save(transaction) {
         const sql = `INSERT INTO orders (
             customer_id,
             type_id,
@@ -38,8 +38,14 @@ class Order {
             ${this.items_discount},
             ${this.total}
         )`;
-        const result = await pool.execute(sql);
-        this.order_id = result[0].insertId;
+        const result = transaction ? await sequelize.query(sql, { transaction }) : await pool.execute(sql);
+        if (transaction) {
+            // For MySQL, `result` is an array: [rows, metadata]
+            this.order_id = result[0]; // Adjust based on Sequelize version
+        } else {
+            // MySQL pool's result structure: [rows, fields]
+            this.order_id = result[0].insertId;
+        }
         return this.order_id;
     }
 
@@ -111,9 +117,7 @@ class Order {
                     FROM products
                     WHERE product_id = ?
                 `;
-                const [rows] = await pool.execute(checkQuantitySql, [
-                    product.product_id,
-                ]);
+                const [rows] = await pool.execute(checkQuantitySql, [product.product_id]);
 
                 if (parseInt(rows[0].quantity) === 0) {
                     const updateAvailabilitySql = `

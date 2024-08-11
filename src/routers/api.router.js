@@ -14,6 +14,12 @@ const shippingController = require('../controllers/shipping.controller');
 const unitController = require('../controllers/unit.controller');
 const topProductController = require('../controllers/topProducts.controller');
 const orderTypeController = require('../controllers/orderType.controller');
+const swishController = require('../controllers/swish.controller');
+
+// Payments
+router.post('/swish/paymentrequests', swishController.paymentrequests);
+router.post('/swish/paymentrequests/status', swishController.receivePaymentStatus);
+router.get('/swish/paymentrequests/:requestId', swishController.getPaymentrequests);
 
 // Authentication
 router.post('/auth/customer/verifyToken', customerController.verifyToken);

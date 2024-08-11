@@ -5,6 +5,11 @@ const CryptoJS = require('crypto-js');
 const JWT_SECRET_KEY = config.get('JWT_SECRET_KEY');
 const CRYPTO_SECRET_KEY = config.get('CRYPTO_SECRET_KEY');
 
+const isProduction = () => {
+    const NODE_ENV = process.env.NODE_ENV || 'production';
+    return NODE_ENV === 'production';
+};
+
 const handleEncrypt = (text, secretKey) => {
     secretKey = secretKey || CRYPTO_SECRET_KEY;
     if (typeof text !== 'string' || typeof secretKey !== 'string') {
@@ -66,6 +71,9 @@ function generateUniqueUserId() {
 }
 
 const isAuthorized = (req, res, next) => {
+    if (!isProduction()) {
+        return next();
+    }
     const reqIpAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     if (reqIpAddress !== req.session.ipAddress) {
         return res.status(401).json({ ok: false, message: 'Unauthorized' });

@@ -1,4 +1,4 @@
-const { pool } = require('../databases/mysql.db');
+const { pool, sequelize } = require('../databases/mysql.db');
 
 class OrderItems {
     constructor(options) {
@@ -51,7 +51,7 @@ class OrderItems {
         return this.item_id;
     }
 
-    static async saveMulti(product_items) {
+    static async saveMulti(product_items, transaction) {
         if (!Array.isArray(product_items.products) || product_items.products.length === 0) {
             throw new Error('Invalid report items data');
         }
@@ -71,7 +71,11 @@ class OrderItems {
                 product.image,
                 product.quantity,
             ];
-            return await pool.execute(sql, values);
+            if (transaction) {
+                return await sequelize.query(sql, { replacements: values, transaction });
+            } else {
+                return await pool.execute(sql, values);
+            }
         });
         await Promise.all(insertionPromises);
     }
