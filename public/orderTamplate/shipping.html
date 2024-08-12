@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Summary</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .wrapper {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            min-height: 100vh;
+            /* Ensures the wrapper takes up at least the full viewport height */
+        }
+
+        .order-summary {
+            width: 100%;
+            max-width: 800px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 0 auto;
+        }
+
+        .order-summary h2 {
+            margin: 0 0 20px;
+            font-size: 24px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        .order-summary h3 {
+            margin: 20px 0;
+            font-size: 18px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+
+        .order-summary .item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .order-summary .item img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-right: 15px;
+        }
+
+        .order-summary .item .details {
+            flex-grow: 1;
+        }
+
+        .order-summary .item .details .name {
+            font-size: 16px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .order-summary .item .details .description {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .order-summary .item .details .price {
+            color: #999;
+            text-decoration: line-through;
+        }
+
+        .order-summary .item .details .discounted-price {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .order-summary .total,
+        .order-summary .customer-info,
+        .order-summary .store-info {
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+
+        .order-summary .total div,
+        .order-summary .customer-info div,
+        .order-summary .store-info div {
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .order-summary .total div strong,
+        .order-summary .customer-info div strong,
+        .order-summary .store-info div strong {
+            font-size: 16px;
+        }
+
+        .order-summary .edit-cart {
+            text-align: center;
+            /* Centered alignment or adjust as needed */
+            margin-top: 20px;
+            font-size: 14px;
+            padding: 10px 0;
+            /* Added padding for better spacing */
+            background-color: #f9f9f9;
+            /* Optional: light background for emphasis */
+            border-top: 1px solid #ddd;
+            /* Optional: border for visual separation */
+        }
+
+        .bottom-border {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <div class="order-summary">
+            <h2>Hej <%= orderData.customer.fname %>
+                    <%= orderData.customer.lname %>!</h2>
+
+            <p>
+                Din order är nu packad och snart på väg till ditt utlämningsställe. Du kan följa ditt paket med nedan
+                trackingnummer. Notera att det kan ta några timmar innan det blir synligt i systemet. Om du får detta
+                mail på en helgdag så beräknas du kunna följa ditt paket nästkommande vardag.
+                Trackingnummer för din beställning
+
+                373325385172901968
+            </p>
+
+            <p>
+                Tack för din beställning! Din orderbekräftelse gäller som kvitto på ditt köp. Detta mail går inte att
+                svara på.
+            </p>
+
+            <div class="customer-info">
+                <h3 class="bottom-border">Kundinformation</h3>
+                <div><strong>Adress:</strong>
+                    <%= orderData.customer.address %>
+                </div>
+                <div><strong>Postnummer:</strong>
+                    <%= orderData.customer.zip %>
+                </div>
+                <div><strong>Stad:</strong>
+                    <%= orderData.customer.city %>
+                </div>
+                <div><strong>Orderdatum:</strong>
+                    <%= orderData.customer.order_date %>
+                </div>
+            </div>
+
+            <h3 class="bottom-border">Produkters</h3>
+
+            <% orderData.products.forEach(item=> { %>
+                <div class="item">
+                    <img src="cid:<%= item.cid %>" alt="Product Image">
+                    <div class="details">
+                        <div class="name">(<%= item.quantity %> / <%= item.unit_name %>) <%= item.product_name %>
+                        </div>
+                        <div>
+                            <span class="discounted-price">
+                                <%= (item.quantity * item.price - item.quantity * item.discount).toFixed(2) %> Kr
+                            </span>
+                            <% if (item.discount) { %>
+                                <span class="price">
+                                    <%= (item.quantity * item.price).toFixed(2) %> Kr
+                                </span>
+                                <% } %>
+                        </div>
+                    </div>
+                </div>
+                <% }); %>
+
+                    <h3 class="bottom-border">Betalningsinformation</h3>
+                    <div class="total">
+                        <div><strong>SUBTOTAL:</strong>
+                            <%= orderData.orderDetails.sub_total %> Kr
+                        </div>
+                        <% if (orderData.totalDiscount) { %>
+                            <div><strong>TOTALDISCOUNT:</strong>
+                                <%= orderData.orderDetails.items_discount %> Kr
+                            </div>
+                            <% } %>
+                                <div><strong>FRAKT:</strong>
+                                    <%= orderData.orderDetails.shipping_price %> Kr
+                                </div>
+                                <div><strong>MOMS:</strong>
+                                    <%= orderData.orderDetails.tax %> Kr
+                                </div>
+                                <div><strong>TOTAL:</strong>
+                                    <%= orderData.orderDetails.total %> Kr
+                                </div>
+                    </div>
+
+                    <h3 class="bottom-border">Butiksinformation</h3>
+                    <div class="store-info">
+                        <div><strong>Butik:</strong> Din Butik AB</div>
+                        <div><strong>Adress:</strong>
+                            <%= orderData.storeInfo.street %>, <%= orderData.storeInfo.zip %>, <%=
+                                        orderData.storeInfo.city %>
+                        </div>
+                        <div><strong>Öppettider:</strong></div>
+                        <div>Vardagar: <%= orderData.storeInfo.opening_day %> - <%= orderData.storeInfo.closing_day %>
+                        </div>
+                        <div>Helger: <%= orderData.storeInfo.opening_weekend %> - <%=
+                                    orderData.storeInfo.closing_weekend %>
+                        </div>
+                        <div><strong>Telefon:</strong>
+                            <%= orderData.storeInfo.phone %>
+                        </div>
+                        <div><strong>Email:</strong>
+                            <%= orderData.storeInfo.email %>
+                        </div>
+                    </div>
+
+                    <div class="edit-cart">
+                        Om du har några frågor om din beställning, vänligen kontakta vår kundtjänst.
+                    </div>
+
+        </div>
+    </div>
+</body>
+
+</html>

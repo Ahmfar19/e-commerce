@@ -7,10 +7,9 @@ const OrderType = require('../models/orderType.model');
 const Shipping = require('../models/shipping.model');
 const { sendResponse } = require('../helpers/apiResponse');
 const { getNowDate_time } = require('../helpers/utils');
-const { sendHtmlEmail, sendReqularEmail } = require('./sendEmail.controller');
+const { sendHtmlEmail } = require('./sendEmail.controller');
 const ejs = require('ejs');
 const path = require('path');
-const mailMessags = require('../helpers/emailMessages');
 
 function getFirstImage(item) {
     const images = JSON.parse(item.image);
@@ -64,7 +63,7 @@ const createOrderData = async (body) => {
     };
 };
 
-const sendOrderEmail = async (orderData) => {
+const sendOrderEmail = async (orderData, templatePath) => {
     // Construct inline images data
     const inlineImages = orderData.products.map((product) => {
         const firstImage = JSON.parse(product.image)[0];
@@ -89,7 +88,6 @@ const sendOrderEmail = async (orderData) => {
     const [storeInfo] = await StoreInfo.getAll();
     orderData.storeInfo = storeInfo;
 
-    const templatePath = path.resolve(`public/orderTamplate/index.html`);
     const htmlTamplate = await ejs.renderFile(templatePath, { orderData, getFirstImage });
     sendHtmlEmail(orderData.customer.email, 'hello', 'customer', htmlTamplate, inlineImages);
 };
@@ -167,7 +165,8 @@ const createOrder = async (req, res) => {
         const order = await createOrderAndSaveItems(orderData, customerId);
 
         // Send Email to customer
-        await sendOrderEmail(orderData);
+        const templatePath = path.resolve(`public/orderTamplate/index.html`);
+        await sendOrderEmail(orderData, templatePath);
 
         return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, order);
     } catch (err) {
@@ -274,10 +273,13 @@ const updateOrderType = async (req, res) => {
             });
         }
 
-        const CustomerInformation = await Order.getUserFromOrderId(id);
-        const title = mailMessags.shippingOrder.title.replace('{0}', CustomerInformation[0].customerName);
-        const body = mailMessags.shippingOrder.body;
-        sendReqularEmail(CustomerInformation[0].email, title, body);
+        const customer = await Order.getUserFromOrderId(id);
+        const products = await OrderItems.getItemsByOrderId(id);
+        const orderDetails = await Order.getOrderDetails(id);
+        const orderData = { 'customer': customer, 'products': products, 'orderDetails': orderDetails };
+
+        const templatePath = path.resolve(`public/orderTamplate/shipping.html`);
+        await sendOrderEmail(orderData, templatePath);
 
         sendResponse(res, 202, 'Accepted', 'Successfully updated a orderType.', null, null);
     } catch (err) {
