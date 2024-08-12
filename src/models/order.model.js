@@ -115,7 +115,7 @@ class Order {
                     product.product_id,
                 ]);
 
-                if (rows[0].quantity === 0) {
+                if (parseInt(rows[0].quantity) === 0) {
                     const updateAvailabilitySql = `
                         UPDATE products
                         SET available = false
@@ -196,7 +196,7 @@ class Order {
         const [year, month] = date.split('-');
 
         const sql =
-            'SELECT SUM(total) AS total_price, COUNT(*) AS orders_count FROM orders WHERE MONTH(orders.order_date) = ? AND YEAR(orders.order_date) = ?';
+            'SELECT SUM(sub_total) AS total_price, COUNT(*) AS orders_count FROM orders WHERE MONTH(orders.order_date) = ? AND YEAR(orders.order_date) = ?';
         const [rows] = await pool.execute(sql, [month, year]);
         return rows;
     }
@@ -205,7 +205,7 @@ class Order {
         const sql = `
              SELECT
                  MONTH(order_date) AS month,
-                 SUM(total) AS total_price,
+                 SUM(sub_total) AS total_price,
                  COUNT(*) AS orders_count
              FROM
                  orders
