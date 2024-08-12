@@ -1,17 +1,84 @@
 const { pool } = require('../databases/mysql.db');
+const Joi = require('joi');
 
+const orderSchema = Joi.object({
+    customer_id: Joi.number().integer().positive().required().messages({
+        'number.base': 'Customer ID must be a number.',
+        'number.integer': 'Customer ID must be an integer.',
+        'number.positive': 'Customer ID must be a positive number.',
+        'any.required': 'Customer ID is required.',
+    }),
+    type_id: Joi.number().integer().positive().required().messages({
+        'number.base': 'Type ID must be a number.',
+        'number.integer': 'Type ID must be an integer.',
+        'number.positive': 'Type ID must be a positive number.',
+        'any.required': 'Type ID is required.',
+    }),
+    order_date: Joi.date().iso().required().messages({
+        'date.base': 'Order date must be a valid date.',
+        'date.iso': 'Order date must be in ISO format.',
+        'any.required': 'Order date is required.',
+    }),
+    shipping_name: Joi.string().trim().max(100).required().messages({
+        'string.base': 'Shipping name must be a string.',
+        'string.empty': 'Shipping name cannot be empty.',
+        'string.max': 'Shipping name must be less than or equal to 100 characters.',
+        'any.required': 'Shipping name is required.',
+    }),
+    shipping_price: Joi.number().precision(2).positive().required().messages({
+        'number.base': 'Shipping price must be a number.',
+        'number.precision': 'Shipping price must have up to 2 decimal places.',
+        'number.positive': 'Shipping price must be a positive number.',
+        'any.required': 'Shipping price is required.',
+    }),
+    shipping_time: Joi.string().trim().max(50).required().messages({
+        'string.base': 'Shipping time must be a string.',
+        'string.max': 'Shipping time must be less than or equal to 50 characters.',
+        'any.required': 'Shipping time is required.',
+    }),
+    sub_total: Joi.number().precision(2).positive().required().messages({
+        'number.base': 'Sub total must be a number.',
+        'number.precision': 'Sub total must have up to 2 decimal places.',
+        'number.positive': 'Sub total must be a positive number.',
+        'any.required': 'Sub total is required.',
+    }),
+    tax: Joi.number().precision(2).positive().required().messages({
+        'number.base': 'Tax must be a number.',
+        'number.precision': 'Tax must have up to 2 decimal places.',
+        'number.positive': 'Tax must be a positive number.',
+        'any.required': 'Tax is required.',
+    }),
+    items_discount: Joi.number().precision(2).min(0).required().messages({
+        'number.base': 'Items discount must be a number.',
+        'number.precision': 'Items discount must have up to 2 decimal places.',
+        'number.min': 'Items discount cannot be negative.',
+        'any.required': 'Items discount is required.',
+    }),
+    total: Joi.number().precision(2).positive().required().messages({
+        'number.base': 'Total must be a number.',
+        'number.precision': 'Total must have up to 2 decimal places.',
+        'number.positive': 'Total must be a positive number.',
+        'any.required': 'Total is required.',
+    }),
+});
 class Order {
     constructor(options) {
-        this.customer_id = options.customer_id;
-        this.type_id = options.type_id;
-        this.order_date = options.order_date;
-        this.shipping_name = options.shipping_name;
-        this.shipping_price = options.shipping_price;
-        this.shipping_time = options.shipping_time;
-        this.sub_total = options.sub_total;
-        this.tax = options.tax;
-        this.items_discount = options.items_discount;
-        this.total = options.total;
+        const { error, value } = orderSchema.validate(options);
+
+        if (error) {
+            throw new Error(`Validation error: ${error.details.map(err => err.message).join(', ')}`);
+        }
+
+        this.customer_id = value.customer_id;
+        this.type_id = value.type_id;
+        this.order_date = value.order_date;
+        this.shipping_name = value.shipping_name;
+        this.shipping_price = value.shipping_price;
+        this.shipping_time = value.shipping_time;
+        this.sub_total = value.sub_total;
+        this.tax = value.tax;
+        this.items_discount = value.items_discount;
+        this.total = value.total;
     }
 
     async save() {

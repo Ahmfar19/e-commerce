@@ -2,7 +2,6 @@ const { pool } = require('../databases/mysql.db');
 const Joi = require('joi');
 
 const userSchema = Joi.object({
-    
     fname: Joi.string().trim().min(1).max(50).required().messages({
         'string.base': 'ec_validation_customer_fname_beString',
         'string.empty': 'ec_validation_customer_fname_cantBeEmpty',
@@ -76,7 +75,7 @@ class User {
         this.city = value.city || '';
         this.phone = value.phone || '';
         this.registered = value.registered || false;
-        this.isCompany = value.isCompany; 
+        this.isCompany = value.isCompany;
     }
 
     async createUser() {

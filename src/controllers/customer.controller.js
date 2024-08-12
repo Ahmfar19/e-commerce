@@ -62,9 +62,6 @@ const createUser = async (req, res) => {
                 isCompany,
                 registered: false,
             });
-             
-        
-            
 
             // If the customer exists but is not registered, update the existing record
             if (checkCustomer.length && !checkCustomer[0].registered) {
