@@ -140,7 +140,9 @@ const updateUser = async (req, res) => {
             return sendResponse(res, 406, 'Not Acceptable', 'ec_profile_user_editFail_Email_exsists', null, null);
         }
 
-        const custoemr = new Customer(req.body);
+        const data = req.body;
+        delete data.customer_id;
+        const custoemr = new Customer(data);
 
         await custoemr.updateUser(id);
         sendResponse(res, 202, 'Accepted', 'Successfully updated a custoemr.', null, null);
