@@ -140,7 +140,8 @@ class User {
             zip = ?, 
             city = ?, 
             phone = ?, 
-            registered = ?
+            registered = ?,
+            isCompany = ?
             WHERE customer_id = ?`;
         const values = [
             this.fname,
@@ -151,6 +152,7 @@ class User {
             this.city,
             this.phone,
             this.registered,
+            this.isCompany,
             id,
         ];
         await pool.execute(sql, values);
