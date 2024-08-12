@@ -2,11 +2,7 @@ const { pool } = require('../databases/mysql.db');
 const Joi = require('joi');
 
 const userSchema = Joi.object({
-    customer_id: Joi.number().integer().positive().optional().messages({
-        'number.base': 'ec_validation_customer_id_mustBeNumber',
-        'number.integer': 'ec_validation_customer_id_mustBeInteger',
-        'number.positive': 'ec_validation_customer_id_mustBePositive',
-    }),
+    
     fname: Joi.string().trim().min(1).max(50).required().messages({
         'string.base': 'ec_validation_customer_fname_beString',
         'string.empty': 'ec_validation_customer_fname_cantBeEmpty',
@@ -49,15 +45,15 @@ const userSchema = Joi.object({
     registered: Joi.alternatives().try(
         Joi.boolean(),
         Joi.number().valid(0, 1),
-    ).messages({
-        'boolean.base': 'ec_validation_customer_isCompany_mustBeBoolean',
-        'number.base': 'ec_validation_customer_isCompany_mustBeNumber',
-        'number.only': 'ec_validation_customer_isCompany_mustBeZeroOrOne',
+    ).optional().messages({
+        'boolean.base': 'ec_validation_customer_registered_mustBeBoolean',
+        'number.base': 'ec_validation_customer_registered_mustBeNumber',
+        'number.only': 'ec_validation_customer_registered_mustBeZeroOrOne',
     }),
-    isCompany: Joi.alternatives().optional().try(
+    isCompany: Joi.alternatives().try(
         Joi.boolean(),
         Joi.number().valid(0, 1),
-    ).messages({
+    ).optional().default(0).messages({
         'boolean.base': 'ec_validation_customer_isCompany_mustBeBoolean',
         'number.base': 'ec_validation_customer_isCompany_mustBeNumber',
         'number.only': 'ec_validation_customer_isCompany_mustBeZeroOrOne',
@@ -80,7 +76,7 @@ class User {
         this.city = value.city || '';
         this.phone = value.phone || '';
         this.registered = value.registered || false;
-        this.isCompany = value.isCompany || 0;
+        this.isCompany = value.isCompany; 
     }
 
     async createUser() {
