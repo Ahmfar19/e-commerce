@@ -86,6 +86,7 @@ const createUser = async (req, res) => {
 
             await sendVerificationEmail(email, htmlContent);
 
+            delete customer.password;
             return sendResponse(
                 res,
                 201,

@@ -108,7 +108,18 @@ class User {
     }
 
     static async getAllUsers() {
-        const sql = 'SELECT * FROM customers';
+        const sql = `SELECT
+        	customer_id,
+            	fname,
+                lname,
+                email,
+                address,
+                zip,
+                city,
+                phone,
+                registered,
+                isCompany
+        FROM customers`;
         const [rows] = await pool.execute(sql);
         return rows;
     }
