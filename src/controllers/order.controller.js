@@ -6,7 +6,7 @@ const StoreInfo = require('../models/storeInfo.model');
 const OrderType = require('../models/orderType.model');
 const Shipping = require('../models/shipping.model');
 const { sendResponse } = require('../helpers/apiResponse');
-const { getNowDate_time } = require('../helpers/utils');
+const { getNowDate_time, roundToTwoDecimals } = require('../helpers/utils');
 const { sendHtmlEmail } = require('./sendEmail.controller');
 const ejs = require('ejs');
 const path = require('path');
@@ -17,7 +17,8 @@ function getFirstImage(item) {
 }
 
 const calculateVatAmount = (totalWithVat, vatRate) => {
-    return totalWithVat * ((vatRate) / (100 + (+vatRate)));
+    const res = totalWithVat * ((vatRate) / (100 + (+vatRate)));
+    return roundToTwoDecimals(res);
 };
 
 const createOrderData = async (body) => {
@@ -36,14 +37,16 @@ const createOrderData = async (body) => {
 
     // Total price before
     const totalPriceAfterDiscount = products.reduce((acc, product) => {
-        return acc + (product.price - product.discount) * product.quantity;
+        const res = acc + (product.price - product.discount) * product.quantity;
+        return roundToTwoDecimals(res);
     }, 0);
 
     const vatAmount = calculateVatAmount(totalPriceAfterDiscount, tax[0].tax_percentage);
 
     // Calculate total discount
     const totalDiscount = products.reduce((acc, current) => {
-        return acc + current.discount * current.quantity;
+        const res = acc + (current.discount * current.quantity);
+        return roundToTwoDecimals(res);
     }, 0);
 
     // Calculate final price

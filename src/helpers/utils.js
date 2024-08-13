@@ -73,8 +73,6 @@ function isDateTimeInPast(dateTimeToCheck) {
 const verifyEmail = async (req, res) => {
     const { token } = req.body;
     try {
-        
-        
         const decrypted = handleDecrypt(token);
         if (!decrypted) {
             return sendResponse(res, 400, 'Bad Request', 'Invalid or expired token.', null, null);
@@ -90,18 +88,18 @@ const verifyEmail = async (req, res) => {
         if (user.registered) {
             return sendResponse(res, 400, 'Bad Request', 'Email already verified', null, null);
         }
-        
+
         if (tokenExpiryDate < Date.now()) {
             return sendResponse(res, 401, 'Unauthorized', 'invalid authentication token', null, null);
         }
-        
+
         const customerId = user.customer_id;
         user.registered = true;
 
         const data = user;
         delete data.customer_id;
         const newuser = new User(data);
-      
+
         await newuser.updateUser(customerId);
 
         return sendResponse(res, 200, 'Verified', 'The customer is verified', null, null);
@@ -122,6 +120,8 @@ const isProduction = () => {
     return NODE_ENV === 'production';
 };
 
+const roundToTwoDecimals = (value) => Math.floor(value * 100) / 100;
+
 module.exports = {
     hashPassword,
     comparePassword,
@@ -132,4 +132,5 @@ module.exports = {
     handleDecrypt,
     verifyEmail,
     isProduction,
+    roundToTwoDecimals,
 };

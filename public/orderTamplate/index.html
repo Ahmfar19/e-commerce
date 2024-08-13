@@ -136,13 +136,13 @@
 
             <h3 class="bottom-border">Betalningsinformation</h3>
             <div class="total">
-                <div><strong>SUBTOTAL:</strong> <%= orderData.totalPriceAfterDiscount.toFixed(2) %> Kr</div>
+                <div><strong>SUBTOTAL:</strong> <%= orderData.totalPriceAfterDiscount %> Kr</div>
                 <% if (orderData.totalDiscount) { %>
-                <div><strong>TOTALDISCOUNT:</strong> <%= orderData.totalDiscount.toFixed(2) %> Kr</div>
+                <div><strong>TOTALDISCOUNT:</strong> <%= orderData.totalDiscount %> Kr</div>
                 <% } %>
                 <div><strong>FRAKT:</strong> <%= orderData.shipping_price %> Kr</div>
-                <div><strong>MOMS:</strong> <%= orderData.vatAmount.toFixed(2) %> Kr</div>
-                <div><strong>TOTAL:</strong> <%= orderData.finallprice.toFixed(2) %> Kr</div>
+                <div><strong>MOMS:</strong> <%= orderData.vatAmount %> Kr</div>
+                <div><strong>TOTAL:</strong> <%= orderData.finallprice %> Kr</div>
             </div>
 
             <h3 class="bottom-border">Butiksinformation</h3>

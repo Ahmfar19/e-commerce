@@ -248,7 +248,7 @@ const login = async (req, res) => {
                 };
                 res.cookie('cidHash', cidHash, cookiesOption);
                 res.cookie('verifier', verifier, cookiesOption);
-                
+
                 delete customer.password;
                 res.json({
                     customer: customer,
