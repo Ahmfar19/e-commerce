@@ -36,7 +36,16 @@ class Staff {
         return this.staff_id;
     }
     static async getAll() {
-        const sql = 'SELECT * FROM staff';
+        const sql = `SELECT 
+           staff_id,
+           username,
+           fname,
+           lname,
+           phone,
+           email,
+           role,
+           image
+        FROM staff`;
         const [rows] = await pool.execute(sql);
         return rows;
     }

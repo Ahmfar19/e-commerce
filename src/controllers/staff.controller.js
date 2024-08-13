@@ -90,7 +90,7 @@ const createStaff = async (req, res) => {
         });
 
         await user.save();
-
+        delete user.password;
         return sendResponse(
             res,
             201,
