@@ -110,7 +110,7 @@ class Product {
         const placeholders = productIds.map(() => '?').join(',');
 
         // SQL query to fetch product quantities from the database
-        const sql = `SELECT product_id, quantity FROM products WHERE product_id IN (${placeholders})`;
+        const sql = `SELECT product_id, quantity, available FROM products WHERE product_id IN (${placeholders})`;
 
         try {
             // Execute SQL query with product IDs as parameters
@@ -118,17 +118,18 @@ class Product {
 
             // Map rows to an object for easy access by product_id
             const dbQuantities = rows.reduce((acc, row) => {
-                acc[row.product_id] = row.quantity;
+                acc[row.product_id] = {quantity: row.quantity, available: row.available};
                 return acc;
             }, {});
-
+          
             // Array to hold products with insufficient quantities
             const insufficientProducts = [];
 
             // Check each product's requested quantity against the database quantity
             for (const product of products) {
-                const availableQuantity = dbQuantities[product.product_id] || 0;
-                if (product.quantity > availableQuantity) {
+                const isAvailable = +dbQuantities[product.product_id].available || false;
+                const availableQuantity = dbQuantities[product.product_id].quantity || 0;
+                if ((product.quantity > availableQuantity) || !isAvailable) {
                     insufficientProducts.push({
                         id: product.product_id,
                         requested: product.quantity,
