@@ -12,12 +12,10 @@ class WebSocketManager {
             console.log('New WebSocket connection');
             let clientId = null;
 
-            // Listen for messages from the client
             ws.on('message', (message) => {
                 try {
                     const msg = JSON.parse(message);
 
-                    // If the message contains an ID, associate it with the WebSocket connection
                     if (msg.type === 'id' && msg.id) {
                         clientId = msg.id;
                         this.clients.set(clientId, ws);
@@ -28,22 +26,19 @@ class WebSocketManager {
                 }
             });
 
-            // Handle client disconnection
             ws.on('close', () => {
                 console.log('WebSocket disconnected');
                 if (clientId) {
                     this.clients.delete(clientId);
-                    console.log(`Client ${clientId} removed`);
+                    // console.log(`Client ${clientId} removed`);
                 }
             });
 
-            // Handle WebSocket errors
             ws.on('error', (error) => {
                 console.error('WebSocket error:', error);
             });
         });
 
-        // Log any errors with the WebSocket server itself
         this.wss.on('error', (error) => {
             console.error('WebSocket server error:', error);
         });

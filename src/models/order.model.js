@@ -9,6 +9,9 @@ class Order {
         this.shipping_price = options.shipping_price;
         this.shipping_time = options.shipping_time;
         this.sub_total = options.sub_total;
+        this.address = options.address;
+        this.zip = options.zip;
+        this.city = options.city;
         this.tax = options.tax;
         this.items_discount = options.items_discount;
         this.total = options.total;
@@ -22,6 +25,9 @@ class Order {
             shipping_name,
             shipping_price,
             shipping_time,
+            address,
+            zip,
+            city,
             sub_total,
             tax,
             items_discount,
@@ -33,6 +39,9 @@ class Order {
             "${this.shipping_name}",
             ${this.shipping_price},
             ${this.shipping_time},
+            "${this.address}",
+            "${this.zip}",
+            "${this.city}",
             ${this.sub_total},
             ${this.tax},
             ${this.items_discount},
@@ -51,14 +60,14 @@ class Order {
 
     static async getAll() {
         const sql = `SELECT orders.*, 
-       DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS order_date,
-       customers.customer_id,
-       CONCAT(customers.fname, ' ', customers.lname) AS customerName,
-       order_type.type_name 
-       FROM orders
-       INNER JOIN customers ON orders.customer_id = customers.customer_id
-       INNER JOIN order_type ON orders.type_id = order_type.type_id
-`;
+            DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS order_date,
+            customers.customer_id,
+            CONCAT(customers.fname, ' ', customers.lname) AS customerName,
+            order_type.type_name 
+            FROM orders
+            INNER JOIN customers ON orders.customer_id = customers.customer_id
+            INNER JOIN order_type ON orders.type_id = order_type.type_id
+        `;
         const [rows] = await pool.execute(sql);
         return rows;
     }

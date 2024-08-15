@@ -8,16 +8,10 @@ const Payments = require('../models/payments.model');
 const Shipping = require('../models/shipping.model');
 const { sendResponse } = require('../helpers/apiResponse');
 const { getNowDate_time, roundToTwoDecimals } = require('../helpers/utils');
-const { sendHtmlEmail } = require('./sendEmail.controller');
-const ejs = require('ejs');
+const { paymentrequests } = require('./swish.controller');
+const { sendOrderEmail } = require('../helpers/orderUtils');
 const path = require('path');
 const { sequelize } = require('../databases/mysql.db');
-const { paymentrequests } = require('./swish.controller');
-
-function getFirstImage(item) {
-    const images = JSON.parse(item.image);
-    return images[0];
-}
 
 const calculateVatAmount = (totalWithVat, vatRate) => {
     const res = totalWithVat * ((vatRate) / (100 + (+vatRate)));
@@ -69,35 +63,6 @@ const createOrderData = async (body) => {
     };
 };
 
-const sendOrderEmail = async (orderData, templatePath) => {
-    // Construct inline images data
-    const inlineImages = orderData.products.map((product) => {
-        const firstImage = JSON.parse(product.image)[0];
-        const imagePath = path.resolve(
-            __dirname,
-            '../../public/images',
-            `product_${product.product_id}`,
-            firstImage,
-        );
-        return {
-            filename: firstImage,
-            path: imagePath,
-            cid: `${firstImage}`, // Unique CID
-        };
-    });
-
-    orderData.products.forEach(product => {
-        product.cid = getFirstImage(product);
-    });
-
-    // Get the store information to add to the email
-    const [storeInfo] = await StoreInfo.getAll();
-    orderData.storeInfo = storeInfo;
-
-    const htmlTamplate = await ejs.renderFile(templatePath, { orderData, getFirstImage });
-    sendHtmlEmail(orderData.customer.email, 'hello', 'customer', htmlTamplate, inlineImages);
-};
-
 const getOrCreateCustomer = async (customer) => {
     // Check if the user exists in the database
     const checkCustomer = await Customer.isCustomerRegistered(customer.email);
@@ -113,7 +78,7 @@ const getOrCreateCustomer = async (customer) => {
     }
 };
 
-const createOrderAndSaveItems = async (orderData, customerId, transaction) => {
+const createOrderAndSaveItems = async (orderData, customer, transaction) => {
     const {
         products,
         nowDate,
@@ -127,31 +92,32 @@ const createOrderAndSaveItems = async (orderData, customerId, transaction) => {
     } = orderData;
 
     const orderType = await OrderType.getAll();
+    const { customer_id, address, zip, city } = customer;
 
     const order = new Order({
-        customer_id: customerId,
+        customer_id: customer_id,
         type_id: orderType[0].type_id,
         shipping_price: shipping_price,
         shipping_name: shipping_name,
         shipping_time: shipping_time,
         order_date: nowDate,
+        address: address,
+        zip: zip,
+        city: city,
         sub_total: totalPriceAfterDiscount,
         tax: vatAmount,
         items_discount: totalDiscount,
         total: finallprice,
     });
-
     const order_id = await order.save(transaction);
 
     await OrderItems.saveMulti({ order_id, products }, transaction);
+
     return order;
 };
 
 const createOrder = async (req, res) => {
     const transaction = await sequelize.transaction();
-
-    console.error(1);
-
     try {
         const { products, customer } = req.body;
 
@@ -167,7 +133,8 @@ const createOrder = async (req, res) => {
         // Handle the customer
         const customerId = await getOrCreateCustomer(customer);
         // Create the order and the order items
-        const order = await createOrderAndSaveItems(orderData, customerId, transaction);
+        const customerToInsert = { customer_id: customerId, ...customer };
+        const order = await createOrderAndSaveItems(orderData, customerToInsert, transaction);
 
         const payData = {
             payerAlias: '46700240563',
@@ -175,7 +142,7 @@ const createOrder = async (req, res) => {
             message: 'test this amount',
         };
         const paymentResponse = await paymentrequests(payData);
-        console.error(paymentResponse);
+
         if (paymentResponse && paymentResponse?.id) {
             await transaction.commit();
             (new Payments({
@@ -187,14 +154,10 @@ const createOrder = async (req, res) => {
             })).createPayment();
         }
 
-        // Send Email to customer
-        // const templatePath = path.resolve(`public/orderTamplate/index.html`);
-        // await sendOrderEmail(orderData, templatePath);
-
         const response = {
             order,
-            paymentResponse
-        }
+            paymentResponse,
+        };
 
         return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, response);
     } catch (err) {
@@ -306,7 +269,6 @@ const updateOrderType = async (req, res) => {
         const products = await OrderItems.getItemsByOrderId(id);
         const orderDetails = await Order.getOrderDetails(id);
         const orderData = { 'customer': customer, 'products': products, 'orderDetails': orderDetails };
-
         const templatePath = path.resolve(`public/orderTamplate/shipping.html`);
         await sendOrderEmail(orderData, templatePath);
 

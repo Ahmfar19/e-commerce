@@ -103,17 +103,17 @@
 <body>
     <div class="wrapper">
         <div class="order-summary">
-            <h2>Hej <%= orderData.customer.fname %> <%= orderData.customer.lname %>!</h2>
+            <h2>Hej <%= orderData.fname %> <%= orderData.lname %>!</h2>
             <p>
                 Tack för din beställning! Din orderbekräftelse gäller som kvitto på ditt köp. Detta mail går inte att svara på.
             </p>
             
             <div class="customer-info">
                 <h3 class="bottom-border">Kundinformation</h3>
-                <div><strong>Adress:</strong> <%= orderData.customer.address %></div>
-                <div><strong>Postnummer:</strong> <%= orderData.customer.zip %></div>
-                <div><strong>Stad:</strong> <%= orderData.customer.city %></div>
-                <div><strong>Orderdatum:</strong> <%= orderData.nowDate %></div>
+                <div><strong>Adress:</strong> <%= orderData.address %></div>
+                <div><strong>Postnummer:</strong> <%= orderData.zip %></div>
+                <div><strong>Stad:</strong> <%= orderData.city %></div>
+                <div><strong>Orderdatum:</strong> <%= orderData.order_date %></div>
             </div>
 
             <h3 class="bottom-border">Produkters</h3>
@@ -136,13 +136,13 @@
 
             <h3 class="bottom-border">Betalningsinformation</h3>
             <div class="total">
-                <div><strong>SUBTOTAL:</strong> <%= orderData.totalPriceAfterDiscount %> Kr</div>
-                <% if (orderData.totalDiscount) { %>
-                <div><strong>TOTALDISCOUNT:</strong> <%= orderData.totalDiscount %> Kr</div>
+                <div><strong>SUBTOTAL:</strong> <%= orderData.sub_total %> Kr</div>
+                <% if (orderData.items_discount) { %>
+                <div><strong>TOTALDISCOUNT:</strong> <%= orderData.items_discount %> Kr</div>
                 <% } %>
                 <div><strong>FRAKT:</strong> <%= orderData.shipping_price %> Kr</div>
-                <div><strong>MOMS:</strong> <%= orderData.vatAmount %> Kr</div>
-                <div><strong>TOTAL:</strong> <%= orderData.finallprice %> Kr</div>
+                <div><strong>MOMS:</strong> <%= orderData.tax %> Kr</div>
+                <div><strong>TOTAL:</strong> <%= orderData.total %> Kr</div>
             </div>
 
             <h3 class="bottom-border">Butiksinformation</h3>

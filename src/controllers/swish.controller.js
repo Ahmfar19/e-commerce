@@ -1,11 +1,10 @@
 /* eslint-disable no-unused-vars */
-const request = require('request');
+const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const { sendResponse } = require('../helpers/apiResponse');
 const Payments = require('../models/payments.model');
-const OrderItems = require('../models/orderItems.model');
-const Order = require('../models/order.model');
+const { commitOrder } = require('../helpers/orderUtils');
 
 const testConfig = {
     payeeAlias: '1231181189',
@@ -26,71 +25,74 @@ const prodConfig = {
     passphrase: null,
 };
 
-const config = testConfig;
+const config = process.env.NODE_ENV === 'production' ? prodConfig : testConfig;
+
+const axiosInstance = axios.create({
+    baseURL: config.host,
+    httpsAgent: new require('https').Agent({
+        cert: fs.readFileSync(config.cert),
+        key: fs.readFileSync(config.key),
+        ca: config.ca ? fs.readFileSync(config.ca) : undefined,
+        passphrase: config.passphrase,
+    }),
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
 
 // Create Payment Request
-function paymentrequests(data) {
-    // https://webhook.site
-    const json = {
-        payeePaymentReference: '0123456789',
-        callbackUrl: 'https://webhook.site/8c4933fa-f439-43da-aa0c-64c3682d9ce8',
-        payeeAlias: config.payeeAlias,
-        payerAlias: data.payerAlias,
-        amount: data.amount,
-        currency: 'SEK',
-        message: data.message,
-    };
+async function paymentrequests(data) {
+    try {
+        const requestBody = {
+            payeePaymentReference: '0123456789',
+            callbackUrl: 'https://webhook.site/8c4933fa-f439-43da-aa0c-64c3682d9ce8',
+            payeeAlias: config.payeeAlias,
+            payerAlias: data.payerAlias,
+            amount: data.amount,
+            currency: 'SEK',
+            message: data.message,
+        };
 
-    const options = requestOptions('POST', `${config.host}/api/v1/paymentrequests`, json);
+        const response = await axiosInstance.post('/api/v1/paymentrequests', requestBody);
 
-    return new Promise((resolve) => {
-        request(options, (error, response, body) => {
-            if (!response) {
-                return resolve(false);
-            }
-            if (response.statusCode == 201) {
-                const location = response.headers['location'];
-                const token = response.headers['paymentrequesttoken'];
-                const opt = requestOptions('GET', location);
-                request(opt, (err, resp) => {
-                    if (!response) {
-                        resolve(false);
-                    }
-                    const status = {
-                        id: resp.body['id'],
-                        paymentReference: resp.body['paymentReference'] || '',
-                        status: resp.body['status'],
-                        url: location,
-                    };
-                    return resolve(status);
-                });
-            } else {
-                return resolve(false);
-            }
-        });
-    });
+        if (response.status === 201) {
+            const location = response.headers['location'];
+            const statusResponse = await axiosInstance.get(location);
+
+            return {
+                id: statusResponse.data.id,
+                paymentReference: statusResponse.data.paymentReference || '',
+                status: statusResponse.data.status,
+                url: location,
+            };
+        } else {
+            return false;
+        }
+    } catch (error) {
+        console.error('Error creating payment request:', error.message || error);
+        return false;
+    }
 }
 
+// Receive Payment Status
 async function receivePaymentStatus(req, res) {
     try {
         const { id, status } = req.body;
+
         if (id && status === 'PAID') {
             const result = await Payments.updatePaymentsStatus(id, 2);
+
             if (!result || !result.order_id) {
                 throw new Error('Invalid payment update result.');
             }
-            const products = await OrderItems.getItemsByOrderId(result.order_id);
-
-            if (!products || products.length === 0) {
-                throw new Error('No products found for the given order.');
-            }
-            await Order.updateProductQuantities(products);
 
             const wsManager = req.app.wsManager;
             wsManager.sendMessageToClient(id, status);
+            commitOrder(result.order_id);
 
             return sendResponse(res, 201, 'Received', 'Successfully received the payment status.', null, null);
         }
+
         return sendResponse(res, 400, 'Error', 'Invalid payment status or missing ID.', null, null);
     } catch (error) {
         return sendResponse(
@@ -105,129 +107,74 @@ async function receivePaymentStatus(req, res) {
 }
 
 // Get Payment Request
-function getPaymentrequests(req, res) {
-    const options = requestOptions('GET', `${config.host}/api/v1/paymentrequests/${req.params.requestId}`);
+async function getPaymentrequests(req, res) {
+    try {
+        const response = await axiosInstance.get(`/api/v1/paymentrequests/${req.params.requestId}`);
 
-    request(options, (error, response, body) => {
-        logResult(error, response);
-
-        if (!response) {
-            res.status(500).send(error);
-            return;
-        }
-
-        res.status(response.statusCode);
-        if (response.statusCode == 200) {
-            res.json({
-                id: response.body['id'],
-                paymentReference: response.body['paymentReference'] || '',
-                status: response.body['status'],
-            });
-        } else {
-            res.send(body);
-            return;
-        }
-    });
+        return res.status(response.status).json({
+            id: response.data.id,
+            paymentReference: response.data.paymentReference || '',
+            status: response.data.status,
+        });
+    } catch (error) {
+        logError('Get Payment Request', error);
+        return res.status(500).send(error.message || 'An error occurred.');
+    }
 }
 
 // Create Refund
-function refunds(req, res) {
-    const clURL = 'https://webhook.site/a8f9b5c2-f2da-4bb8-8181-fcb84a6659ea';
-    const json = {
-        payeePaymentReference: '0123456789',
-        originalPaymentReference: req.body.originalPaymentReference,
-        callbackUrl: 'http://localhost:4000/server/api/payments/klaran',
-        payerAlias: config.payeeAlias,
-        amount: req.body.amount,
-        currency: 'SEK',
-        message: req.body.message,
-    };
+async function refunds(req, res) {
+    try {
+        const requestBody = {
+            payeePaymentReference: '0123456789',
+            originalPaymentReference: req.body.originalPaymentReference,
+            callbackUrl: 'http://localhost:4000/server/api/payments/klaran',
+            payerAlias: config.payeeAlias,
+            amount: req.body.amount,
+            currency: 'SEK',
+            message: req.body.message,
+        };
 
-    const options = requestOptions('POST', `${config.host}/api/v1/refunds`, json);
+        const response = await axiosInstance.post('/api/v1/refunds', requestBody);
 
-    request(options, (error, response, body) => {
-        if (!response) {
-            res.status(500).send(error);
-            return;
-        }
-
-        res.status(response.statusCode);
-        if (response.statusCode == 201) {
+        if (response.status === 201) {
             const location = response.headers['location'];
-            const token = response.headers['paymentrequesttoken'];
-            const opt = requestOptions('GET', location);
+            const statusResponse = await axiosInstance.get(location);
 
-            request(opt, (err, resp, bod) => {
-                const id = resp.body['id'];
-                const originalPaymentReference = resp.body['originalPaymentReference'];
-                const status = resp.body['status'];
-
-                res.json({
-                    url: location,
-                    token: token,
-                    originalPaymentReference: originalPaymentReference,
-                    status: status,
-                    id: id,
-                });
+            return res.json({
+                url: location,
+                token: response.headers['paymentrequesttoken'],
+                originalPaymentReference: statusResponse.data.originalPaymentReference,
+                status: statusResponse.data.status,
+                id: statusResponse.data.id,
             });
         } else {
-            res.send(body);
-            return;
+            return res.status(response.status).send(response.data);
         }
-    });
+    } catch (error) {
+        logError('Create Refund', error);
+        return res.status(500).send(error.message || 'An error occurred.');
+    }
 }
 
 // Get Refund
-function getRefunds(req, res) {
-    const options = requestOptions('GET', `${config.host}/api/v1/refunds/${req.params.refundId}`);
+async function getRefunds(req, res) {
+    try {
+        const response = await axiosInstance.get(`/api/v1/refunds/${req.params.refundId}`);
 
-    console.log(req);
-
-    request(options, (error, response, body) => {
-        logResult(error, response);
-
-        if (!response) {
-            res.status(500).send(error);
-            return;
-        }
-
-        res.status(response.statusCode);
-        if (response.statusCode == 200) {
-            res.json({
-                id: response.body['id'],
-                originalPaymentReference: response.body['originalPaymentReference'] || '',
-                status: response.body['status'],
-            });
-        } else {
-            res.send(body);
-            return;
-        }
-    });
+        return res.status(response.status).json({
+            id: response.data.id,
+            originalPaymentReference: response.data.originalPaymentReference || '',
+            status: response.data.status,
+        });
+    } catch (error) {
+        logError('Get Refund', error);
+        return res.status(500).send(error.message || 'An error occurred.');
+    }
 }
 
-function requestOptions(method, uri, body) {
-    return {
-        method: method,
-        uri: uri,
-        json: true,
-        body: body,
-        'content-type': 'application/json',
-        cert: fs.readFileSync(config.cert),
-        key: fs.readFileSync(config.key),
-        ca: config.ca ? fs.readFileSync(config.ca) : null,
-        passphrase: config.passphrase,
-    };
-}
-
-function logResult(error, response) {
-    if (error) {
-        console.log(error);
-    }
-    if (response) {
-        console.log(response.statusCode);
-        console.log(response.headers);
-        console.log(response.body);
-    }
+function logError(context, error) {
+    console.error(`Error in ${context}:`, error.message || error);
 }
 
 module.exports = {
