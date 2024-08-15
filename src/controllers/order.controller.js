@@ -191,7 +191,12 @@ const createOrder = async (req, res) => {
         // const templatePath = path.resolve(`public/orderTamplate/index.html`);
         // await sendOrderEmail(orderData, templatePath);
 
-        return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, order);
+        const response = {
+            order,
+            paymentResponse
+        }
+
+        return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, response);
     } catch (err) {
         console.error(err);
         await transaction.rollback();

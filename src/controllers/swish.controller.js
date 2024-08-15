@@ -74,7 +74,6 @@ function paymentrequests(data) {
 async function receivePaymentStatus(req, res) {
     try {
         const { id, status } = req.body;
-
         if (id && status === 'PAID') {
             const result = await Payments.updatePaymentsStatus(id, 2);
             if (!result || !result.order_id) {
@@ -86,6 +85,10 @@ async function receivePaymentStatus(req, res) {
                 throw new Error('No products found for the given order.');
             }
             await Order.updateProductQuantities(products);
+
+            const wsManager = req.app.wsManager;
+            wsManager.sendMessageToClient(id, status);
+
             return sendResponse(res, 201, 'Received', 'Successfully received the payment status.', null, null);
         }
         return sendResponse(res, 400, 'Error', 'Invalid payment status or missing ID.', null, null);
