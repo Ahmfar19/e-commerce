@@ -23,7 +23,13 @@ app.use(express.static(path.resolve('./public')));
 // Apply CORS middleware with the defined options
 const corsOptions = {
     origin: (origin, callback) => {
-        const allowedOrigins = ['http://localhost:3000'];
+        let allowedOrigins = [];
+        if (isProduction()) {
+            allowedOrigins = ['misk-anbar.administreramer.se', 'dashboard.administreramer.se'];
+        } else {
+            allowedOrigins = ['http://localhost:3000'];
+        }
+
         if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
