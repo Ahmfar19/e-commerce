@@ -13,6 +13,13 @@ const { sendOrderEmail } = require('../helpers/orderUtils');
 const path = require('path');
 const { sequelize } = require('../databases/mysql.db');
 
+
+const PAYMNT_TYPE = {
+    SWISH: 'swish',
+    KLARNA: 'klarna',
+    CARD: 'card'
+}
+
 const calculateVatAmount = (totalWithVat, vatRate) => {
     const res = totalWithVat * ((vatRate) / (100 + (+vatRate)));
     return roundToTwoDecimals(res);
@@ -119,7 +126,7 @@ const createOrderAndSaveItems = async (orderData, customer, transaction) => {
 const createOrder = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
-        const { products, customer } = req.body;
+        const { products, customer, payment } = req.body;
 
         // Enusre the all products are available
         const { success, message, insufficientProducts } = await Product.checkQuantities(products);
@@ -136,28 +143,39 @@ const createOrder = async (req, res) => {
         const customerToInsert = { customer_id: customerId, ...customer };
         const order = await createOrderAndSaveItems(orderData, customerToInsert, transaction);
 
-        const payData = {
-            payerAlias: '46700240563',
-            amount: '1.00',
-            message: 'test this amount',
-        };
-        const paymentResponse = await paymentrequests(payData);
-
-        if (paymentResponse && paymentResponse?.id) {
-            await transaction.commit();
-            (new Payments({
-                payment_type_id: 2,
-                customer_id: customerId,
-                order_id: order.order_id,
-                payment_id: paymentResponse.id,
-                status: 1,
-            })).createPayment();
-        }
-
         const response = {
             order,
-            paymentResponse,
         };
+
+        if (payment.type === PAYMNT_TYPE.SWISH) {
+            if(!payment.phone) {
+                return sendResponse(res, 401, 'Fail', 'No valid phone number.', null, null);
+            }
+            if (!payment.phone.startsWith('46')) {
+                payment.phone = '46' + payment.phone;
+            }
+            const amount = Number(order.total).toFixed(2);
+            const payData = {
+                payerAlias: payment.phone,
+                amount: amount,
+                message: payment.message || '',
+            };
+            console.error(payData);
+    
+            const paymentResponse = await paymentrequests(payData);
+
+            if (paymentResponse && paymentResponse?.id) {
+                await transaction.commit();
+                (new Payments({
+                    payment_type_id: 2,
+                    customer_id: customerId,
+                    order_id: order.order_id,
+                    payment_id: paymentResponse.id,
+                    status: 1,
+                })).createPayment();
+            }
+            response.paymentResponse = paymentResponse;
+        }
 
         return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, response);
     } catch (err) {
