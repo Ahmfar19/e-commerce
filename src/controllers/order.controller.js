@@ -205,7 +205,6 @@ const createOrder = async (req, res) => {
                 amount: amount,
                 message: payment.message || '',
             };
-            console.error(payData);
     
             const paymentResponse = await paymentrequests(payData);
 
