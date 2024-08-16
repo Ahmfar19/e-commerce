@@ -59,14 +59,18 @@ class Order {
     }
 
     static async getAll() {
-        const sql = `SELECT orders.*, 
-            DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS order_date,
-            customers.customer_id,
-            CONCAT(customers.fname, ' ', customers.lname) AS customerName,
-            order_type.type_name 
-            FROM orders
-            INNER JOIN customers ON orders.customer_id = customers.customer_id
-            INNER JOIN order_type ON orders.type_id = order_type.type_id
+        const sql = `
+            SELECT 
+                orders.*,
+                CONCAT(customers.fname, ' ', customers.lname) AS customerName,
+                customers.email,
+                customers.phone,
+                customers.registered,
+                customers.isCompany,
+                order_type.type_name,
+                DATE_FORMAT(order_date, '%Y-%m-%d %H:%i:%s') AS order_date FROM orders 
+                INNER JOIN customers ON orders.customer_id = customers.customer_id
+                INNER JOIN order_type ON orders.type_id = order_type.type_id
         `;
         const [rows] = await pool.execute(sql);
         return rows;
@@ -99,7 +103,15 @@ class Order {
 
     static async getById(id) {
         const sql = `SELECT 
-                *, 
+                orders.*,
+                customers.customer_id,
+                customers.fname,
+                customers.lname,
+                customers.email,
+                customers.phone,
+                customers.registered,
+                customers.isCompany,
+                order_type.type_name,
                 DATE_FORMAT(order_date, '%Y-%m-%d %H:%i:%s') AS order_date FROM orders 
                 INNER JOIN customers ON orders.customer_id = customers.customer_id
                 INNER JOIN order_type ON orders.type_id = order_type.type_id
@@ -148,6 +160,7 @@ class Order {
             SELECT orders.*, 
             DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS order_date,
             customers.customer_id,
+            customers.email,
             CONCAT(customers.fname, ' ', customers.lname) AS customerName,
             order_type.type_name 
             FROM orders

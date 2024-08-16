@@ -264,11 +264,11 @@ const updateOrderType = async (req, res) => {
                 message: 'No order found for update',
             });
         }
-
-        const customer = await Order.getUserFromOrderId(id);
+      
         const products = await OrderItems.getItemsByOrderId(id);
-        const orderDetails = await Order.getOrderDetails(id);
-        const orderData = { 'customer': customer, 'products': products, 'orderDetails': orderDetails };
+        const orderDetails = await Order.getById(id);
+      
+        const orderData = { 'products': products, 'orderDetails': orderDetails[0] };
         const templatePath = path.resolve(`public/orderTamplate/shipping.html`);
         await sendOrderEmail(orderData, templatePath);
 

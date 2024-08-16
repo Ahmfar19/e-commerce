@@ -132,8 +132,8 @@
 <body>
     <div class="wrapper">
         <div class="order-summary">
-            <h2>Hej <%= orderData.customer.fname %>
-                    <%= orderData.customer.lname %>!</h2>
+            <h2>Hej <%= orderData.orderDetails.fname %>
+                    <%= orderData.orderDetails.lname %>!</h2>
 
             <p>
                 Din order är nu packad och snart på väg till ditt utlämningsställe. Du kan följa ditt paket med nedan
@@ -152,16 +152,16 @@
             <div class="customer-info">
                 <h3 class="bottom-border">Kundinformation</h3>
                 <div><strong>Adress:</strong>
-                    <%= orderData.customer.address %>
+                    <%= orderData.orderDetails.address %>
                 </div>
                 <div><strong>Postnummer:</strong>
-                    <%= orderData.customer.zip %>
+                    <%= orderData.orderDetails.zip %>
                 </div>
                 <div><strong>Stad:</strong>
-                    <%= orderData.customer.city %>
+                    <%= orderData.orderDetails.city %>
                 </div>
                 <div><strong>Orderdatum:</strong>
-                    <%= orderData.customer.order_date %>
+                    <%= orderData.orderDetails.order_date %>
                 </div>
             </div>
 
