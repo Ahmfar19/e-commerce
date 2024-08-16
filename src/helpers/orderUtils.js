@@ -41,7 +41,6 @@ const commitOrder = async (orderId) => {
     if (products && products.length) {
         OrderModel.updateProductQuantities(products);
         const [orderData] = await OrderModel.getById(orderId);
-        console.error(orderData);
         orderData.products = products;
         sendOrderEmail(orderData, templatePath);
     }
