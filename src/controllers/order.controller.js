@@ -19,102 +19,234 @@ const calculateVatAmount = (totalWithVat, vatRate) => {
 };
 
 const createOrderData = async (body) => {
-    const { customer, products, shipping_id } = body;
-    const nowDate = getNowDate_time();
+    try {
+        const { customer, products, shipping_id } = body;
 
-    // Store tax
-    const tax = await StoreInfo.getTax();
+        // Input validation
+        if (!customer || !Array.isArray(products) || !shipping_id) {
+            throw new Error('Invalid input: customer, products array, and shipping_id are required');
+        }
 
-    // Shipping info
-    const shipping = await Shipping.getById(shipping_id);
+        const nowDate = getNowDate_time();
 
-    const shipping_price = +shipping[0].shipping_price;
-    const shipping_name = shipping[0].shipping_name;
-    const shipping_time = shipping[0].shipping_time;
+        // Store tax
+        const tax = await StoreInfo.getTax();
+        if (!tax || tax.length === 0) {
+            throw new Error('Tax information not found');
+        }
 
-    // Total price before
-    const totalPriceAfterDiscount = products.reduce((acc, product) => {
-        const res = acc + (product.price - product.discount) * product.quantity;
-        return roundToTwoDecimals(res);
-    }, 0);
+        // Shipping info
+        const shipping = await Shipping.getById(shipping_id);
+        if (!shipping || shipping.length === 0) {
+            throw new Error('Shipping information not found');
+        }
 
-    const vatAmount = calculateVatAmount(totalPriceAfterDiscount, tax[0].tax_percentage);
+        const shipping_price = +shipping[0].shipping_price || 0;
+        const shipping_name = shipping[0].shipping_name || '';
+        const shipping_time = shipping[0].shipping_time || '';
 
-    // Calculate total discount
-    const totalDiscount = products.reduce((acc, current) => {
-        const res = acc + (current.discount * current.quantity);
-        return roundToTwoDecimals(res);
-    }, 0);
+        // Total price calculation
+        const totalPriceAfterDiscount = products.reduce((acc, product) => {
+            const res = acc + (product.price - product.discount) * product.quantity;
+            return roundToTwoDecimals(res);
+        }, 0);
 
-    // Calculate final price
-    const finallprice = totalPriceAfterDiscount + shipping_price;
+        const vatAmount = calculateVatAmount(totalPriceAfterDiscount, tax[0].tax_percentage);
 
-    return {
-        customer,
-        products,
-        nowDate,
-        totalPriceAfterDiscount,
-        totalDiscount,
-        finallprice,
-        vatAmount,
-        shipping_price,
-        shipping_name,
-        shipping_time,
-    };
+        // Calculate total discount
+        const totalDiscount = products.reduce((acc, current) => {
+            const res = acc + (current.discount * current.quantity);
+            return roundToTwoDecimals(res);
+        }, 0);
+
+        // Calculate final price
+        const finallprice = totalPriceAfterDiscount + shipping_price;
+
+        return {
+            customer,
+            products,
+            nowDate,
+            totalPriceAfterDiscount,
+            totalDiscount,
+            finallprice,
+            vatAmount,
+            shipping_price,
+            shipping_name,
+            shipping_time,
+        };
+    } catch (error) {
+        return null;
+    }
 };
+// const createOrderData = async (body) => {
+//     const { customer, products, shipping_id } = body;
+//     const nowDate = getNowDate_time();
+
+//     // Store tax
+//     const tax = await StoreInfo.getTax();
+
+//     // Shipping info
+//     const shipping = await Shipping.getById(shipping_id);
+
+//     const shipping_price = +shipping[0].shipping_price;
+//     const shipping_name = shipping[0].shipping_name;
+//     const shipping_time = shipping[0].shipping_time;
+
+//     // Total price before
+//     const totalPriceAfterDiscount = products.reduce((acc, product) => {
+//         const res = acc + (product.price - product.discount) * product.quantity;
+//         return roundToTwoDecimals(res);
+//     }, 0);
+
+//     const vatAmount = calculateVatAmount(totalPriceAfterDiscount, tax[0].tax_percentage);
+
+//     // Calculate total discount
+//     const totalDiscount = products.reduce((acc, current) => {
+//         const res = acc + (current.discount * current.quantity);
+//         return roundToTwoDecimals(res);
+//     }, 0);
+
+//     // Calculate final price
+//     const finallprice = totalPriceAfterDiscount + shipping_price;
+
+//     return {
+//         customer,
+//         products,
+//         nowDate,
+//         totalPriceAfterDiscount,
+//         totalDiscount,
+//         finallprice,
+//         vatAmount,
+//         shipping_price,
+//         shipping_name,
+//         shipping_time,
+//     };
+// };
 
 const getOrCreateCustomer = async (customer) => {
-    // Check if the user exists in the database
-    const checkCustomer = await Customer.isCustomerRegistered(customer.email);
+    try {
+        const checkCustomer = await Customer.isCustomerRegistered(customer.email);
 
-    if (checkCustomer.length) {
-        // Customer exists, return the customer_id
-        return checkCustomer[0].customer_id;
-    } else {
-        // Customer does not exist, create a new customer
-        const newCustomer = new Customer(customer);
-        const last_customer_id = await newCustomer.createUser();
-        return last_customer_id;
+        if (checkCustomer.length) {
+            return checkCustomer[0].customer_id;
+        } else {
+            const newCustomer = new Customer(customer);
+            const last_customer_id = await newCustomer.createUser();
+            return last_customer_id;
+        }
+    } catch (error) {
+        return null;
     }
 };
 
+// const getOrCreateCustomer = async (customer) => {
+//     // Check if the user exists in the database
+//     const checkCustomer = await Customer.isCustomerRegistered(customer.email);
+
+//     if (checkCustomer.length) {
+//         // Customer exists, return the customer_id
+//         return checkCustomer[0].customer_id;
+//     } else {
+//         // Customer does not exist, create a new customer
+//         const newCustomer = new Customer(customer);
+//         const last_customer_id = await newCustomer.createUser();
+//         return last_customer_id;
+//     }
+// };
+
 const createOrderAndSaveItems = async (orderData, customer, transaction) => {
-    const {
-        products,
-        nowDate,
-        totalPriceAfterDiscount,
-        finallprice,
-        totalDiscount,
-        vatAmount,
-        shipping_price,
-        shipping_name,
-        shipping_time,
-    } = orderData;
+    try {
+        const {
+            products,
+            nowDate,
+            totalPriceAfterDiscount,
+            finallprice,
+            totalDiscount,
+            vatAmount,
+            shipping_price,
+            shipping_name,
+            shipping_time,
+        } = orderData;
 
-    const orderType = await OrderType.getAll();
-    const { customer_id, address, zip, city } = customer;
+       
+        const orderType = await OrderType.getAll();
+        if (!orderType || orderType.length === 0) {
+            throw new Error('Order type not found');
+        }
 
-    const order = new Order({
-        customer_id: customer_id,
-        type_id: orderType[0].type_id,
-        shipping_price: shipping_price,
-        shipping_name: shipping_name,
-        shipping_time: shipping_time,
-        order_date: nowDate,
-        address: address,
-        zip: zip,
-        city: city,
-        sub_total: totalPriceAfterDiscount,
-        tax: vatAmount,
-        items_discount: totalDiscount,
-        total: finallprice,
-    });
-    const order_id = await order.save(transaction);
+        const { customer_id, address, zip, city } = customer;
+        if (!customer_id || !address || !zip || !city) {
+            throw new Error('Invalid customer data');
+        }
 
-    await OrderItems.saveMulti({ order_id, products }, transaction);
+        // Create new order
+        const order = new Order({
+            customer_id,
+            type_id: orderType[0].type_id,
+            shipping_price,
+            shipping_name,
+            shipping_time,
+            order_date: nowDate,
+            address,
+            zip,
+            city,
+            sub_total: totalPriceAfterDiscount,
+            tax: vatAmount,
+            items_discount: totalDiscount,
+            total: finallprice,
+        });
 
-    return order;
+        // Save order and items
+        const order_id = await order.save(transaction);
+        await OrderItems.saveMulti({ order_id, products }, transaction);
+
+        return order;
+    } catch (error) {
+
+        if (transaction) {
+            await transaction.rollback();
+        }
+        throw error; 
+    }
 };
+
+// const createOrderAndSaveItems = async (orderData, customer, transaction) => {
+//     const {
+//         products,
+//         nowDate,
+//         totalPriceAfterDiscount,
+//         finallprice,
+//         totalDiscount,
+//         vatAmount,
+//         shipping_price,
+//         shipping_name,
+//         shipping_time,
+//     } = orderData;
+
+//     const orderType = await OrderType.getAll();
+//     const { customer_id, address, zip, city } = customer;
+
+//     const order = new Order({
+//         customer_id: customer_id,
+//         type_id: orderType[0].type_id,
+//         shipping_price: shipping_price,
+//         shipping_name: shipping_name,
+//         shipping_time: shipping_time,
+//         order_date: nowDate,
+//         address: address,
+//         zip: zip,
+//         city: city,
+//         sub_total: totalPriceAfterDiscount,
+//         tax: vatAmount,
+//         items_discount: totalDiscount,
+//         total: finallprice,
+//     });
+//     const order_id = await order.save(transaction);
+
+//     await OrderItems.saveMulti({ order_id, products }, transaction);
+
+//     return order;
+// };
 
 const createOrder = async (req, res) => {
     const transaction = await sequelize.transaction();
@@ -130,8 +262,20 @@ const createOrder = async (req, res) => {
 
         // Create the order object data
         const orderData = await createOrderData(req.body);
+        if (orderData === null) {
+            return res.status(400).json({
+                error: 'Failed to create order data',
+                ok: false,
+            });
+        }
         // Handle the customer
         const customerId = await getOrCreateCustomer(customer);
+        if (customerId === null) {
+            return res.status(400).json({
+                error: 'Failed to get or create customer',
+                ok: false,
+            });
+        }
         // Create the order and the order items
         const customerToInsert = { customer_id: customerId, ...customer };
         const order = await createOrderAndSaveItems(orderData, customerToInsert, transaction);
@@ -280,14 +424,12 @@ const updateOrderType = async (req, res) => {
 
         const shipping_url = await Shipping.getByName(orderDetails[0].shipping_name);
 
-    
         const orderData = {
             products,
-            shipping_url: shipping_url?.shipping_url || null, 
+            shipping_url: shipping_url?.shipping_url || null,
             ...orderDetails[0],
         };
 
-        
         const templatePath = path.resolve(`public/orderTamplate/shipping.html`);
         await sendOrderEmail(orderData, templatePath);
 
