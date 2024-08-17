@@ -169,7 +169,6 @@ const createOrderAndSaveItems = async (orderData, customer, transaction) => {
             shipping_time,
         } = orderData;
 
-       
         const orderType = await OrderType.getAll();
         if (!orderType || orderType.length === 0) {
             throw new Error('Order type not found');
@@ -203,11 +202,10 @@ const createOrderAndSaveItems = async (orderData, customer, transaction) => {
 
         return order;
     } catch (error) {
-
         if (transaction) {
             await transaction.rollback();
         }
-        throw error; 
+        throw error;
     }
 };
 
