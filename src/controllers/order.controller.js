@@ -78,6 +78,7 @@ const createOrderData = async (body) => {
         return null;
     }
 };
+
 // const createOrderData = async (body) => {
 //     const { customer, products, shipping_id } = body;
 //     const nowDate = getNowDate_time();
