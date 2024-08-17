@@ -40,6 +40,7 @@
         "express-session": "^1.18.0",
         "joi": "^17.13.3",
         "jsonwebtoken": "^9.0.2",
+        "klarna-node": "^0.1.2",
         "moment-timezone": "^0.5.45",
         "multer": "^1.4.5-lts.1",
         "mysql2": "^2.3.3",
