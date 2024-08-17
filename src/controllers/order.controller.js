@@ -254,25 +254,44 @@ const getOrderByType = async (req, res) => {
 const updateOrderType = async (req, res) => {
     try {
         const id = req.params.id;
+        const { trackingNumber } = req.body;
 
-        const data = await Order.updateOrderType(id);
-        if (data.affectedRows === 0) {
-            return res.json({
-                status: 404,
+        const updateResult = await Order.updateOrderType(id, trackingNumber);
+        if (updateResult.affectedRows === 0) {
+            return res.status(404).json({
                 ok: false,
-                statusCode: 'Bad Request',
+                statusCode: 'Not Found',
                 message: 'No order found for update',
             });
         }
-      
-        const products = await OrderItems.getItemsByOrderId(id);
-        const orderDetails = await Order.getById(id);
-      
-        const orderData = { 'products': products, 'orderDetails': orderDetails[0] };
+
+        const [products, orderDetails] = await Promise.all([
+            OrderItems.getItemsByOrderId(id),
+            Order.getById(id),
+        ]);
+
+        if (!orderDetails.length) {
+            return res.status(404).json({
+                ok: false,
+                statusCode: 'Not Found',
+                message: 'Order details not found',
+            });
+        }
+
+        const shipping_url = await Shipping.getByName(orderDetails[0].shipping_name);
+
+    
+        const orderData = {
+            products,
+            shipping_url: shipping_url?.shipping_url || null, 
+            ...orderDetails[0],
+        };
+
+        
         const templatePath = path.resolve(`public/orderTamplate/shipping.html`);
         await sendOrderEmail(orderData, templatePath);
 
-        sendResponse(res, 202, 'Accepted', 'Successfully updated a orderType.', null, null);
+        sendResponse(res, 202, 'Accepted', 'Successfully updated the order type.', null, null);
     } catch (err) {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }

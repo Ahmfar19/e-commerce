@@ -44,6 +44,12 @@ class Shipping {
         const [rows] = await pool.execute(sql);
         return rows;
     }
+
+    static async getByName(name) {
+        const sql = 'SELECT shipping_url FROM shipping WHERE shipping_name = ?';
+        const [rows] = await pool.execute(sql, [name]);
+        return rows[0];
+    }
 }
 
 module.exports = Shipping;

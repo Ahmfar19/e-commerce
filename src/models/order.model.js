@@ -15,6 +15,7 @@ class Order {
         this.tax = options.tax;
         this.items_discount = options.items_discount;
         this.total = options.total;
+        this.trackingNumber = options.trackingNumber || null;
     }
 
     async save(transaction) {
@@ -31,7 +32,8 @@ class Order {
             sub_total,
             tax,
             items_discount,
-            total
+            total,
+            trackingNumber
         ) VALUES (
             ${this.customer_id},
             ${this.type_id},
@@ -45,7 +47,8 @@ class Order {
             ${this.sub_total},
             ${this.tax},
             ${this.items_discount},
-            ${this.total}
+            ${this.total},
+            "${this.trackingNumber}"
         )`;
         const result = transaction ? await sequelize.query(sql, { transaction }) : await pool.execute(sql);
         if (transaction) {
@@ -172,9 +175,9 @@ class Order {
         return rows;
     }
 
-    static async updateOrderType(order_id) {
-        const sql = 'UPDATE orders SET type_id = 3 WHERE order_id = ?';
-        const [rows] = await pool.execute(sql, [order_id]);
+    static async updateOrderType(order_id, trackingNumber) {
+        const sql = 'UPDATE orders SET type_id = 3, trackingNumber = ? WHERE order_id = ?';
+        const [rows] = await pool.execute(sql, [trackingNumber || null, order_id]);
         return rows;
     }
 
