@@ -1,21 +1,95 @@
 const { pool, sequelize } = require('../databases/mysql.db');
+const Joi = require('joi');
 
+const orderSchema = Joi.object({
+    customer_id: Joi.number().integer().required().messages({
+        'number.base': 'customer_id must be a number.',
+        'number.integer': 'customer_id must be an integer.',
+        'any.required': 'customer_id is required.',
+    }),
+    type_id: Joi.number().integer().required().messages({
+        'number.base': 'type_id must be a number.',
+        'number.integer': 'type_id must be an integer.',
+        'any.required': 'type_id is required.',
+    }),
+    order_date: Joi.date().required().messages({
+        'date.base': 'order_date must be a valid date.',
+        'any.required': 'order_date is required.',
+    }),
+    shipping_name: Joi.string().min(1).max(255).required().messages({
+        'string.base': 'shipping_name must be a string.',
+        'string.empty': 'shipping_name cannot be empty.',
+        'any.required': 'shipping_name is required.',
+    }),
+    shipping_price: Joi.number().precision(2).required().messages({
+        'number.base': 'shipping_price must be a number.',
+        'number.precision': 'shipping_price must have up to two decimal places.',
+        'any.required': 'shipping_price is required.',
+    }),
+    shipping_time: Joi.number().integer().min(1).required().messages({
+        'number.base': 'shipping_time must be a number.',
+        'number.integer': 'shipping_time must be an integer.',
+        'number.min': 'shipping_time must be at least 1.',
+        'any.required': 'shipping_time is required.',
+    }),
+    sub_total: Joi.number().precision(2).required().messages({
+        'number.base': 'sub_total must be a number.',
+        'number.precision': 'sub_total must have up to two decimal places.',
+        'any.required': 'sub_total is required.',
+    }),
+    address: Joi.string().min(1).max(255).required().messages({
+        'string.base': 'address must be a string.',
+        'string.empty': 'address cannot be empty.',
+        'any.required': 'address is required.',
+    }),
+    zip: Joi.string().pattern(/^\d{5}(-\d{4})?$/).required().messages({
+        'string.base': 'zip must be a string.',
+        'string.pattern.base': 'zip must be a valid ZIP code.',
+        'any.required': 'zip is required.',
+    }),
+    city: Joi.string().min(1).max(100).required().messages({
+        'string.base': 'city must be a string.',
+        'string.empty': 'city cannot be empty.',
+        'any.required': 'city is required.',
+    }),
+    tax: Joi.number().precision(2).required().messages({
+        'number.base': 'tax must be a number.',
+        'number.precision': 'tax must have up to two decimal places.',
+        'any.required': 'tax is required.',
+    }),
+    items_discount: Joi.number().precision(2).optional().default(0).messages({
+        'number.base': 'items_discount must be a number.',
+        'number.precision': 'items_discount must have up to two decimal places.',
+    }),
+    total: Joi.number().precision(2).required().messages({
+        'number.base': 'total must be a number.',
+        'number.precision': 'total must have up to two decimal places.',
+        'any.required': 'total is required.',
+    }),
+    trackingNumber: Joi.string().optional().allow(null, '').messages({
+        'string.base': 'trackingNumber must be a string.',
+    }),
+});
 class Order {
     constructor(options) {
-        this.customer_id = options.customer_id;
-        this.type_id = options.type_id;
-        this.order_date = options.order_date;
-        this.shipping_name = options.shipping_name;
-        this.shipping_price = options.shipping_price;
-        this.shipping_time = options.shipping_time;
-        this.sub_total = options.sub_total;
-        this.address = options.address;
-        this.zip = options.zip;
-        this.city = options.city;
-        this.tax = options.tax;
-        this.items_discount = options.items_discount;
-        this.total = options.total;
-        this.trackingNumber = options.trackingNumber || null;
+        const { error, value } = orderSchema.validate(options);
+        if (error) {
+            throw new Error(`${error.details.map(err => err.message).join(', ')}`);
+        }
+        this.customer_id = value.customer_id;
+        this.type_id = value.type_id;
+        this.order_date = value.order_date;
+        this.shipping_name = value.shipping_name;
+        this.shipping_price = value.shipping_price;
+        this.shipping_time = value.shipping_time;
+        this.sub_total = value.sub_total;
+        this.address = value.address;
+        this.zip = value.zip;
+        this.city = value.city;
+        this.tax = value.tax;
+        this.items_discount = value.items_discount;
+        this.total = value.total;
+        this.trackingNumber = value.trackingNumber || null;
     }
 
     async save(transaction) {

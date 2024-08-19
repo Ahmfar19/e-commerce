@@ -213,11 +213,33 @@ class User {
 
         if (key === 'customerName') {
             sql = `
-                SELECT * FROM customers WHERE CONCAT(fname, ' ', lname) LIKE '${`%${value}%`}'
+                SELECT 
+                customer_id,
+            	fname,
+                lname,
+                email,
+                address,
+                zip,
+                city,
+                phone,
+                registered,
+                isCompany
+                FROM customers WHERE CONCAT(fname, ' ', lname) LIKE '${`%${value}%`}'
             `;
         } else {
             sql = `
-                SELECT * FROM customers WHERE ${key} = '${value}'
+                SELECT 
+                customer_id,
+            	fname,
+                lname,
+                email,
+                address,
+                zip,
+                city,
+                phone,
+                registered,
+                isCompany
+                FROM customers WHERE ${key} = '${value}'
             `;
         }
         const [rows] = await pool.execute(sql);

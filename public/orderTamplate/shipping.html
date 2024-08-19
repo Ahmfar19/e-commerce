@@ -121,7 +121,7 @@
             <% if (orderData.trackingNumber) { %>
                 <div>
                     <strong>
-                        <a href="https://www.dhl.com/us-en/home/tracking/tracking-freight.html?submit=1&tracking-id=<%= orderData.trackingNumber %>">
+                        <a href="<%= orderData.shipping_url %><%= orderData.trackingNumber %>">
                             <%= orderData.trackingNumber %>
                         </a>
                     </strong>
