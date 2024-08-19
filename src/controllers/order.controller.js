@@ -79,51 +79,6 @@ const createOrderData = async (body) => {
     }
 };
 
-// const createOrderData = async (body) => {
-//     const { customer, products, shipping_id } = body;
-//     const nowDate = getNowDate_time();
-
-//     // Store tax
-//     const tax = await StoreInfo.getTax();
-
-//     // Shipping info
-//     const shipping = await Shipping.getById(shipping_id);
-
-//     const shipping_price = +shipping[0].shipping_price;
-//     const shipping_name = shipping[0].shipping_name;
-//     const shipping_time = shipping[0].shipping_time;
-
-//     // Total price before
-//     const totalPriceAfterDiscount = products.reduce((acc, product) => {
-//         const res = acc + (product.price - product.discount) * product.quantity;
-//         return roundToTwoDecimals(res);
-//     }, 0);
-
-//     const vatAmount = calculateVatAmount(totalPriceAfterDiscount, tax[0].tax_percentage);
-
-//     // Calculate total discount
-//     const totalDiscount = products.reduce((acc, current) => {
-//         const res = acc + (current.discount * current.quantity);
-//         return roundToTwoDecimals(res);
-//     }, 0);
-
-//     // Calculate final price
-//     const finallprice = totalPriceAfterDiscount + shipping_price;
-
-//     return {
-//         customer,
-//         products,
-//         nowDate,
-//         totalPriceAfterDiscount,
-//         totalDiscount,
-//         finallprice,
-//         vatAmount,
-//         shipping_price,
-//         shipping_name,
-//         shipping_time,
-//     };
-// };
-
 const getOrCreateCustomer = async (customer) => {
     try {
         const checkCustomer = await Customer.isCustomerRegistered(customer.email);
@@ -139,21 +94,6 @@ const getOrCreateCustomer = async (customer) => {
         return null;
     }
 };
-
-// const getOrCreateCustomer = async (customer) => {
-//     // Check if the user exists in the database
-//     const checkCustomer = await Customer.isCustomerRegistered(customer.email);
-
-//     if (checkCustomer.length) {
-//         // Customer exists, return the customer_id
-//         return checkCustomer[0].customer_id;
-//     } else {
-//         // Customer does not exist, create a new customer
-//         const newCustomer = new Customer(customer);
-//         const last_customer_id = await newCustomer.createUser();
-//         return last_customer_id;
-//     }
-// };
 
 const createOrderAndSaveItems = async (orderData, customer, transaction) => {
     try {
@@ -208,44 +148,6 @@ const createOrderAndSaveItems = async (orderData, customer, transaction) => {
         throw error;
     }
 };
-
-// const createOrderAndSaveItems = async (orderData, customer, transaction) => {
-//     const {
-//         products,
-//         nowDate,
-//         totalPriceAfterDiscount,
-//         finallprice,
-//         totalDiscount,
-//         vatAmount,
-//         shipping_price,
-//         shipping_name,
-//         shipping_time,
-//     } = orderData;
-
-//     const orderType = await OrderType.getAll();
-//     const { customer_id, address, zip, city } = customer;
-
-//     const order = new Order({
-//         customer_id: customer_id,
-//         type_id: orderType[0].type_id,
-//         shipping_price: shipping_price,
-//         shipping_name: shipping_name,
-//         shipping_time: shipping_time,
-//         order_date: nowDate,
-//         address: address,
-//         zip: zip,
-//         city: city,
-//         sub_total: totalPriceAfterDiscount,
-//         tax: vatAmount,
-//         items_discount: totalDiscount,
-//         total: finallprice,
-//     });
-//     const order_id = await order.save(transaction);
-
-//     await OrderItems.saveMulti({ order_id, products }, transaction);
-
-//     return order;
-// };
 
 const createOrder = async (req, res) => {
     const transaction = await sequelize.transaction();
