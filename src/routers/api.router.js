@@ -22,8 +22,8 @@ const klarnaController = require('../controllers/klarna.controller');
 router.post('/swish/paymentrequests', swishController.paymentrequests);
 router.post('/swish/paymentrequests/status', swishController.receivePaymentStatus);
 router.get('/swish/paymentrequests/:requestId', swishController.getPaymentrequests);
-
 router.post('/klarna/paymentrequests', klarnaController.paymentrequests);
+router.get('/klarna/paymentrequests/status', klarnaController.receivePaymentStatus);
 
 
 // Authentication

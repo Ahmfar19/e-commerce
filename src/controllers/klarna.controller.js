@@ -45,7 +45,8 @@ const paymentrequests = async (req, res) => {
         merchant_urls: {
             terms: 'https://www.example.com/terms',
             checkout: 'https://www.example.com/checkout?klarna_order_id={checkout.order.id}',
-            confirmation: 'https://www.example.com/confirmation?klarna_order_id={checkout.order.id}',
+            // confirmation: 'https://www.example.com/confirmation?klarna_order_id={checkout.order.id}',
+            confirmation: 'https://127.0.0.1:3000/order/confirmation?klarna_order_id={checkout.order.id}',
             push: 'https://www.example.com/api/klarna/push?klarna_order_id={checkout.order.id}',
         },
     };
@@ -58,6 +59,36 @@ const paymentrequests = async (req, res) => {
     }
 };
 
+
+const receivePaymentStatus = async (req, res) => {
+    const { klarna_order_id } = req.query;
+    try {
+        const response = await axios.get(`${KLARNA_API_URL}/checkout/v3/orders/${klarna_order_id}`, {
+            auth: KLARNA_AUTH,
+        });
+
+        const orderStatus = response.data.status; 
+        const paymentStatus = response.data.payment_status;
+
+        // Skicka status tillbaka till frontend
+        res.status(200).json({
+            success: true,
+            status: orderStatus,
+            paymentStatus: paymentStatus,
+            order: response.data,
+        });
+    } catch (error) {
+        console.error('Error fetching Klarna order:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve order status',
+            error: error.message,
+        });
+    }
+};
+
+
 module.exports = {
-    paymentrequests
+    paymentrequests,
+    receivePaymentStatus
 };
