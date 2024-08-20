@@ -118,10 +118,10 @@ class Product {
 
             // Map rows to an object for easy access by product_id
             const dbQuantities = rows.reduce((acc, row) => {
-                acc[row.product_id] = {quantity: row.quantity, available: row.available};
+                acc[row.product_id] = { quantity: row.quantity, available: row.available };
                 return acc;
             }, {});
-          
+
             // Array to hold products with insufficient quantities
             const insufficientProducts = [];
 
