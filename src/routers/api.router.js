@@ -17,14 +17,12 @@ const orderTypeController = require('../controllers/orderType.controller');
 const swishController = require('../controllers/swish.controller');
 const klarnaController = require('../controllers/klarna.controller');
 
-
 // Payments
-router.post('/swish/paymentrequests', swishController.paymentrequests);
+router.post('/swish/paymentrequests', swishController.swish_paymentrequests);
 router.post('/swish/paymentrequests/status', swishController.receivePaymentStatus);
 router.get('/swish/paymentrequests/:requestId', swishController.getPaymentrequests);
-router.post('/klarna/paymentrequests', klarnaController.paymentrequests);
+router.post('/klarna/paymentrequests', klarnaController.klarna_paymentrequests);
 router.get('/klarna/paymentrequests/status', klarnaController.receivePaymentStatus);
-
 
 // Authentication
 router.post('/auth/customer/verifyToken', customerController.verifyToken);

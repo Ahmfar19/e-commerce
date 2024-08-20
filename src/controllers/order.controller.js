@@ -8,17 +8,17 @@ const Payments = require('../models/payments.model');
 const Shipping = require('../models/shipping.model');
 const { sendResponse } = require('../helpers/apiResponse');
 const { getNowDate_time, roundToTwoDecimals } = require('../helpers/utils');
-const { paymentrequests } = require('./swish.controller');
-const { sendOrderEmail } = require('../helpers/orderUtils');
+const { swish_paymentrequests } = require('./swish.controller');
+const { klarna_paymentrequests } = require('./klarna.controller');
+const { sendOrderEmail, migrateProductsToKlarnaStructure } = require('../helpers/orderUtils');
 const path = require('path');
 const { sequelize } = require('../databases/mysql.db');
-
 
 const PAYMNT_TYPE = {
     SWISH: 'swish',
     KLARNA: 'klarna',
-    CARD: 'card'
-}
+    CARD: 'card',
+};
 
 const calculateVatAmount = (totalWithVat, vatRate) => {
     const res = totalWithVat * ((vatRate) / (100 + (+vatRate)));
@@ -192,33 +192,50 @@ const createOrder = async (req, res) => {
             order,
         };
 
-        if (payment.type === PAYMNT_TYPE.SWISH) {
-            if(!payment.phone) {
-                return sendResponse(res, 401, 'Fail', 'No valid phone number.', null, null);
-            }
-            if (!payment.phone.startsWith('46')) {
-                payment.phone = '46' + payment.phone;
-            }
-            const amount = Number(order.total).toFixed(2);
-            const payData = {
-                payerAlias: payment.phone,
-                amount: amount,
-                message: payment.message || '',
-            };
-    
-            const paymentResponse = await paymentrequests(payData);
+        if (payment) {
+            if (payment.type === PAYMNT_TYPE.SWISH) {
+                if (!payment.phone) {
+                    return sendResponse(res, 401, 'Fail', 'No valid phone number.', null, null);
+                }
+                if (!payment.phone.startsWith('46')) {
+                    payment.phone = '46' + payment.phone;
+                }
+                const amount = Number(order.total).toFixed(2);
+                const payData = {
+                    payerAlias: payment.phone,
+                    amount: amount,
+                    message: payment.message || '',
+                };
 
-            if (paymentResponse && paymentResponse?.id) {
-                await transaction.commit();
-                (new Payments({
-                    payment_type_id: 2,
-                    customer_id: customerId,
-                    order_id: order.order_id,
-                    payment_id: paymentResponse.id,
-                    status: 1,
-                })).createPayment();
+                const paymentResponse = await swish_paymentrequests(payData);
+
+                if (paymentResponse && paymentResponse?.id) {
+                    await transaction.commit();
+                    (new Payments({
+                        payment_type_id: 2,
+                        customer_id: customerId,
+                        order_id: order.order_id,
+                        payment_id: paymentResponse.id,
+                        status: 1,
+                    })).createPayment();
+                }
+                response.paymentResponse = paymentResponse;
+            } else if (payment.type === PAYMNT_TYPE.KLARNA) {
+                const klarna_order = await migrateProductsToKlarnaStructure(products, order);
+                const klarna_res = await klarna_paymentrequests(klarna_order);
+
+                if (klarna_res.session_id) {
+                    await transaction.commit();
+                    (new Payments({
+                        payment_type_id: 3,
+                        customer_id: customerId,
+                        order_id: order.order_id,
+                        payment_id: klarna_res.session_id,
+                        status: 1,
+                    })).createPayment();
+                    response.klarna = klarna_res;
+                }
             }
-            response.paymentResponse = paymentResponse;
         }
 
         return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, response);

@@ -41,7 +41,7 @@ const axiosInstance = axios.create({
 });
 
 // Create Payment Request
-async function paymentrequests(data) {
+async function swish_paymentrequests(data) {
     try {
         const requestBody = {
             payeePaymentReference: '0123456789',
@@ -78,18 +78,13 @@ async function paymentrequests(data) {
 async function receivePaymentStatus(req, res) {
     try {
         const { id, status } = req.body;
-
         if (id && status === 'PAID') {
             const result = await Payments.updatePaymentsStatus(id, 2);
 
             if (!result || !result.order_id) {
                 throw new Error('Invalid payment update result.');
             }
-
-            const wsManager = req.app.wsManager;
-            wsManager.sendMessageToClient(id, status);
             commitOrder(result.order_id);
-
             return sendResponse(res, 201, 'Received', 'Successfully received the payment status.', null, null);
         }
 
@@ -110,7 +105,6 @@ async function receivePaymentStatus(req, res) {
 async function getPaymentrequests(req, res) {
     try {
         const response = await axiosInstance.get(`/api/v1/paymentrequests/${req.params.requestId}`);
-
         return res.status(response.status).json({
             id: response.data.id,
             paymentReference: response.data.paymentReference || '',
@@ -178,7 +172,7 @@ function logError(context, error) {
 }
 
 module.exports = {
-    paymentrequests,
+    swish_paymentrequests,
     receivePaymentStatus,
     getPaymentrequests,
     refunds,
