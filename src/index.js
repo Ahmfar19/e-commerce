@@ -8,6 +8,9 @@ const fs = require('fs');
 const path = require('path');
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
+const isHttps = process.env.HTTPS ? true : false;
+
+
 if (NODE_ENV === 'development') dotenv.config();
 
 const isDevelopment = NODE_ENV === 'development';
@@ -19,7 +22,7 @@ const PORT = isDevelopment ? 4000 : config.get('PORT');
 // const server = http.createServer(app);
 let server = http.createServer(app);
 
-if (isDevelopment) {
+if (isHttps) {
     // Läs SSL-certifikatet och nyckeln
     const key = fs.readFileSync(path.join(__dirname, '/ssl/node/key.pem'), 'utf8');
     const cert = fs.readFileSync(path.join(__dirname, '/ssl/node/cert.pem'), 'utf8');
