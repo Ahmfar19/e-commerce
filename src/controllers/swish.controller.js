@@ -5,6 +5,7 @@ const path = require('path');
 const { sendResponse } = require('../helpers/apiResponse');
 const Payments = require('../models/payments.model');
 const { commitOrder } = require('../helpers/orderUtils');
+const { deleteById } = require('../models/order.model');
 
 const PAYMENT_STATUS = {
     CREATED: 'CREATED',
@@ -99,6 +100,20 @@ async function receivePaymentStatus(req, res) {
             }
             commitOrder(result.order_id);
             return sendResponse(res, 201, 'Received', 'Successfully received the payment status.', null, null);
+        } else if (id && status === PAYMENT_STATUS.DECLINED) {
+
+            const [payment] = await Payments.getPaymentsByPaymentId(id);
+            if (!payment) {
+                throw new Error('Payment not found.');
+            }
+            if (payment.status === 1) {
+                const delRes = await deleteById(payment.order_id);
+                if (!delRes) {
+                    throw new Error('Failed to delete order.');
+                } else {
+                    return sendResponse(res, 200, 'Declined', 'Successfully declined the payment.', null, null);
+                }
+            }
         }
 
         return sendResponse(res, 400, 'Error', 'Invalid payment status or missing ID.', null, null);
