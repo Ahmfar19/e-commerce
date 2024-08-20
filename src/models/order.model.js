@@ -12,10 +12,6 @@ const orderSchema = Joi.object({
         'number.integer': 'type_id must be an integer.',
         'any.required': 'type_id is required.',
     }),
-    order_date: Joi.date().required().messages({
-        'date.base': 'order_date must be a valid date.',
-        'any.required': 'order_date is required.',
-    }),
     shipping_name: Joi.string().min(1).max(255).required().messages({
         'string.base': 'shipping_name must be a string.',
         'string.empty': 'shipping_name cannot be empty.',
@@ -78,7 +74,6 @@ class Order {
         }
         this.customer_id = value.customer_id;
         this.type_id = value.type_id;
-        this.order_date = value.order_date;
         this.shipping_name = value.shipping_name;
         this.shipping_price = value.shipping_price;
         this.shipping_time = value.shipping_time;
@@ -111,7 +106,7 @@ class Order {
         ) VALUES (
             ${this.customer_id},
             ${this.type_id},
-            "${this.order_date}",
+            NOW(),
             "${this.shipping_name}",
             ${this.shipping_price},
             ${this.shipping_time},
@@ -286,7 +281,7 @@ class Order {
         `;
         if (key === 'order_date') {
             const [from, to] = value.split('to').map(v => v.trim());
-            sql += `WHERE DATE_FORMAT(orders.${key}, '%Y-%m-%d') BETWEEN '${from}' AND '${to}'`;
+            sql += `WHERE DATE_FORMAT(orders.${key}, '%Y-%m-%d') BETWEEN '${from}' AND '${to || from}'`;
             // const values = [from, to];
         } else {
             sql += `WHERE orders.${key} = ${value}`;

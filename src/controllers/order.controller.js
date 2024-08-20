@@ -7,7 +7,7 @@ const OrderType = require('../models/orderType.model');
 const Payments = require('../models/payments.model');
 const Shipping = require('../models/shipping.model');
 const { sendResponse } = require('../helpers/apiResponse');
-const { getNowDate_time, roundToTwoDecimals } = require('../helpers/utils');
+const { roundToTwoDecimals } = require('../helpers/utils');
 const { swish_paymentrequests } = require('./swish.controller');
 const { klarna_paymentrequests } = require('./klarna.controller');
 const { sendOrderEmail, migrateProductsToKlarnaStructure, commitOrder } = require('../helpers/orderUtils');
@@ -33,8 +33,6 @@ const createOrderData = async (body) => {
         if (!customer || !Array.isArray(products) || !shipping_id) {
             throw new Error('Invalid input: customer, products array, and shipping_id are required');
         }
-
-        const nowDate = getNowDate_time();
 
         // Store tax
         const tax = await StoreInfo.getTax();
@@ -72,7 +70,6 @@ const createOrderData = async (body) => {
         return {
             customer,
             products,
-            nowDate,
             totalPriceAfterDiscount,
             totalDiscount,
             finallprice,
@@ -106,7 +103,6 @@ const createOrderAndSaveItems = async (orderData, customer, transaction) => {
     try {
         const {
             products,
-            nowDate,
             totalPriceAfterDiscount,
             finallprice,
             totalDiscount,
@@ -133,7 +129,6 @@ const createOrderAndSaveItems = async (orderData, customer, transaction) => {
             shipping_price,
             shipping_name,
             shipping_time,
-            order_date: nowDate,
             address,
             zip,
             city,
@@ -170,6 +165,8 @@ const createOrder = async (req, res) => {
 
         // Create the order object data
         const orderData = await createOrderData(req.body);
+
+        console.error('orderData', orderData);
         if (orderData === null) {
             return res.status(400).json({
                 error: 'Failed to create order data',
