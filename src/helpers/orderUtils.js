@@ -35,12 +35,13 @@ const sendOrderEmail = async (orderData, templatePath) => {
     sendHtmlEmail(orderData.email, 'hello', 'customer', htmlTamplate, inlineImages);
 };
 
-const commitOrder = async (orderId) => {
+const commitOrder = async (orderId, isResend) => {
     const templatePath = path.resolve(`public/orderTamplate/index.html`);
-
     const products = await OrderItemsModel.getItemsByOrderId(orderId);
     if (products && products.length) {
-        OrderModel.updateProductQuantities(products);
+        if (!isResend) {
+            OrderModel.updateProductQuantities(products);
+        }
         const [orderData] = await OrderModel.getById(orderId);
         orderData.products = products;
         sendOrderEmail(orderData, templatePath);
