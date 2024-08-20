@@ -9,7 +9,7 @@ const Shipping = require('../models/shipping.model');
 const { sendResponse } = require('../helpers/apiResponse');
 const { getNowDate_time, roundToTwoDecimals } = require('../helpers/utils');
 const { paymentrequests } = require('./swish.controller');
-const { sendOrderEmail } = require('../helpers/orderUtils');
+const { sendOrderEmail, commitOrder } = require('../helpers/orderUtils');
 const path = require('path');
 const { sequelize } = require('../databases/mysql.db');
 
@@ -404,6 +404,16 @@ const getOrdersTotalPriceForChart = async (req, res) => {
     }
 };
 
+const resendEmail = async (req, res) => {
+    try {
+        const { id, isResend } = req.body
+        await commitOrder(id, isResend)
+        sendResponse(res, 200, 'Ok', 'Successfully resend Email', null, null);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
 module.exports = {
     createOrder,
     getAllOrders,
@@ -418,4 +428,5 @@ module.exports = {
     getOrdersFilter,
     getOrdersTotalPriceAndCount,
     getOrdersTotalPriceForChart,
+    resendEmail
 };

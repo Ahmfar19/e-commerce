@@ -49,6 +49,7 @@ router.get('/orders/total-price/count', orderController.getOrdersTotalPriceAndCo
 router.get('/orders/total-price/count/chart', orderController.getOrdersTotalPriceForChart);
 router.get('/orders/filter', orderController.getOrdersFilter);
 router.get('/orders', orderController.getAllOrders);
+router.post('/order/resendEmail', orderController.resendEmail);
 
 // OrderType
 router.get('/orderType/:id', orderTypeController.getSingleOrderType);
