@@ -440,8 +440,8 @@ const getOrdersTotalPriceForChart = async (req, res) => {
 
 const resendEmail = async (req, res) => {
     try {
-        const { id, isResend } = req.body
-        await commitOrder(id, isResend)
+        const { id, isResend } = req.body;
+        await commitOrder(id, isResend);
         sendResponse(res, 200, 'Ok', 'Successfully resend Email', null, null);
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
@@ -462,5 +462,5 @@ module.exports = {
     getOrdersFilter,
     getOrdersTotalPriceAndCount,
     getOrdersTotalPriceForChart,
-    resendEmail
+    resendEmail,
 };

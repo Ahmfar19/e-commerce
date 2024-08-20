@@ -6,6 +6,12 @@ const { sendResponse } = require('../helpers/apiResponse');
 const Payments = require('../models/payments.model');
 const { commitOrder } = require('../helpers/orderUtils');
 
+const PAYMENT_STATUS = {
+    CREATED: 'CREATED',
+    PAID: 'PAID',
+    DECLINED: 'DECLINED',
+};
+
 const testConfig = {
     payeeAlias: '1231181189',
     host: 'https://mss.cpc.getswish.net/swish-cpcapi',
@@ -78,7 +84,14 @@ async function swish_paymentrequests(data) {
 async function receivePaymentStatus(req, res) {
     try {
         const { id, status } = req.body;
-        if (id && status === 'PAID') {
+        if (id && status === PAYMENT_STATUS.PAID) {
+            const [payment] = await Payments.getPaymentsByPaymentId(id);
+            if (!payment) {
+                throw new Error('Payment not found.');
+            }
+            if (payment.status === 2) {
+                return sendResponse(res, 400, 'Error', 'Payment already received.', null, null);
+            }
             const result = await Payments.updatePaymentsStatus(id, 2);
 
             if (!result || !result.order_id) {

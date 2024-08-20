@@ -10,7 +10,6 @@ const path = require('path');
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const isHttps = process.env.HTTPS ? true : false;
 
-
 if (NODE_ENV === 'development') dotenv.config();
 
 const isDevelopment = NODE_ENV === 'development';

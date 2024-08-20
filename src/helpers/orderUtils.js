@@ -111,7 +111,7 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
             checkout: 'https://www.example.com/checkout?klarna_order_id={checkout.order.id}',
             // confirmation: 'https://www.example.com/confirmation?klarna_order_id={checkout.order.id}',
             confirmation: 'https://127.0.0.1:3000/order/confirmation?klarna_order_id={checkout.order.id}',
-            push: 'https://www.example.com/api/klarna/push?klarna_order_id={checkout.order.id}',
+            push: 'https://127.0.0.1:3000/server/api/klarna/paymentrequests/status?klarna_order_id={checkout.order.id}',
         },
     };
 };
