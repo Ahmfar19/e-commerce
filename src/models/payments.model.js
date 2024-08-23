@@ -1,4 +1,4 @@
-const { pool } = require('../databases/mysql.db');
+const { pool, sequelize } = require('../databases/mysql.db');
 
 class Payments {
     constructor(options) {
@@ -10,7 +10,7 @@ class Payments {
         this.status = options.status || 1;
     }
 
-    async createPayment() {
+    async createPayment(transaction) {
         const sql = `
             INSERT INTO payments (
                 payment_type_id,
@@ -24,9 +24,14 @@ class Payments {
                 ${this.order_id},
                 "${this.payment_id}",
                 ${this.status}
-            )`;
-        const [result] = await pool.execute(sql);
-        this.payment_id = result.insertId;
+        )`;
+
+        const result = transaction ? await sequelize.query(sql, { transaction }) : await pool.execute(sql);
+        if (transaction) {
+            this.payment_id = result[0]; // Adjust based on Sequelize version
+        } else {
+            this.payment_id = result[0].insertId;
+        }
         return this.payment_id;
     }
 

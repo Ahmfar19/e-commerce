@@ -7,7 +7,7 @@ const OrderType = require('../models/orderType.model');
 const Payments = require('../models/payments.model');
 const Shipping = require('../models/shipping.model');
 const { sendResponse } = require('../helpers/apiResponse');
-const { roundToTwoDecimals } = require('../helpers/utils');
+const { roundToTwoDecimals, normalizePhoneNumber } = require('../helpers/utils');
 const { swish_paymentrequests } = require('./swish.controller');
 const { klarna_paymentrequests } = require('./klarna.controller');
 const { sendOrderEmail, migrateProductsToKlarnaStructure, commitOrder } = require('../helpers/orderUtils');
@@ -77,6 +77,7 @@ const createOrderData = async (body) => {
             shipping_price,
             shipping_name,
             shipping_time,
+            shipping_id,
         };
     } catch (error) {
         return null;
@@ -138,11 +139,15 @@ const createOrderAndSaveItems = async (orderData, customer, transaction) => {
             total: finallprice,
         });
 
-        // Save order and items
-        const order_id = await order.save(transaction);
-        await OrderItems.saveMulti({ order_id, products }, transaction);
+        if (!transaction) {
+            return { ...order, ...customer };
+        } else {
+            // Save order and items
+            const order_id = await order.save(transaction);
+            await OrderItems.saveMulti({ order_id, products }, transaction);
+        }
 
-        return order;
+        return { ...order, ...customer };
     } catch (error) {
         if (transaction) {
             await transaction.rollback();
@@ -151,93 +156,125 @@ const createOrderAndSaveItems = async (orderData, customer, transaction) => {
     }
 };
 
+const createPaymentRecord = async (typeId, customerId, orderId, paymentId, status, transaction = null) => {
+    await (new Payments({
+        payment_type_id: typeId,
+        customer_id: customerId,
+        order_id: orderId,
+        payment_id: paymentId,
+        status: status,
+    })).createPayment(transaction);
+};
+
+const handleSwishPayment = async (payment, order, customerId, transaction) => {
+    if (!payment.phone) {
+        return { error: true, statusCode: 401, message: 'No valid phone number.' };
+    }
+
+    payment.phone = normalizePhoneNumber(payment.phone);
+    const payData = {
+        payerAlias: payment.phone,
+        amount: Number(order.total).toFixed(2),
+        message: payment.message || '',
+    };
+
+    const paymentResponse = await swish_paymentrequests(payData);
+
+    if (paymentResponse && paymentResponse.id) {
+        await createPaymentRecord(2, customerId, order.order_id, paymentResponse.id, 1, transaction);
+        return { data: { paymentResponse, commit: true } };
+    }
+
+    return { error: true, statusCode: 400, message: 'Swish payment failed' };
+};
+
+const handleKlarnaPayment = async (payment, order, customerId, transaction, products) => {
+    if (payment.paymentstatus === 'PAID') {
+        const existingPayment = await Payments.getPaymentsByPaymentId(payment.payment_id);
+        if (existingPayment.length > 0) {
+            return { error: true, statusCode: 400, message: 'Order already created.' };
+        }
+
+        await createPaymentRecord(3, customerId, order.order_id, payment.payment_id, 2, transaction);
+        return { data: { commit: true } };
+    } else {
+        const klarnaOrder = await migrateProductsToKlarnaStructure(products, order);
+        const klarnaRes = await klarna_paymentrequests(klarnaOrder);
+        if (klarnaRes.session_id) {
+            return { data: { ...klarnaRes, commit: false } };
+        }
+        return { error: true, statusCode: 400, message: 'Klarna payment failed' };
+    }
+};
+
+const handlePayment = async (payment, order, customerId, transaction, products) => {
+    if (!payment) return { data: {} };
+
+    switch (payment.type) {
+        case PAYMNT_TYPE.SWISH:
+            return await handleSwishPayment(payment, order, customerId, transaction);
+        case PAYMNT_TYPE.KLARNA:
+            return await handleKlarnaPayment(payment, order, customerId, transaction, products);
+        default:
+            return { error: true, statusCode: 400, message: 'Invalid payment type' };
+    }
+};
+
 const createOrder = async (req, res) => {
-    const transaction = await sequelize.transaction();
+    let transaction = null;
     try {
         const { products, customer, payment } = req.body;
 
         // Enusre the all products are available
         const { success, message, insufficientProducts } = await Product.checkQuantities(products);
         if (!success) {
-            await transaction.rollback();
             return sendResponse(res, 500, message, null, message, insufficientProducts);
         }
 
         // Create the order object data
         const orderData = await createOrderData(req.body);
-
-        if (orderData === null) {
-            return res.status(400).json({
-                error: 'Failed to create order data',
-                ok: false,
-            });
+        if (!orderData) {
+            return sendResponse(res, 400, 'Failed to create order data', null, null);
         }
+
         // Handle the customer
         const customerId = await getOrCreateCustomer(customer);
-        if (customerId === null) {
-            return res.status(400).json({
-                error: 'Failed to get or create customer',
-                ok: false,
-            });
+        if (!customerId) {
+            return sendResponse(res, 400, 'Failed to get or create customer', null, null);
         }
+
         // Create the order and the order items
         const customerToInsert = { customer_id: customerId, ...customer };
+
+        if (payment?.paymentstatus !== 'CREATED') {
+            transaction = await sequelize.transaction();
+        }
+
         const order = await createOrderAndSaveItems(orderData, customerToInsert, transaction);
+        order.shipping_id = orderData.shipping_id;
 
-        const response = {
-            order,
-        };
+        // Handle payment
+        const paymentResponse = await handlePayment(payment, order, customerId, transaction, products);
+        if (paymentResponse.error) {
+            await transaction?.rollback();
+            return sendResponse(res, paymentResponse.statusCode, paymentResponse.message);
+        }
 
-        if (payment) {
-            if (payment.type === PAYMNT_TYPE.SWISH) {
-                if (!payment.phone) {
-                    return sendResponse(res, 401, 'Fail', 'No valid phone number.', null, null);
-                }
-                if (!payment.phone.startsWith('46')) {
-                    payment.phone = '46' + payment.phone;
-                }
-                const amount = Number(order.total).toFixed(2);
-                const payData = {
-                    payerAlias: payment.phone,
-                    amount: amount,
-                    message: payment.message || '',
-                };
-
-                const paymentResponse = await swish_paymentrequests(payData);
-
-                if (paymentResponse && paymentResponse?.id) {
-                    await transaction.commit();
-                    (new Payments({
-                        payment_type_id: 2,
-                        customer_id: customerId,
-                        order_id: order.order_id,
-                        payment_id: paymentResponse.id,
-                        status: 1,
-                    })).createPayment();
-                }
-                response.paymentResponse = paymentResponse;
-            } else if (payment.type === PAYMNT_TYPE.KLARNA) {
-                const klarna_order = await migrateProductsToKlarnaStructure(products, order);
-                const klarna_res = await klarna_paymentrequests(klarna_order);
-
-                if (klarna_res.session_id) {
-                    await transaction.commit();
-                    (new Payments({
-                        payment_type_id: 3,
-                        customer_id: customerId,
-                        order_id: order.order_id,
-                        payment_id: klarna_res.session_id,
-                        status: 1,
-                    })).createPayment();
-                    response.klarna = klarna_res;
-                }
+        if (paymentResponse.data.commit) {
+            await transaction?.commit();
+            // The klarna order is inserted here to we need to
+            // commit the order here when the order is done
+            if (payment.type === PAYMNT_TYPE.KLARNA) {
+                await commitOrder(order.order_id);
             }
         }
 
-        return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, response);
+        return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, {
+            order,
+            ...paymentResponse.data,
+        });
     } catch (err) {
-        console.error(err);
-        await transaction.rollback();
+        await transaction?.rollback();
         sendResponse(res, 500, 'Internal Server Error', null, err?.message || err, null);
     }
 };

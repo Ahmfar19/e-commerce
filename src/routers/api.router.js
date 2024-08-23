@@ -23,8 +23,8 @@ router.post('/swish/paymentrequests/status', swishController.receivePaymentStatu
 router.get('/swish/paymentrequests/:requestId', swishController.getPaymentrequests);
 
 router.post('/klarna/paymentrequests', klarnaController.klarna_paymentrequests);
-router.post('/klarna/paymentrequests/status', klarnaController.commitKlarnaOrder);
-router.get('/klarna/paymentrequests/status', klarnaController.receivePaymentStatus);
+router.get('/klarna/paymentrequests/status', klarnaController.getOrderStatus);
+router.get('/klarna/paymentrequests/push', klarnaController.reportOrderStatus);
 
 // Authentication
 router.post('/auth/customer/verifyToken', customerController.verifyToken);
@@ -58,7 +58,7 @@ router.get('/products/multi', productController.getMultiProducts);
 router.get('/popular-products', productController.getPopularProducts);
 router.get('/products/priceRange', productController.getProductsByRangePrice);
 router.get('/products/random', productController.getRandomCategoryProducts);
-router.post('/products/checkQuantities', productController.checkQuantitiesForCheckout)
+router.post('/products/checkQuantities', productController.checkQuantitiesForCheckout);
 
 // Top products
 router.get('/top-products', topProductController.getTopProducts);

@@ -100,7 +100,6 @@ class Product {
     }
 
     static async checkQuantities(products) {
-       
         if (!Array.isArray(products) || products.length === 0) {
             throw new Error('Invalid products array');
         }

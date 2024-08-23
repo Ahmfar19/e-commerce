@@ -1,20 +1,11 @@
-const Payments = require('../models/payments.model');
 const axios = require('axios');
-const { sendResponse } = require('../helpers/apiResponse');
-const { commitOrder } = require('../helpers/orderUtils');
-const { deleteById } = require('../models/order.model');
+const orderModel = require('../models/order.model.js');
 
 const KLARNA_API_URL = 'https://api.playground.klarna.com'; // Klarna's playground environment
 const KLARNA_AUTH = {
     username: 'dad5d96d-bc63-4ee0-81b2-3fa1969cc4c0',
     password:
         'klarna_test_api_MiluUCFWYXVvTEZxZnE2UGEhamF4WCUxOHIwI3drKHUsZGFkNWQ5NmQtYmM2My00ZWUwLTgxYjItM2ZhMTk2OWNjNGMwLDEsM0NzSUk3azBKYVBabSsrRGhwZW5McUN1NVBoNzh3RG5KS20rZ1Y4UDJxOD0',
-};
-
-const PAYMENT_STATUS = {
-    CREATED: 'CREATED',
-    PAID: 'checkout_complete',
-    DECLINED: 'DECLINED',
 };
 
 // Skapa en Klarna Checkout-session
@@ -37,60 +28,13 @@ async function createKlarnaSession(orderData) {
 const klarna_paymentrequests = async (orderData) => {
     try {
         const session = await createKlarnaSession(orderData);
-        // res.json({ session_id: session.order_id, html_snippet: session.html_snippet });
         return { session_id: session.order_id, html_snippet: session.html_snippet };
     } catch (error) {
-        // res.status(500).json({ error: 'Failed to create Klarna session' });
         return false;
     }
 };
 
-async function commitKlarnaOrder(req, res) {
-    try {
-        const { id, status } = req.body;
-        if (id && status === PAYMENT_STATUS.PAID) {
-            const [payment] = await Payments.getPaymentsByPaymentId(id);
-            if (!payment) {
-                throw new Error('Payment not found.');
-            }
-            if (payment.status === 2) {
-                return sendResponse(res, 400, 'Error', 'Payment already received.', null, null);
-            }
-            const result = await Payments.updatePaymentsStatus(id, 2);
-
-            if (!result || !result.order_id) {
-                throw new Error('Invalid payment update result.');
-            }
-            commitOrder(result.order_id);
-            return sendResponse(res, 201, 'Received', 'Successfully received the payment status.', null, null);
-        } else if (id && status === PAYMENT_STATUS.DECLINED) {
-            const [payment] = await Payments.getPaymentsByPaymentId(id);
-            if (!payment) {
-                throw new Error('Payment not found.');
-            }
-            if (payment.status === 1) {
-                const delRes = await deleteById(payment.order_id);
-                if (!delRes) {
-                    throw new Error('Failed to delete order.');
-                } else {
-                    return sendResponse(res, 200, 'Declined', 'Successfully declined the payment.', null, null);
-                }
-            }
-        }
-        return sendResponse(res, 400, 'Error', 'Invalid payment status or missing ID.', null, null);
-    } catch (error) {
-        return sendResponse(
-            res,
-            500,
-            'Server Error',
-            'An error occurred while processing the payment status.',
-            null,
-            error.message,
-        );
-    }
-}
-
-const receivePaymentStatus = async (req, res) => {
+const getOrderStatus = async (req, res) => {
     const { klarna_order_id } = req.query;
     try {
         const response = await axios.get(`${KLARNA_API_URL}/checkout/v3/orders/${klarna_order_id}`, {
@@ -117,8 +61,78 @@ const receivePaymentStatus = async (req, res) => {
     }
 };
 
+const reportOrderStatus = async (req, res) => {
+    const { klarna_order_id } = req.query;
+
+    try {
+        if (!klarna_order_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing Klarna order ID',
+            });
+        }
+        const response = await orderModel.isOrderCommitted(klarna_order_id);
+        if (!response) {
+            return res.status(404).json({
+                success: false,
+                message: 'Klarna order not found',
+            });
+        }
+        return res.status(200).json({
+            success: true,
+            message: 'Klarna order status updated to committed',
+        });
+    } catch (error) {
+        console.error('Error fetching Klarna order:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve order status',
+            error: error.message,
+        });
+    }
+};
+
+// Function to abort a Klarna order
+const abortKlarnaOrder = async (req, res) => {
+    const { klarna_order_id } = req.body;
+    if (!klarna_order_id) {
+        return res.status(400).json({
+            success: false,
+            message: 'Missing Klarna order ID',
+        });
+    }
+
+    try {
+        const response = await axios.post(`${KLARNA_API_URL}/checkout/v3/orders/${klarna_order_id}/abort`, null, {
+            auth: KLARNA_AUTH,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (response.status === 204) {
+            return res.status(200).json({
+                success: true,
+                message: 'Klarna order successfully aborted',
+            });
+        } else {
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to abort Klarna order',
+            });
+        }
+    } catch (error) {
+        console.error('Error aborting Klarna order:', error.response ? error.response.data : error.message);
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
 module.exports = {
     klarna_paymentrequests,
-    receivePaymentStatus,
-    commitKlarnaOrder,
+    abortKlarnaOrder,
+    reportOrderStatus,
+    getOrderStatus,
 };

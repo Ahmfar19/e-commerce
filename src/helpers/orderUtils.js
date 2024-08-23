@@ -68,9 +68,27 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
         locale: 'sv-SE',
         order_amount: orderTotalInOres,
         order_tax_amount: orderTaxInOres,
+        billing_address: {
+            given_name: orderData.fname,
+            family_name: orderData.lname,
+            email: orderData.email,
+            street_address: orderData.adress,
+            postal_code: orderData.zip,
+            city: orderData.city,
+            phone: orderData.phone,
+        },
+        shipping_address: {
+            given_name: orderData.fname,
+            family_name: orderData.lname,
+            email: orderData.email,
+            street_address: orderData.adress,
+            postal_code: orderData.zip,
+            city: orderData.city,
+            phone: orderData.phone,
+        },
         shipping_options: [
             {
-                id: 'express_priority',
+                id: orderData.shipping_id,
                 name: shippingInfo,
                 price: shippingPrice,
                 preselected: true,
@@ -109,9 +127,59 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
         merchant_urls: {
             terms: 'https://www.example.com/terms',
             checkout: 'https://www.example.com/checkout?klarna_order_id={checkout.order.id}',
-            confirmation: 'https://127.0.0.1:3000/order/confirmation?klarna_order_id={checkout.order.id}',
+            confirmation: 'https://localhost:3000/order/confirmation?klarna_order_id={checkout.order.id}',
             push: 'https://127.0.0.1:3000/server/api/klarna/paymentrequests/status?klarna_order_id={checkout.order.id}',
         },
+    };
+};
+
+const unmigrateKlarnaStruct = (data) => {
+    const customer = data.billing_address;
+    const order_lines = data.order_lines;
+    const shipping_options = data.shipping_options[0]; // Assuming there's always at least one shipping option
+
+    // Unmigrated customer data
+    const unMigratedCustomer = {
+        fname: customer.given_name,
+        lname: customer.family_name,
+        email: customer.email,
+        adress: customer.street_address,
+        zip: customer.postal_code,
+        city: customer.city,
+        phone: customer.phone,
+    };
+
+    // Calculate order details
+    const unMigratedOrder = {
+        sub_total: order_lines.reduce((acc, curr) => acc + (curr.type !== 'shipping_fee' ? curr.total_amount : 0), 0)
+            / 100, // Convert back from öre to SEK
+        shipping_price: shipping_options.price / 100, // Convert back from öre to SEK
+        tax: order_lines.reduce((acc, curr) => acc + (curr.type !== 'shipping_fee' ? curr.total_tax_amount : 0), 0)
+            / 100, // Convert back from öre to SEK
+        shipping_id: shipping_options.id,
+        shipping_name: shipping_options.name,
+        shipping_time: shipping_options.shipping_method, // Assuming `shipping_method` is what was used for time
+    };
+
+    // Unmigrated order items using reduce
+    const unmigratedOrderItems = order_lines.reduce((acc, item) => {
+        if (item.type !== 'shipping_fee') {
+            acc.push({
+                articelNumber: item.reference,
+                name: item.name,
+                price: item.unit_price / 100, // Convert back from öre to SEK
+                discount: item.total_discount_amount / 100, // Convert back from öre to SEK
+                quantity: item.quantity,
+                unit_name: item.quantity_unit,
+            });
+        }
+        return acc;
+    }, []);
+
+    return {
+        customer: unMigratedCustomer,
+        order: unMigratedOrder,
+        products: unmigratedOrderItems,
     };
 };
 
@@ -119,4 +187,5 @@ module.exports = {
     sendOrderEmail,
     commitOrder,
     migrateProductsToKlarnaStructure,
+    unmigrateKlarnaStruct,
 };

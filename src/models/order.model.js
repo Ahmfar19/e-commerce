@@ -327,6 +327,23 @@ class Order {
         const [rows] = await pool.execute(sql, [orderId]);
         return rows[0];
     }
+
+    static async isOrderCommitted(paymentId) {
+        const sql = `
+            SELECT orders.order_id, payments.payment_id, payments.status
+            FROM orders 
+            INNER JOIN payments 
+            ON orders.order_id = payments.order_id
+            WHERE payments.payment_id = ?;
+        `;
+        const [rows] = await pool.execute(sql, [paymentId]);
+        // Assuming "committed" means that the payment status is a certain value, e.g., 2
+        if (rows?.length === 1) {
+            return rows[0].status === 2;
+        } else {
+            return false;
+        }
+    }
 }
 
 module.exports = Order;

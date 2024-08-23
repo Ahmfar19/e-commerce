@@ -120,9 +120,17 @@ const isProduction = () => {
     return NODE_ENV === 'production';
 };
 
+const normalizePhoneNumber = (phone) => {
+    if (!phone.startsWith('46')) {
+        return '46' + phone;
+    }
+    return phone;
+};
+
 const roundToTwoDecimals = (value) => Math.floor(value * 100) / 100;
 
 module.exports = {
+    normalizePhoneNumber,
     hashPassword,
     comparePassword,
     getNowDate_time,
