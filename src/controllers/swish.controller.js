@@ -101,7 +101,6 @@ async function receivePaymentStatus(req, res) {
             commitOrder(result.order_id);
             return sendResponse(res, 201, 'Received', 'Successfully received the payment status.', null, null);
         } else if (id && status === PAYMENT_STATUS.DECLINED) {
-
             const [payment] = await Payments.getPaymentsByPaymentId(id);
             if (!payment) {
                 throw new Error('Payment not found.');
