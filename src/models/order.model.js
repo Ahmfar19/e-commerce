@@ -38,9 +38,8 @@ const orderSchema = Joi.object({
         'string.empty': 'address cannot be empty.',
         'any.required': 'address is required.',
     }),
-    zip: Joi.string().pattern(/^\d{5}(-\d{4})?$/).required().messages({
+    zip: Joi.string().required().messages({
         'string.base': 'zip must be a string.',
-        'string.pattern.base': 'zip must be a valid ZIP code.',
         'any.required': 'zip is required.',
     }),
     city: Joi.string().min(1).max(100).required().messages({
