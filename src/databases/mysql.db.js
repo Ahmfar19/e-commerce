@@ -6,18 +6,18 @@ const DB_HOST = config.get('DB_HOST');
 // const DB_PORT = config.get('DB_PORT');
 const DB_NAME = config.get('DB_NAME');
 const DB_USERNAME = config.get('DB_USERNAME');
-const DB_USERNAME_PASSWORD = config.get('DB_USERNAME_PASSWORD');
+const DB_PASSWORD = config.get('DB_PASSWORD');
 
 const connectionOptions = {
     host: DB_HOST,
     // port: DB_PORT,
     database: DB_NAME,
     user: DB_USERNAME,
-    password: DB_USERNAME_PASSWORD,
+    password: DB_PASSWORD,
     decimalNumbers: true,
 };
 
-const sequelize = new Sequelize(DB_NAME, DB_USERNAME, DB_USERNAME_PASSWORD, {
+const sequelize = new Sequelize(DB_NAME, DB_USERNAME, DB_PASSWORD, {
     host: DB_HOST,
     dialect: 'mysql', // or 'postgres', 'sqlite', etc.
     logging: false,

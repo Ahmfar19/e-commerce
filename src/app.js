@@ -27,7 +27,7 @@ const corsOptions = {
     origin: (origin, callback) => {
         let allowedOrigins = [];
         if (isProduction()) {
-            allowedOrigins = ['misk-anbar.administreramer.se', 'dashboard.administreramer.se'];
+            allowedOrigins = ['almondo.se', 'dashboard.almondo.se'];
         } else {
             allowedOrigins = ['http://localhost:3000'];
         }
@@ -41,7 +41,7 @@ const corsOptions = {
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+    credentials: true,
 };
 
 app.use(function(req, res, next) {
@@ -77,10 +77,8 @@ app.use(session({
     },
 }));
 
-app.post('/server/api/test', (req, res) => {
-    const wsManager = req.app.wsManager;
-    console.error(wsManager);
-    res.send('hahaha');
+app.get('/server/api/test', (req, res) => {
+    res.send('It works');
 });
 
 // Middleware to initialize user session
