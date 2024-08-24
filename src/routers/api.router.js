@@ -58,6 +58,7 @@ router.get('/products/multi', productController.getMultiProducts);
 router.get('/popular-products', productController.getPopularProducts);
 router.get('/products/priceRange', productController.getProductsByRangePrice);
 router.get('/products/random', productController.getRandomCategoryProducts);
+router.post('/products/checkQuantities', productController.checkQuantitiesForCheckout)
 
 // Top products
 router.get('/top-products', topProductController.getTopProducts);

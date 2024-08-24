@@ -342,6 +342,15 @@ const updateDiscountId = async (req, res) => {
     }
 };
 
+const checkQuantitiesForCheckout = async (req, res) => {
+    try {
+        const result = await Product.checkQuantities(req.body);
+        sendResponse(res, 200, 'OK', 'Result retrieved successfully.', null, result);
+    } catch (err) {
+        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+    }
+};
+
 module.exports = {
     createProduct,
     updateProduct,
@@ -364,4 +373,5 @@ module.exports = {
     getProductsByDiscountId,
     getProductsCountByCategory,
     updateDiscountId,
+    checkQuantitiesForCheckout,
 };
