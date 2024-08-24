@@ -35,8 +35,7 @@ const corsOptions = {
         if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
-            // In development, allow any origin
-            callback(null, true);
+            callback(new Error('Not allowed by CORS'));
         }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
