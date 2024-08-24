@@ -30,7 +30,7 @@ const corsOptions = {
             // allowedOrigins = ['www.almondo.se', 'www.dashboard.almondo.se']; // when dist prime3
             allowedOrigins = ['misk-anbar', 'dashboard.misk-anbar.se']; // when dist prime5
         } else {
-            allowedOrigins = ['http://localhost:3000'];
+            allowedOrigins = ['http://localhost:3000', 'http://localhost:3001', undefined];
         }
 
         if (allowedOrigins.includes(origin)) {
