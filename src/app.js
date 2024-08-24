@@ -27,7 +27,8 @@ const corsOptions = {
     origin: (origin, callback) => {
         let allowedOrigins = [];
         if (isProduction()) {
-            allowedOrigins = ['almondo.se', 'dashboard.almondo.se'];
+            // allowedOrigins = ['www.almondo.se', 'www.dashboard.almondo.se']; // when dist prime3
+            allowedOrigins = ['misk-anbar', 'dashboard.misk-anbar.se']; // when dist prime5
         } else {
             allowedOrigins = ['http://localhost:3000'];
         }
