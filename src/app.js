@@ -28,7 +28,7 @@ const corsOptions = {
         let allowedOrigins = [];
         if (isProduction()) {
             // allowedOrigins = ['www.almondo.se', 'www.dashboard.almondo.se']; // when dist prime3
-            allowedOrigins = ['misk-anbar', 'dashboard.misk-anbar.se']; // when dist prime5
+            allowedOrigins = ['misk-anbar.administreramer.se', 'dashboard.administreramer.se']; // when dist prime5
         } else {
             allowedOrigins = ['http://localhost:3000', 'http://localhost:3001', undefined];
         }
