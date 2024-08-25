@@ -312,6 +312,7 @@ class Product {
         products.name,
         products.price,
         products.image,
+        products.available,
         products.description,
         discounts.discount_value As discount,
         products.articelNumber,
