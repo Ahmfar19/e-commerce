@@ -107,9 +107,10 @@ async function isAuthenticated(req, res, next) {
 }
 
 const initSIDSession = (req, res) => {
+    const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
     if (!req.session.SID) {
         const sessionID = generateUniqueUserId();
-        const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
         req.session.ipAddress = ipAddress;
         req.session.SID = sessionID;
         res.cookie('SID', sessionID, {
@@ -123,6 +124,10 @@ const initSIDSession = (req, res) => {
         });
     } else {
         const response = { message: 'Session already established', SID: req.session.SID };
+
+        // In case the user changed the internet connection
+        req.session.ipAddress = ipAddress;
+
         if (req.session.staff || req.session.customer) {
             response.verifyToken = true;
         }
