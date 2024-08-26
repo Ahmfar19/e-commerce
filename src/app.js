@@ -20,6 +20,10 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.static(path.resolve('./public')));
 
+app.get('/server/ping', (req, res) => {
+    res.send('Server is active.');
+});
+
 deleteEndedDiscount();
 
 // Apply CORS middleware with the defined options
@@ -88,5 +92,22 @@ app.use('/server/api/verify-customer', verifyEmail);
 
 app.use('/server/api/admin', isAdmin, apiAdminRouter);
 app.use('/server/api', isAuthorized, apiRouter);
+
+
+const url = "https://misk-anbar.administreramer.se/server/ping";
+async function pingServer() {
+    try {
+        const response = await fetch(url);
+        if (response.ok) {
+            // console.error('Ping successful:', response.status);
+        } else {
+            // console.error(`Request failed. Status Code: ${response.status}`);
+        }
+    } catch (error) {
+        // console.error('Error during ping request:', error.message);
+    }
+}
+setInterval(pingServer, 4 * 60 * 1000);
+
 
 module.exports = app;
