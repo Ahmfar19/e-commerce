@@ -1,4 +1,5 @@
 const ejs = require('ejs');
+const fs = require('fs').promises;
 const path = require('path');
 const StoreInfo = require('../models/storeInfo.model');
 const OrderModel = require('../models/order.model');
@@ -12,16 +13,31 @@ function getFirstImage(item) {
 }
 
 const sendOrderEmail = async (orderData, templatePath) => {
-    // Construct inline images data
-    const inlineImages = orderData.products.map((product) => {
-        const firstImage = JSON.parse(product.image)[0];
+    const defaultImagePath = path.resolve('public/image', 'no-product-image-available.png');
+
+    // Helper function to get the correct image path
+    const getImagePath = async (product, firstImage) => {
         const imagePath = path.resolve('public/images', `product_${product.product_id}`, firstImage);
+        try {
+            // Check if the image file exists
+            await fs.access(imagePath);
+            return imagePath;
+        } catch (err) {
+            // If the image doesn't exist, return the default image path
+            return defaultImagePath;
+        }
+    };
+
+    // Construct inline images data
+    const inlineImages = await Promise.all(orderData.products.map(async (product) => {
+        const firstImage = JSON.parse(product.image)[0];
+        const imagePath = await getImagePath(product, firstImage);
         return {
             filename: firstImage,
             path: imagePath,
             cid: `${firstImage}`, // Unique CID
         };
-    });
+    }));
 
     orderData.products.forEach(product => {
         product.cid = getFirstImage(product);
@@ -31,8 +47,8 @@ const sendOrderEmail = async (orderData, templatePath) => {
     const [storeInfo] = await StoreInfo.getAll();
     orderData.storeInfo = storeInfo;
 
-    const htmlTamplate = await ejs.renderFile(templatePath, { orderData, getFirstImage });
-    sendHtmlEmail(orderData.email, 'hello', 'customer', htmlTamplate, inlineImages);
+    const htmlTemplate = await ejs.renderFile(templatePath, { orderData, getFirstImage });
+    sendHtmlEmail(orderData.email, 'hello', 'customer', htmlTemplate, inlineImages);
 };
 
 const commitOrder = async (orderId, isResend) => {

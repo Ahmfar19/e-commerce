@@ -93,8 +93,7 @@ app.use('/server/api/verify-customer', verifyEmail);
 app.use('/server/api/admin', isAdmin, apiAdminRouter);
 app.use('/server/api', isAuthorized, apiRouter);
 
-
-const url = "https://misk-anbar.administreramer.se/server/ping";
+const url = 'https://misk-anbar.administreramer.se/server/ping';
 async function pingServer() {
     try {
         const response = await fetch(url);
@@ -108,6 +107,5 @@ async function pingServer() {
     }
 }
 setInterval(pingServer, 4 * 60 * 1000);
-
 
 module.exports = app;
