@@ -18,7 +18,7 @@ const orderTypeController = require('../controllers/orderType.controller');
 const shippingController = require('../controllers/shipping.controller');
 const discountsController = require('../controllers/discounts.controller');
 const swishController = require('../controllers/swish.controller');
-
+const klarnaController = require('../controllers/klarna.controller');
 const uploadUser = multer({
     dest: path.join(__dirname, 'public/users'),
     limits: {
@@ -30,6 +30,7 @@ const uploadUser = multer({
 // Payments
 router.post('/swish/refunds', swishController.refunds);
 router.get('/swish/refunds/:refundId', swishController.getRefunds);
+router.post('/klarna/refundsPayment', klarnaController.abortKlarnaOrder);
 
 // Customers
 router.get('/customers', customerController.getUsers);

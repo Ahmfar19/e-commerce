@@ -95,9 +95,11 @@ const reportOrderStatus = async (req, res) => {
 // Function to abort a Klarna order
 const abortKlarnaOrder = async (req, res) => {
     const { klarna_order_id } = req.body;
+    
     if (!klarna_order_id) {
         return res.status(400).json({
             success: false,
+            ok: false,
             message: 'Missing Klarna order ID',
         });
     }
@@ -113,11 +115,13 @@ const abortKlarnaOrder = async (req, res) => {
         if (response.status === 204) {
             return res.status(200).json({
                 success: true,
+                ok:true,
                 message: 'Klarna order successfully aborted',
             });
         } else {
             return res.status(500).json({
                 success: false,
+                ok:false,
                 message: 'Failed to abort Klarna order',
             });
         }
@@ -125,6 +129,7 @@ const abortKlarnaOrder = async (req, res) => {
         console.error('Error aborting Klarna order:', error.response ? error.response.data : error.message);
         return res.status(500).json({
             success: false,
+            ok:false,
             message: error.message,
         });
     }
