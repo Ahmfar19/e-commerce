@@ -226,7 +226,7 @@ class Order {
         }
     }
 
-    static async getByType() {
+    static async getByOrderedType() {
         const sql = `
             SELECT orders.*, 
             DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS order_date,

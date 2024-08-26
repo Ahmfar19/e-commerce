@@ -356,7 +356,7 @@ const getOrderById = async (req, res) => {
 
 const getOrderByType = async (req, res) => {
     try {
-        const orderByType = await Order.getByType();
+        const orderByType = await Order.getByOrderedType();
         sendResponse(res, 202, 'Accepted', 'Successfully retrieved all the order ', null, orderByType);
     } catch (error) {
         sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
