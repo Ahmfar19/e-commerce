@@ -232,19 +232,20 @@ class Order {
             DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS order_date,
             customers.customer_id,
             customers.email,
+            customers.isCompany,
             CONCAT(customers.fname, ' ', customers.lname) AS customerName,
             order_type.type_name 
             FROM orders
             INNER JOIN customers ON orders.customer_id = customers.customer_id
             INNER JOIN order_type ON orders.type_id = order_type.type_id
-            WHERE orders.type_id = 2
+            WHERE orders.type_id = 1
         `;
         const [rows] = await pool.execute(sql);
         return rows;
     }
 
     static async updateOrderType(order_id, trackingNumber) {
-        const sql = 'UPDATE orders SET type_id = 3, trackingNumber = ? WHERE order_id = ?';
+        const sql = 'UPDATE orders SET type_id = 2, trackingNumber = ? WHERE order_id = ?';
         const [rows] = await pool.execute(sql, [trackingNumber || null, order_id]);
         return rows;
     }
