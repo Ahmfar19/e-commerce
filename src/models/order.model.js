@@ -140,7 +140,7 @@ class Order {
                 customers.isCompany,
                 order_type.type_name,
                 DATE_FORMAT(order_date, '%Y-%m-%d %H:%i:%s') AS order_date FROM orders 
-                INNER JOIN customers ON orders.customer_id = customers.customer_id
+                LEFT JOIN customers ON orders.customer_id = customers.customer_id
                 INNER JOIN order_type ON orders.type_id = order_type.type_id
         `;
         const [rows] = await pool.execute(sql);
@@ -187,7 +187,7 @@ class Order {
             payments.payment_id,
             DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS order_date
         FROM orders 
-        INNER JOIN customers ON orders.customer_id = customers.customer_id
+        LEFT JOIN customers ON orders.customer_id = customers.customer_id
         INNER JOIN order_type ON orders.type_id = order_type.type_id
         INNER JOIN payments ON payments.order_id = orders.order_id
         WHERE orders.order_id = ?`;
@@ -240,7 +240,7 @@ class Order {
             CONCAT(customers.fname, ' ', customers.lname) AS customerName,
             order_type.type_name 
             FROM orders
-            INNER JOIN customers ON orders.customer_id = customers.customer_id
+            LEFT JOIN customers ON orders.customer_id = customers.customer_id
             INNER JOIN order_type ON orders.type_id = order_type.type_id
             WHERE orders.type_id = 1
         `;
@@ -280,7 +280,7 @@ class Order {
             customers.isCompany,
             order_type.type_name
             FROM orders
-            INNER JOIN customers ON orders.customer_id = customers.customer_id
+            LEFT JOIN customers ON orders.customer_id = customers.customer_id
             INNER JOIN order_type ON orders.type_id = order_type.type_id
         `;
         if (key === 'order_date') {
