@@ -114,14 +114,26 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
             },
         ],
         order_lines: products.map(product => {
-            const unitPriceInOres = product.price * 100; // Convert price to öre
-            const discountInOres = (product.discount || 0) * 100; // Convert discount to öre
+            let unitPriceInOres = product.price * 100;
+            let discountInOres = (product.discount || 0) * 100;
+            
+            // If the weight is not 1 (i.e., the product is measured in grams rather than kilograms)
+            if (product.weight !== 1) {
+                unitPriceInOres = unitPriceInOres / 1000; // Convert to price per gram
+                discountInOres = discountInOres / 1000; // Convert discount to per gram
+            }
+
             const discountedUnitPrice = unitPriceInOres - discountInOres; // Apply the discount
 
-            const quantity = +product.quantity;
+            let quantity = +product.quantity;
+
+            // If the product is in grams, adjust the quantity accordingly
+            if (product.weight !== 1) {
+                quantity = quantity * 1000; // Adjust for grams
+            }
+
             const totalAmount = discountedUnitPrice * quantity; // Total amount after discount
             const totalDiscountAmount = discountInOres * quantity; // Total discount applied
-
             const taxRate = Math.round(tax * 100); // Tax rate as percentage * 100
             const totalTaxAmount = calculateVatAmount(totalAmount, tax);
 
