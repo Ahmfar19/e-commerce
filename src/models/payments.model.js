@@ -7,6 +7,7 @@ class Payments {
         this.customer_id = options.customer_id;
         this.order_id = options.order_id;
         this.payment_id = options.payment_id;
+        this.payment_reference = options.payment_reference;
         this.status = options.status || 1;
     }
 
@@ -17,12 +18,14 @@ class Payments {
                 customer_id,
                 order_id,
                 payment_id,
+                payment_reference,
                 status
             ) VALUES (
                 ${this.payment_type_id},
                 ${this.customer_id},
                 ${this.order_id},
                 "${this.payment_id}",
+                "${this.payment_reference}",
                 ${this.status}
         )`;
 
@@ -43,6 +46,7 @@ class Payments {
                 customer_id,
                 order_id,
                 payment_id,
+                payment_reference,
                 status,
                 created_at,
                 updated_at
@@ -88,6 +92,30 @@ class Payments {
             id,
         ];
         await pool.execute(sql, values);
+    }
+
+    static async updatePaymentStatus(payment_id, status) {
+        const sql = `
+            UPDATE payments SET 
+            status = ? 
+            WHERE payment_id = ?`;
+
+        const values = [status, payment_id];
+
+        try {
+            // Execute the SQL query to update the payment status
+            await pool.execute(sql, values);
+            return {
+                success: true,
+                message: 'Payment status updated successfully',
+            };
+        } catch (error) {
+            console.error('Error updating payment status:', error.message);
+            return {
+                success: false,
+                message: 'Failed to update payment status',
+            };
+        }
     }
 
     static async deletePayments(id) {

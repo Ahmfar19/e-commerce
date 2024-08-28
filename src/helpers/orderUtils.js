@@ -88,16 +88,19 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
             given_name: orderData.fname,
             family_name: orderData.lname,
             email: orderData.email,
-            street_address: orderData.adress,
+            street_address: orderData.address,
             postal_code: orderData.zip,
             city: orderData.city,
             phone: orderData.phone,
+            merchant_data: JSON.stringify({
+                customer_id: orderData.customer_id,
+            }),
         },
         shipping_address: {
             given_name: orderData.fname,
             family_name: orderData.lname,
             email: orderData.email,
-            street_address: orderData.adress,
+            street_address: orderData.address,
             postal_code: orderData.zip,
             city: orderData.city,
             phone: orderData.phone,
@@ -113,23 +116,31 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
                 shipping_method: 'PickUpStore',
             },
         ],
+        merchant_data: JSON.stringify({
+            customer_id: orderData.customer_id,
+        }),
         order_lines: products.map(product => {
             let unitPriceInOres = product.price * 100;
             let discountInOres = (product.discount || 0) * 100;
-            
+            let productImage = product.image;
+            let unit_name = product.unit_name;
+
             // If the weight is not 1 (i.e., the product is measured in grams rather than kilograms)
             if (product.weight !== 1) {
                 unitPriceInOres = unitPriceInOres / 1000; // Convert to price per gram
                 discountInOres = discountInOres / 1000; // Convert discount to per gram
             }
 
+            console.error('discountInOres', discountInOres);
             const discountedUnitPrice = unitPriceInOres - discountInOres; // Apply the discount
 
+            console.error('discountedUnitPrice', discountedUnitPrice);
             let quantity = +product.quantity;
 
             // If the product is in grams, adjust the quantity accordingly
             if (product.weight !== 1) {
                 quantity = quantity * 1000; // Adjust for grams
+                unit_name = 'g';
             }
 
             const totalAmount = discountedUnitPrice * quantity; // Total amount after discount
@@ -137,26 +148,37 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
             const taxRate = Math.round(tax * 100); // Tax rate as percentage * 100
             const totalTaxAmount = calculateVatAmount(totalAmount, tax);
 
+            if (productImage) {
+                productImage = JSON.parse(productImage);
+                productImage = productImage[0];
+                productImage = `https://www.exampleobjects.com/images/product_${product.product_id}/${productImage}`;
+            }
+            console.error('quantity', quantity);
+            console.error('totalDiscountAmount', totalDiscountAmount);
+            console.error('--------');
+
             return {
                 type: 'physical',
-                reference: String(product.articelNumber),
+                reference: String(product.product_id),
                 name: product.name,
                 quantity: quantity,
-                quantity_unit: product.unit_name,
+                quantity_unit: unit_name,
                 unit_price: unitPriceInOres,
                 tax_rate: taxRate,
                 total_amount: totalAmount,
                 total_discount_amount: totalDiscountAmount,
                 total_tax_amount: totalTaxAmount,
-                image_url: product.image ? `https://www.exampleobjects.com/${product.image}` : '',
+                image_url: productImage ? productImage : '',
                 product_url: `https://www.estore.com/products/${product.product_id}`,
+                merchant_data: JSON.stringify({ articelNumber: product.articelNumber }),
             };
         }),
         merchant_urls: {
             terms: 'https://www.example.com/terms',
-            checkout: 'https://www.example.com/checkout?klarna_order_id={checkout.order.id}',
+            checkout: 'https://localhost:3000/checkout?klarna_order_id={checkout.order.id}',
             confirmation: 'https://localhost:3000/order/confirmation?klarna_order_id={checkout.order.id}',
-            push: 'https://127.0.0.1:3000/server/api/klarna/paymentrequests/status?klarna_order_id={checkout.order.id}',
+            // push: 'https://127.0.0.1:3000/server/api/klarna/paymentrequests/status?klarna_order_id={checkout.order.id}',
+            push: 'https://webhook.site/3c565038-5dfb-4ff8-add2-c76b0052b6bc',
         },
     };
 };
@@ -164,41 +186,95 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
 const unmigrateKlarnaStruct = (data) => {
     const customer = data.billing_address;
     const order_lines = data.order_lines;
-    const shipping_options = data.shipping_options[0]; // Assuming there's always at least one shipping option
+    const shipping_options = data.selected_shipping_option;
+    const merchantData = JSON.parse(data.merchant_data || {});
 
     // Unmigrated customer data
     const unMigratedCustomer = {
+        customer_id: merchantData.customer_id,
         fname: customer.given_name,
         lname: customer.family_name,
         email: customer.email,
-        adress: customer.street_address,
+        address: customer.street_address,
         zip: customer.postal_code,
         city: customer.city,
         phone: customer.phone,
     };
 
+    let order_date = new Date(data.created_at);
+    order_date = order_date.toLocaleString();
+
+    const totals = order_lines.reduce(
+        (acc, curr) => {
+            if (curr.type !== 'shipping_fee') {
+                acc.total_discount += curr.total_discount_amount;
+                acc.total_tax += curr.total_tax_amount;
+            }
+            return acc;
+        },
+        { total_discount: 0, total_tax: 0 },
+    );
+
     // Calculate order details
     const unMigratedOrder = {
-        sub_total: order_lines.reduce((acc, curr) => acc + (curr.type !== 'shipping_fee' ? curr.total_amount : 0), 0)
-            / 100, // Convert back from öre to SEK
-        shipping_price: shipping_options.price / 100, // Convert back from öre to SEK
-        tax: order_lines.reduce((acc, curr) => acc + (curr.type !== 'shipping_fee' ? curr.total_tax_amount : 0), 0)
-            / 100, // Convert back from öre to SEK
-        shipping_id: shipping_options.id,
-        shipping_name: shipping_options.name,
-        shipping_time: shipping_options.shipping_method, // Assuming `shipping_method` is what was used for time
+        customer_id: merchantData.customer_id,
+        type_id: 1,
+        date: order_date,
+        shipping_price: shipping_options.price / 100,
+        address: customer.street_address,
+        zip: customer.postal_code,
+        city: customer.city,
+        sub_total: (data.order_amount / 100) - ((shipping_options.price / 100) || 0),
+        tax: totals.total_tax / 100,
+        items_discount: totals.total_discount / 100,
+        total: data.order_amount / 100,
     };
 
     // Unmigrated order items using reduce
     const unmigratedOrderItems = order_lines.reduce((acc, item) => {
         if (item.type !== 'shipping_fee') {
+            let unitPrice = item.unit_price / 100; // Convert from öre to SEK
+            let totalDiscount = item.total_discount_amount / 100; // Convert from öre to SEK
+            let quantity = item.quantity;
+            let merchantData = item.merchant_data;
+            let unitname = item.quantity_unit;
+
+            // Calculate discount per unit
+            let discountPerUnit = totalDiscount / quantity;
+
+            // Handle cases where the weight was originally in grams (g)
+            if (item.quantity_unit === 'g') {
+                unitPrice = unitPrice * 1000; // Convert price from per gram to per kilogram
+                discountPerUnit = discountPerUnit * 1000; // Convert discount from per gram to per kilogram
+                unitname = 'kg';
+                quantity = quantity / 1000; // Convert quantity from grams to kilograms
+            }
+
+            if (typeof merchantData === 'string') {
+                try {
+                    merchantData = JSON.parse(merchantData);
+                } catch (error) {
+                    merchantData = {};
+                }
+            }
+            const articelNumber = merchantData?.articelNumber || 0;
+
+            // Handle image URL transformation
+            if (item.image_url) {
+                const parts = item.image_url.split('/');
+                const fileName = parts[parts.length - 1];
+                item.image_url = JSON.stringify([fileName || '']) || '[]';
+            }
+
             acc.push({
-                articelNumber: item.reference,
+                product_id: +item.reference,
                 name: item.name,
-                price: item.unit_price / 100, // Convert back from öre to SEK
-                discount: item.total_discount_amount / 100, // Convert back from öre to SEK
-                quantity: item.quantity,
-                unit_name: item.quantity_unit,
+                articelNumber: articelNumber,
+                price: unitPrice,
+                unit_name: unitname,
+                discount: discountPerUnit, // Use the calculated discount per unit
+                image: item.image_url || '[]',
+                quantity: quantity,
             });
         }
         return acc;
@@ -208,6 +284,9 @@ const unmigrateKlarnaStruct = (data) => {
         customer: unMigratedCustomer,
         order: unMigratedOrder,
         products: unmigratedOrderItems,
+        shipping_id: shipping_options.id,
+        klarna_order_id: data.order_id,
+        klarna_reference: data.klarna_reference,
     };
 };
 

@@ -24,7 +24,13 @@ router.get('/swish/paymentrequests/:requestId', swishController.getPaymentreques
 
 router.post('/klarna/paymentrequests', klarnaController.klarna_paymentrequests);
 router.get('/klarna/paymentrequests/status', klarnaController.getOrderStatus);
-router.get('/klarna/paymentrequests/push', klarnaController.reportOrderStatus);
+router.post('/klarna/paymentrequests/push', klarnaController.receivePush);
+router.post('/klarna/paymentrequests/acknowledgeOrder', klarnaController.acknowledgeKlarnaCheckoutOrder);
+router.get('/klarna/ordermanagement/getorder', klarnaController.getOrder);
+router.post('/klarna/order/create', klarnaController.createOrder);
+router.post('/klarna/order/capture', klarnaController.captureOrder);
+router.get('/klarna/order/:orderId/captures', klarnaController.getOrderCaptures);
+router.post('/klarna/order/:orderId/refund', klarnaController.refundOrder);
 
 // Authentication
 router.post('/auth/customer/verifyToken', customerController.verifyToken);

@@ -1,143 +1,304 @@
-const axios = require('axios');
+const klarnaModel = require('../models/klarna.model.js');
+const { unmigrateKlarnaStruct } = require('../helpers/orderUtils.js');
+const { createOrderFromKlarnaStruct } = require('./order.controller.js');
+const Payments = require('../models/payments.model');
 const orderModel = require('../models/order.model.js');
+const { sendResponse } = require('../helpers/apiResponse');
 
-const KLARNA_API_URL = 'https://api.playground.klarna.com'; // Klarna's playground environment
-const KLARNA_AUTH = {
-    username: 'dad5d96d-bc63-4ee0-81b2-3fa1969cc4c0',
-    password:
-        'klarna_test_api_MiluUCFWYXVvTEZxZnE2UGEhamF4WCUxOHIwI3drKHUsZGFkNWQ5NmQtYmM2My00ZWUwLTgxYjItM2ZhMTk2OWNjNGMwLDEsM0NzSUk3azBKYVBabSsrRGhwZW5McUN1NVBoNzh3RG5KS20rZ1Y4UDJxOD0',
+// Read here for more information
+// https://docs.klarna.com/klarna-checkout/additional-resources/confirm-purchase/
+
+const ORDER_STATUS = {
+    AUTHORIZED: 'AUTHORIZED',
+    PAID: 'PAID',
 };
-
-// Skapa en Klarna Checkout-session
-async function createKlarnaSession(orderData) {
-    try {
-        const response = await axios.post(`${KLARNA_API_URL}/checkout/v3/orders`, orderData, {
-            auth: KLARNA_AUTH,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-
-        return response.data;
-    } catch (error) {
-        console.error('Error creating Klarna session:', error.response ? error.response.data : error.message);
-        throw error;
-    }
-}
 
 const klarna_paymentrequests = async (orderData) => {
     try {
-        const session = await createKlarnaSession(orderData);
-        return { session_id: session.order_id, html_snippet: session.html_snippet };
+        const session = await klarnaModel.createKlarnaSession(orderData);
+        return {
+            success: true,
+            session_id: session.order_id,
+            html_snippet: session.html_snippet,
+        };
     } catch (error) {
-        return false;
+        console.error('Error creating Klarna payment request:', error.message);
+        return {
+            success: false,
+            message: 'Failed to create Klarna payment request',
+            error: error.message,
+        };
+    }
+};
+
+// Get order status from Klarna order management
+const getOrder = async (req, res) => {
+    const { klarna_order_id } = req.query;
+
+    if (!klarna_order_id) {
+        return res.status(400).json({
+            success: false,
+            message: 'Missing Klarna order ID',
+        });
+    }
+
+    try {
+        const order = await klarnaModel.getOrder(klarna_order_id);
+        return res.status(200).json({
+            success: true,
+            order: order,
+        });
+    } catch (error) {
+        console.error('Error fetching Klarna order:', error.message);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to retrieve Klarna order status',
+            error: error.message,
+        });
     }
 };
 
 const getOrderStatus = async (req, res) => {
     const { klarna_order_id } = req.query;
     try {
-        const response = await axios.get(`${KLARNA_API_URL}/checkout/v3/orders/${klarna_order_id}`, {
-            auth: KLARNA_AUTH,
-        });
-
-        const orderStatus = response.data.status;
-        const paymentStatus = response.data.payment_status;
-
-        // Skicka status tillbaka till frontend
-        res.status(200).json({
-            success: true,
-            status: orderStatus,
-            paymentStatus: paymentStatus,
-            order: response.data,
-        });
-    } catch (error) {
-        console.error('Error fetching Klarna order:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to retrieve order status',
-            error: error.message,
-        });
-    }
-};
-
-const reportOrderStatus = async (req, res) => {
-    const { klarna_order_id } = req.query;
-
-    try {
-        if (!klarna_order_id) {
-            return res.status(400).json({
-                success: false,
-                message: 'Missing Klarna order ID',
-            });
-        }
-        const response = await orderModel.isOrderCommitted(klarna_order_id);
-        if (!response) {
-            return res.status(404).json({
-                success: false,
-                message: 'Klarna order not found',
-            });
-        }
+        const order = await klarnaModel.getOrderStatus(klarna_order_id);
         return res.status(200).json({
             success: true,
-            message: 'Klarna order status updated to committed',
+            status: order.status,
+            payment_status: order.payment_status,
+            session_id: order.order_id,
+            order: order, // TODO:_Remove
         });
     } catch (error) {
-        console.error('Error fetching Klarna order:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to retrieve order status',
-            error: error.message,
-        });
+        return sendResponse(res, 400, 'Klarna order status is not authorized', 'NOT FOUND', null, null);
     }
 };
 
-// Function to abort a Klarna order
-const abortKlarnaOrder = async (req, res) => {
+const cancelKlarnaOrder = async (req, res) => {
     const { klarna_order_id } = req.body;
-    
-    if (!klarna_order_id) {
-        return res.status(400).json({
-            success: false,
-            ok: false,
-            message: 'Missing Klarna order ID',
-        });
-    }
-
     try {
-        const response = await axios.post(`${KLARNA_API_URL}/checkout/v3/orders/${klarna_order_id}/abort`, null, {
-            auth: KLARNA_AUTH,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-
-        if (response.status === 204) {
+        const success = await klarnaModel.cancelKlarnaOrder(klarna_order_id);
+        if (success) {
             return res.status(200).json({
                 success: true,
-                ok:true,
-                message: 'Klarna order successfully aborted',
+                message: 'Klarna order successfully canceled',
             });
         } else {
             return res.status(500).json({
                 success: false,
-                ok:false,
-                message: 'Failed to abort Klarna order',
+                message: 'Failed to cancel Klarna order',
             });
         }
     } catch (error) {
-        console.error('Error aborting Klarna order:', error.response ? error.response.data : error.message);
+        console.error('Error canceling Klarna order:', error.message);
         return res.status(500).json({
             success: false,
-            ok:false,
-            message: error.message,
+            message: 'Failed to cancel Klarna order',
+            error: error.message,
         });
     }
 };
 
+const acknowledgeKlarnaCheckoutOrder = async (req, res) => {
+    const { klarna_order_id } = req.body;
+    try {
+        const success = await klarnaModel.acknowledgeKlarnaOrder(klarna_order_id);
+        if (success) {
+            return res.status(200).json({
+                success: true,
+                message: 'Klarna order successfully acknowledged',
+            });
+        } else {
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to acknowledge Klarna order',
+            });
+        }
+    } catch (error) {
+        console.error('Error acknowledging Klarna order:', error.message);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to acknowledge Klarna order',
+            error: error.message,
+        });
+    }
+};
+
+const receivePush = async (req, res) => {
+    const { klarna_order_id } = req.query;
+    try {
+        if (!klarna_order_id) {
+            throw new Error('Missing Klarna order ID');
+        }
+
+        const response = await orderModel.isOrderCommited(klarna_order_id);
+        let order_id = response.order_id;
+        if (!response.ok) {
+            // Klarna order not found - i should create it here
+            const klarnaOrder = await klarnaModel.getOrder(klarna_order_id);
+            const orderData = unmigrateKlarnaStruct(klarnaOrder);
+            order_id = await createOrderFromKlarnaStruct(orderData);
+        }
+
+        const result = await klarnaModel.completeOrderValidation(klarna_order_id, order_id);
+
+        if (result.success) {
+            return res.status(200).json(result);
+        }
+
+        return res.status(500).json(result);
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to report Klarna order status',
+            error: error.message,
+        });
+    }
+};
+
+const createOrder = async (req, res) => {
+    const { klarna_order_id } = req.body;
+
+    const existingPayment = await Payments.getPaymentsByPaymentId(klarna_order_id);
+
+    if (existingPayment.length > 0) {
+        return sendResponse(res, 200, 'Order already created', 'CREATED', null, null);
+    }
+
+    const klarnaOrder = await klarnaModel.getOrder(klarna_order_id);
+
+    if (klarnaOrder.status !== ORDER_STATUS.AUTHORIZED) {
+        return sendResponse(res, 400, 'Klarna order status is not authorized', null, null, null);
+    }
+
+    try {
+        const orderData = unmigrateKlarnaStruct(klarnaOrder);
+        const order_id = await createOrderFromKlarnaStruct(orderData);
+
+        if (!order_id) {
+            throw new Error('Failed to create order');
+        }
+
+        // 1.There should be an attempt to acknowledge the order on the confirmation page.
+        const error = await klarnaModel.validateOrderDetails(klarnaOrder, order_id);
+
+        if (error) {
+            console.error('error', error);
+            throw new Error('Failed to validate order details' + error);
+        }
+
+        const accRes = klarnaModel.acknowledgeKlarnaOrder(klarna_order_id);
+        if (!accRes) {
+            throw new Error('Failed to acknowledge Klarna order');
+        }
+
+        // 2. If the order is acknowledged, the order status should be updated to CONFIRMED.
+
+        return sendResponse(res, 200, 'Order created successfully', null, null, null);
+    } catch (error) {
+        return sendResponse(res, 500, 'Failed to create order from Klarna structure', null, error.message, null);
+    }
+};
+
+const captureOrder = async (req, res) => {
+    const { klarna_order_id } = req.body;
+
+    try {
+        const klarnaOrder = await klarnaModel.getOrder(klarna_order_id);
+        if (klarnaOrder.status !== ORDER_STATUS.AUTHORIZED) {
+            return sendResponse(res, 400, 'Klarna order status is not authorized for capture', null, null, null);
+        }
+
+        // Prepare capture details
+        const captureDetails = {
+            captured_amount: klarnaOrder.order_amount,
+            order_lines: klarnaOrder.order_lines,
+            description: 'Capturing payment for order ' + klarna_order_id,
+        };
+
+        // Capture the order
+        const captureResult = await klarnaModel.captureKlarnaOrder(klarna_order_id, captureDetails);
+
+        if (!captureResult.success) {
+            throw new Error(captureResult.message || 'Failed to capture Klarna order');
+        }
+
+        // Update payment status to CAPTURED
+        await Payments.updatePaymentStatus(klarna_order_id, 5);
+
+        return sendResponse(res, 200, 'Order captured successfully', null, captureResult.data, null);
+    } catch (error) {
+        return sendResponse(res, 500, 'Failed to capture order', null, error.message, null);
+    }
+};
+
+const getOrderCaptures = async (req, res) => {
+    const { orderId } = req.params;
+
+    try {
+        // Fetch captures for the given order ID
+        const result = await klarnaModel.fetchOrderCaptures(orderId);
+
+        if (result.success) {
+            return res.status(200).json({
+                message: 'Order captures fetched successfully',
+                data: result.data,
+            });
+        } else {
+            return res.status(500).json({
+                message: 'Failed to fetch order captures',
+                error: result.message,
+            });
+        }
+    } catch (error) {
+        return res.status(500).json({
+            message: 'An error occurred while fetching order captures',
+            error: error.message,
+        });
+    }
+};
+
+const refundOrder = async (req, res) => {
+    const { orderId } = req.params; // Assuming the orderId is passed as a URL parameter
+    // const { refundDetails } = req.body;
+
+    const klarnaOrder = await klarnaModel.getOrder(orderId);
+
+    // Prepare capture details
+    const refundDetails = {
+        refunded_amount: klarnaOrder.order_amount,
+        order_lines: klarnaOrder.order_lines,
+        description: 'Refund for returned items for order ' + orderId,
+    };
+
+    if (klarnaOrder.refunded_amount === refundDetails.refunded_amount) {
+        return sendResponse(res, 400, 'The refund is already done with the refund amount', null, null, null);
+    }
+
+    try {
+        // Process the refund for the given order ID
+        const result = await klarnaModel.refundKlarnaOrder(orderId, refundDetails);
+
+        if (result.success) {
+            await Payments.updatePaymentStatus(orderId, 6);
+            return sendResponse(res, 200, 'Order refunded successfully', null, result.data, null);
+        } else {
+            return sendResponse(res, 500, 'Failed to refund Klarna order', null, result.message, null);
+        }
+    } catch (error) {
+        return sendResponse(res, 500, 'An error occurred while refunding the order', null, error.message, null);
+    }
+};
+
 module.exports = {
+    createOrder,
     klarna_paymentrequests,
-    abortKlarnaOrder,
-    reportOrderStatus,
+    cancelKlarnaOrder,
+    getOrder,
     getOrderStatus,
+    receivePush,
+    acknowledgeKlarnaCheckoutOrder,
+    captureOrder,
+    getOrderCaptures,
+    refundOrder,
 };

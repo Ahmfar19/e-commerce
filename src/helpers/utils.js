@@ -14,6 +14,24 @@ function getCurrentDateTime() {
     return dateTimeString;
 }
 
+function getSwedenTimestamp() {
+    const now = new Date();
+    const timestampUTC = now.getTime();
+    const swedenTime = new Date(timestampUTC);
+    const options = {
+        timeZone: 'Europe/Stockholm',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false, // Use 24-hour time format
+    };
+    const swedenTimestamp = swedenTime.toLocaleString('sv-SE', options);
+    return swedenTimestamp;
+}
+
 async function hashPassword(password) {
     // Number of salt rounds (the higher, the more secure but slower)
     const saltRounds = 10;
@@ -130,6 +148,7 @@ const normalizePhoneNumber = (phone) => {
 const roundToTwoDecimals = (value) => Math.floor(value * 100) / 100;
 
 module.exports = {
+    getSwedenTimestamp,
     normalizePhoneNumber,
     hashPassword,
     comparePassword,

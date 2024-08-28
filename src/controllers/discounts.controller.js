@@ -33,11 +33,11 @@ const createDiscount = async (req, res) => {
         });
 
         const discount_id = await discount.save();
-        
+
         if (!discount_id) {
             return sendResponse(res, 400, 'Bad Request', 'discount id do not match', null, null);
         }
-        
+
         const result = await Product.updateProductDiscountId(discount_id, product_id, category_id);
 
         if (!result.affectedRows) {

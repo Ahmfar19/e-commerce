@@ -1,4 +1,5 @@
 const { pool, sequelize } = require('../databases/mysql.db');
+const { getSwedenTimestamp } = require('../helpers/utils');
 const Joi = require('joi');
 
 const orderSchema = Joi.object({
@@ -64,6 +65,9 @@ const orderSchema = Joi.object({
     trackingNumber: Joi.string().optional().allow(null, '').messages({
         'string.base': 'trackingNumber must be a string.',
     }),
+    date: Joi.string().optional().allow(null, '').messages({
+        'string.base': 'date must be a string.',
+    }),
 });
 class Order {
     constructor(options) {
@@ -84,6 +88,7 @@ class Order {
         this.items_discount = value.items_discount;
         this.total = value.total;
         this.trackingNumber = value.trackingNumber || null;
+        this.date = value.date || getSwedenTimestamp();
     }
 
     async save(transaction) {
@@ -105,7 +110,7 @@ class Order {
         ) VALUES (
             ${this.customer_id},
             ${this.type_id},
-            NOW(),
+            "${this.date}",
             "${this.shipping_name}",
             ${this.shipping_price},
             ${this.shipping_time},
@@ -333,7 +338,7 @@ class Order {
         return rows[0];
     }
 
-    static async isOrderCommitted(paymentId) {
+    static async isOrderCommited(paymentId) {
         const sql = `
             SELECT orders.order_id, payments.payment_id, payments.status
             FROM orders 
@@ -342,11 +347,10 @@ class Order {
             WHERE payments.payment_id = ?;
         `;
         const [rows] = await pool.execute(sql, [paymentId]);
-        // Assuming "committed" means that the payment status is a certain value, e.g., 2
         if (rows?.length === 1) {
-            return rows[0].status === 2;
+            return { ok: rows[0].status === 4, order_id: rows[0].order_id };
         } else {
-            return false;
+            return { ok: false };
         }
     }
 }

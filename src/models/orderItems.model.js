@@ -77,7 +77,8 @@ class OrderItems {
                 return await pool.execute(sql, values);
             }
         });
-        await Promise.all(insertionPromises);
+        const [rows] = await Promise.all(insertionPromises);
+        return rows;
     }
 
     static async getItemsByOrderId(orderId) {

@@ -3,13 +3,12 @@ const Customer = require('../models/customer.model');
 const OrderItems = require('../models/orderItems.model');
 const Product = require('../models/product.model');
 const StoreInfo = require('../models/storeInfo.model');
-const OrderType = require('../models/orderType.model');
 const Payments = require('../models/payments.model');
 const Shipping = require('../models/shipping.model');
+const klarnaModel = require('../models/klarna.model.js');
 const { sendResponse } = require('../helpers/apiResponse');
 const { roundToTwoDecimals, normalizePhoneNumber } = require('../helpers/utils');
 const { swish_paymentrequests } = require('./swish.controller');
-const { klarna_paymentrequests } = require('./klarna.controller');
 const { sendOrderEmail, migrateProductsToKlarnaStructure, commitOrder } = require('../helpers/orderUtils');
 const path = require('path');
 const { sequelize } = require('../databases/mysql.db');
@@ -113,11 +112,6 @@ const createOrderAndSaveItems = async (orderData, customer, transaction) => {
             shipping_time,
         } = orderData;
 
-        const orderType = await OrderType.getAll();
-        if (!orderType || orderType.length === 0) {
-            throw new Error('Order type not found');
-        }
-
         const { customer_id, address, zip, city } = customer;
         if (!customer_id || !address || !zip || !city) {
             throw new Error('Invalid customer data');
@@ -126,7 +120,7 @@ const createOrderAndSaveItems = async (orderData, customer, transaction) => {
         // Create new order
         const order = new Order({
             customer_id,
-            type_id: orderType[0].type_id,
+            type_id: 1,
             shipping_price,
             shipping_name,
             shipping_time,
@@ -156,16 +150,6 @@ const createOrderAndSaveItems = async (orderData, customer, transaction) => {
     }
 };
 
-const createPaymentRecord = async (typeId, customerId, orderId, paymentId, status, transaction = null) => {
-    await (new Payments({
-        payment_type_id: typeId,
-        customer_id: customerId,
-        order_id: orderId,
-        payment_id: paymentId,
-        status: status,
-    })).createPayment(transaction);
-};
-
 const handleSwishPayment = async (payment, order, customerId, transaction) => {
     if (!payment.phone) {
         return { error: true, statusCode: 401, message: 'No valid phone number.' };
@@ -181,43 +165,31 @@ const handleSwishPayment = async (payment, order, customerId, transaction) => {
     const paymentResponse = await swish_paymentrequests(payData);
 
     if (paymentResponse && paymentResponse.id) {
-        await createPaymentRecord(2, customerId, order.order_id, paymentResponse.id, 1, transaction);
-        return { data: { paymentResponse, commit: true } };
+        await (new Payments({
+            payment_type_id: 2,
+            customer_id: customerId,
+            order_id: order.order_id,
+            payment_id: paymentResponse.id,
+            payment_reference: payment.phone,
+            status: 1,
+        })).createPayment(transaction);
+
+        return paymentResponse;
     }
 
     return { error: true, statusCode: 400, message: 'Swish payment failed' };
 };
 
-const handleKlarnaPayment = async (payment, order, customerId, transaction, products) => {
-    if (payment.paymentstatus === 'PAID') {
-        const existingPayment = await Payments.getPaymentsByPaymentId(payment.payment_id);
-        if (existingPayment.length > 0) {
-            return { error: true, statusCode: 400, message: 'Order already created.' };
-        }
+const handleKlarnaPayment = async (order, products) => {
+    const klarnaOrder = await migrateProductsToKlarnaStructure(products, order);
 
-        await createPaymentRecord(3, customerId, order.order_id, payment.payment_id, 2, transaction);
-        return { data: { commit: true } };
-    } else {
-        const klarnaOrder = await migrateProductsToKlarnaStructure(products, order);
-        const klarnaRes = await klarna_paymentrequests(klarnaOrder);
-        if (klarnaRes.session_id) {
-            return { data: { ...klarnaRes, commit: false } };
-        }
-        return { error: true, statusCode: 400, message: 'Klarna payment failed' };
+    // console.error('klarnaOrder', klarnaOrder);
+
+    const klarnaRes = await klarnaModel.createKlarnaSession(klarnaOrder);
+    if (klarnaRes.session_id) {
+        return klarnaRes;
     }
-};
-
-const handlePayment = async (payment, order, customerId, transaction, products) => {
-    if (!payment) return { data: {} };
-
-    switch (payment.type) {
-        case PAYMNT_TYPE.SWISH:
-            return await handleSwishPayment(payment, order, customerId, transaction);
-        case PAYMNT_TYPE.KLARNA:
-            return await handleKlarnaPayment(payment, order, customerId, transaction, products);
-        default:
-            return { error: true, statusCode: 400, message: 'Invalid payment type' };
-    }
+    return { error: true, statusCode: 400, message: 'Klarna payment failed' };
 };
 
 const createOrder = async (req, res) => {
@@ -246,7 +218,7 @@ const createOrder = async (req, res) => {
         // Create the order and the order items
         const customerToInsert = { customer_id: customerId, ...customer };
 
-        if (payment?.paymentstatus !== 'CREATED') {
+        if (payment.type && payment.type !== PAYMNT_TYPE.KLARNA) {
             transaction = await sequelize.transaction();
         }
 
@@ -254,29 +226,70 @@ const createOrder = async (req, res) => {
         order.shipping_id = orderData.shipping_id;
 
         // Handle payment
-        const paymentResponse = await handlePayment(payment, order, customerId, transaction, products);
+        let paymentResponse = {};
+        if (payment.type === PAYMNT_TYPE.SWISH) {
+            paymentResponse = await handleSwishPayment(payment, order, customerId, transaction);
+        } else {
+            paymentResponse = await handleKlarnaPayment(order, products);
+        }
+
         if (paymentResponse.error) {
             await transaction?.rollback();
             return sendResponse(res, paymentResponse.statusCode, paymentResponse.message);
         }
 
-        if (paymentResponse.data.commit) {
-            await transaction?.commit();
-            // The klarna order is inserted here to we need to
-            // commit the order here when the order is done
-            if (payment.type === PAYMNT_TYPE.KLARNA) {
-                await commitOrder(order.order_id);
-            }
+        if (transaction) {
+            await transaction.commit();
         }
 
         return sendResponse(res, 201, 'Created', 'Successfully created an order.', null, {
             order,
-            ...paymentResponse.data,
+            paymentResponse,
         });
     } catch (err) {
         await transaction?.rollback();
         sendResponse(res, 500, 'Internal Server Error', null, err?.message || err, null);
     }
+};
+
+const createOrderFromKlarnaStruct = async (data) => {
+    const { customer, order, products, shipping_id, klarna_order_id, klarna_reference } = data;
+    const transaction = await sequelize.transaction();
+
+    if (!customer || !order || !products || !shipping_id) {
+        throw new Error('Invalid data');
+    }
+
+    const [shipping] = await Shipping.getById(shipping_id);
+    if (!shipping) {
+        throw new Error('Shipping information not found');
+    }
+
+    const { shipping_name, shipping_time } = shipping;
+    order.shipping_name = shipping_name;
+    order.shipping_time = shipping_time;
+
+    const NewOrder = new Order(order);
+    const order_id = await NewOrder.save(transaction);
+
+    if (!order_id) {
+        await transaction.rollback();
+        throw new Error('Failed to create order');
+    }
+
+    await (new Payments({
+        payment_type_id: 3,
+        customer_id: customer.customer_id,
+        order_id: order_id,
+        payment_id: klarna_order_id,
+        payment_reference: klarna_reference,
+        status: 4,
+    })).createPayment(transaction);
+
+    await OrderItems.saveMulti({ order_id, products }, transaction);
+    transaction.commit();
+    await commitOrder(order_id);
+    return order_id;
 };
 
 const getAllOrders = async (req, res) => {
@@ -496,4 +509,5 @@ module.exports = {
     getOrdersTotalPriceAndCount,
     getOrdersTotalPriceForChart,
     resendEmail,
+    createOrderFromKlarnaStruct,
 };

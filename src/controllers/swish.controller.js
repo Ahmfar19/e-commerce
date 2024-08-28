@@ -52,7 +52,7 @@ async function swish_paymentrequests(data) {
     try {
         const requestBody = {
             payeePaymentReference: '0123456789',
-            callbackUrl: 'https://webhook.site/8c4933fa-f439-43da-aa0c-64c3682d9ce8',
+            callbackUrl: 'https://webhook.site/3c565038-5dfb-4ff8-add2-c76b0052b6bc',
             payeeAlias: config.payeeAlias,
             payerAlias: data.payerAlias,
             amount: data.amount,

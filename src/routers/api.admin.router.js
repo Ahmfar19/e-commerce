@@ -30,7 +30,7 @@ const uploadUser = multer({
 // Payments
 router.post('/swish/refunds', swishController.refunds);
 router.get('/swish/refunds/:refundId', swishController.getRefunds);
-router.post('/klarna/refundsPayment', klarnaController.abortKlarnaOrder);
+router.post('/klarna/refundsPayment', klarnaController.cancelKlarnaOrder);
 
 // Customers
 router.get('/customers', customerController.getUsers);

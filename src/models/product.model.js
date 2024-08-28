@@ -576,7 +576,7 @@ class Product {
 
             const [result] = await pool.execute(sql, [discountId, category_id]);
 
-            return result
+            return result;
         } else if ((Array.isArray(product_id) && product_id.length > 0) && !category_id) {
             productIds = product_id;
 
@@ -589,10 +589,8 @@ class Product {
         `;
             const [result] = await pool.execute(sql, [discountId, ...productIds]);
 
-            return result
+            return result;
         }
-
-       
     }
 }
 
