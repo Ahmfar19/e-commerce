@@ -335,7 +335,7 @@ const getProductsCountByCategory = async (req, res) => {
 const updateDiscountId = async (req, res) => {
     try {
         const { id } = req.params;
-        const updatedProduct = await Product.updateProductDiscountId(id);
+        const updatedProduct = await Product.deleteProductDiscountId(id);
         sendResponse(res, 200, 'OK', 'Product updated successfully.', null, updatedProduct);
     } catch (err) {
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);

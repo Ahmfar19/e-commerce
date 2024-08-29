@@ -558,10 +558,41 @@ class Product {
         return rows;
     }
 
-    static async updateProductDiscountId(productId) {
+    static async deleteProductDiscountId(productId) {
         const sql = `UPDATE products SET discount_id = NULL WHERE product_id = ?`;
         const [rows] = await pool.execute(sql, [productId]);
         return rows;
+    }
+
+    static async updateProductDiscountId(discountId, product_id, category_id) {
+        let productIds = [];
+
+        if (category_id && (!product_id || product_id.length === 0)) {
+            const sql = `
+            UPDATE products
+            SET discount_id = ?
+            WHERE category_id  = ?
+          `;
+
+            const [result] = await pool.execute(sql, [discountId, category_id]);
+
+            return result
+        } else if ((Array.isArray(product_id) && product_id.length > 0) && !category_id) {
+            productIds = product_id;
+
+            const placeholders = productIds.map(() => '?').join(',');
+
+            const sql = `
+            UPDATE products
+            SET discount_id = ?
+            WHERE product_id IN (${placeholders})
+        `;
+            const [result] = await pool.execute(sql, [discountId, ...productIds]);
+
+            return result
+        }
+
+       
     }
 }
 

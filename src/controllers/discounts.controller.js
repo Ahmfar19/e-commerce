@@ -2,6 +2,7 @@ const Discount = require('../models/discounts.model');
 const { sendResponse } = require('../helpers/apiResponse');
 const cron = require('node-cron');
 const moment = require('moment-timezone');
+const Product = require('../models/product.model');
 
 const getDiscounts = async (req, res) => {
     try {
@@ -32,8 +33,16 @@ const createDiscount = async (req, res) => {
         });
 
         const discount_id = await discount.save();
+        
+        if (!discount_id) {
+            return sendResponse(res, 400, 'Bad Request', 'discount id do not match', null, null);
+        }
+        
+        const result = await Product.updateProductDiscountId(discount_id, product_id, category_id);
 
-        await Discount.updateProductDiscountId(discount_id, product_id, category_id);
+        if (!result.affectedRows) {
+            await Discount.deleteById(discount_id);
+        }
 
         sendResponse(res, 201, 'Created', 'Successfully created a discount.', null, discount);
     } catch (err) {

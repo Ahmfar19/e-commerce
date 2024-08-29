@@ -58,47 +58,6 @@ class Discount {
         return rows;
     }
 
-    static async updateProductDiscountId(discountId, product_id, category_id) {
-        let productIds = [];
-        if (category_id && (!product_id || product_id.length === 0)) {
-            const [products] = await pool.query(
-                'SELECT product_id FROM products WHERE category_id = ?',
-                [category_id],
-            );
-            productIds = products.map(product => product.product_id);
-        } else if (Array.isArray(product_id) && product_id.length > 0) {
-            productIds = product_id;
-        } else {
-            throw new Error('ec_must_have_products_or_category');
-        }
-
-        if (productIds.length === 0) {
-            throw new Error('ec_not_found_product_relationship_with_this_category_id');
-        }
-
-        const placeholders = productIds.map(() => '?').join(',');
-
-        const sql = `
-            UPDATE products
-            SET discount_id = ?
-            WHERE product_id IN (${placeholders})
-            AND discount_id IS NULL
-        `;
-
-        try {
-            const [result] = await pool.execute(sql, [discountId, ...productIds]);
-
-            if (result.affectedRows === 0) {
-                throw new Error('ec_thisProductHaveDiscountAlready');
-            }
-
-            return result.affectedRows;
-        } catch (error) {
-            console.error('Error updating discount_id:', error);
-            throw error;
-        }
-    }
-
     static async deleteDiscountByEndDate(year, month, day) {
         const sql = `DELETE FROM discounts WHERE end_date < '${year}-${month}-${day}'`;
         const [rows] = await pool.execute(sql);
