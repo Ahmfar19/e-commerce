@@ -136,13 +136,14 @@
 
             <h3 class="bottom-border">Betalningsinformation</h3>
             <div class="total">
-                <div><strong>SUBTOTAL:</strong> <%= orderData.sub_total %> Kr</div>
+                <div><strong>Betalningsmetod:</strong> <%= orderData.payment_name %></div> <!-- Add this line -->
+                <div><strong>Delsumma:</strong> <%= orderData.sub_total %> Kr</div>
                 <% if (orderData.items_discount) { %>
-                <div><strong>TOTALDISCOUNT:</strong> <%= orderData.items_discount %> Kr</div>
+                <div><strong>Total rabbatt:</strong> <%= orderData.items_discount %> Kr</div>
                 <% } %>
-                <div><strong>FRAKT:</strong> <%= orderData.shipping_price %> Kr</div>
-                <div><strong>MOMS:</strong> <%= orderData.tax %> Kr</div>
-                <div><strong>TOTAL:</strong> <%= orderData.total %> Kr</div>
+                <div><strong>Leverans:</strong> <%= orderData.shipping_price %> Kr</div>
+                <div>Moms: <%= orderData.tax %> Kr</div>
+                <div><strong>Totalt:</strong> <%= orderData.total %> Kr</div>
             </div>
 
             <h3 class="bottom-border">Butiksinformation</h3>

@@ -187,6 +187,7 @@ class Order {
             customers.phone,
             customers.registered,
             customers.isCompany,
+            transaction_type.type_name as payment_name,
             order_type.type_name,
             payments.payment_type_id,
             payments.payment_id,
@@ -195,6 +196,7 @@ class Order {
         LEFT JOIN customers ON orders.customer_id = customers.customer_id
         INNER JOIN order_type ON orders.type_id = order_type.type_id
         INNER JOIN payments ON payments.order_id = orders.order_id
+        INNER JOIN transaction_type ON payments.payment_type_id = transaction_type.type_id
         WHERE orders.order_id = ?`;
         const [rows] = await pool.execute(sql, [id]);
         return rows;
