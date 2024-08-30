@@ -87,7 +87,7 @@ class Order {
         this.tax = value.tax;
         this.items_discount = value.items_discount;
         this.total = value.total;
-        this.trackingNumber = value.trackingNumber || null;
+        this.trackingNumber = value.trackingNumber || '';
         this.date = value.date || getSwedenTimestamp();
     }
 
@@ -255,7 +255,7 @@ class Order {
 
     static async updateOrderType(order_id, trackingNumber) {
         const sql = 'UPDATE orders SET type_id = 2, trackingNumber = ? WHERE order_id = ?';
-        const [rows] = await pool.execute(sql, [trackingNumber || null, order_id]);
+        const [rows] = await pool.execute(sql, [trackingNumber || '', order_id]);
         return rows;
     }
 
