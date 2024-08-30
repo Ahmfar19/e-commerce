@@ -109,16 +109,13 @@
                 Tack för din beställning! Din orderbekräftelse gäller som kvitto på ditt köp. Detta mail går inte att svara på.
             </p>
             
-            <p>
-                Din order är nu packad och snart på väg till ditt utlämningsställe. Du kan följa ditt paket med nedan
-                trackingnummer. Notera att det kan ta några timmar innan det blir synligt i systemet. Om du får detta
-                mail på en helgdag så beräknas du kunna följa ditt paket nästkommande vardag.
-                Trackingnummer för din beställning
-
-                373325385172901968
-            </p>
-           
             <% if (orderData.trackingNumber) { %>
+                <p>
+                    Din order är nu packad och snart på väg till ditt utlämningsställe. Du kan följa ditt paket med nedan
+                    trackingnummer. Notera att det kan ta några timmar innan det blir synligt i systemet. Om du får detta
+                    mail på en helgdag så beräknas du kunna följa ditt paket nästkommande vardag.
+                    Trackingnummer för din beställning
+                </p>
                 <div>
                     <strong>
                         <a href="<%= orderData.shipping_url %><%= orderData.trackingNumber %>">
@@ -126,6 +123,12 @@
                         </a>
                     </strong>
                 </div>
+            <% } else { %>
+                <p>
+                    Din order är nu packad och snart på väg till ditt utlämningsställe. För närvarande har vi inget spårningsnummer
+                    att dela, men du kan förvänta dig att ditt paket kommer fram inom kort. Notera att om du har mottagit detta
+                    meddelande på en helgdag, kan det ta något längre tid innan paketet når dig.
+                </p>
             <% } %>
           
 
@@ -143,12 +146,12 @@
                 <div class="item">
                     <img src="cid:<%= item.cid %>" alt="Product Image">
                     <div class="details">
-                        <div class="name"><%= item.quantity %>  <%= item.unit_name %>   <%= item.name %></div>
+                        <div class="name"><%= item.quantity %>  <%= item.unit_name %>   <%= item.product_name %></div>
                         <div class="description"><%= item.description %></div>
                         <div>
-                            <span class="discounted-price"><%= (item.quantity * item.price - item.quantity * item.discount).toFixed(2) %> Kr</span>
+                            <span class="discounted-price"><%= item.price.toFixed(2) %> Kr</span>
                             <% if (item.discount) { %>
-                                <span class="price"><%= (item.quantity * item.price).toFixed(2) %> Kr</span>
+                                <span class="price"><%= (item.price + item.discount).toFixed(2) %> Kr</span>
                             <% } %>
                         </div>
                     </div>

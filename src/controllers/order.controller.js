@@ -182,9 +182,6 @@ const handleSwishPayment = async (payment, order, customerId, transaction) => {
 
 const handleKlarnaPayment = async (order, products) => {
     const klarnaOrder = await migrateProductsToKlarnaStructure(products, order);
-
-    // console.error('klarnaOrder', klarnaOrder);
-
     const klarnaRes = await klarnaModel.createKlarnaSession(klarnaOrder);
     if (klarnaRes.session_id) {
         return klarnaRes;

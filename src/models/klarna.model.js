@@ -11,98 +11,72 @@ const KLARNA_AUTH = {
 
 // Create a Klarna Checkout session
 async function createKlarnaSession(orderData) {
-    try {
-        const response = await axios.post(`${KLARNA_API_URL}/checkout/v3/orders`, orderData, {
-            auth: KLARNA_AUTH,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-        if (response?.data.order_id) {
-            return {
-                success: true,
-                session_id: response?.data.order_id,
-                html_snippet: response?.data.html_snippet,
-            };
-        }
+    const response = await axios.post(`${KLARNA_API_URL}/checkout/v3/orders`, orderData, {
+        auth: KLARNA_AUTH,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+    if (response?.data.order_id) {
         return {
-            success: false,
-            message: 'Failed to create Klarna session',
+            success: true,
+            session_id: response?.data.order_id,
+            html_snippet: response?.data.html_snippet,
         };
-    } catch (error) {
-        console.error('Error creating Klarna session:', error.response ? error.response.data : error.message);
-        throw error;
     }
+    return {
+        success: false,
+        message: 'Failed to create Klarna session',
+    };
 }
 
 // Get order status from Klarna ordermanagement
 async function getOrder(klarna_order_id) {
-    try {
-        const response = await axios.get(`${KLARNA_API_URL}/ordermanagement/v1/orders/${klarna_order_id}`, {
-            auth: KLARNA_AUTH,
-        });
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching Klarna order:', error.response ? error.response.data : error.message);
-        throw error;
-    }
+    const response = await axios.get(`${KLARNA_API_URL}/ordermanagement/v1/orders/${klarna_order_id}`, {
+        auth: KLARNA_AUTH,
+    });
+    return response.data;
 }
 
 // Get order status from Klarna
 async function getOrderStatus(klarna_order_id) {
-    try {
-        const response = await axios.get(`${KLARNA_API_URL}/checkout/v3/orders/${klarna_order_id}`, {
-            auth: KLARNA_AUTH,
-        });
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching Klarna order status:', error.response ? error.response.data : error.message);
-        throw error;
-    }
+    const response = await axios.get(`${KLARNA_API_URL}/checkout/v3/orders/${klarna_order_id}`, {
+        auth: KLARNA_AUTH,
+    });
+    return response.data;
 }
 
 // Cancel a Klarna order
 async function cancelKlarnaOrder(klarna_order_id) {
-    try {
-        const response = await axios.post(
-            `${KLARNA_API_URL}/ordermanagement/v1/orders/${klarna_order_id}/cancel`,
-            null,
-            {
-                auth: KLARNA_AUTH,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Klarna-Idempotency-Key': klarna_order_id,
-                },
+    const response = await axios.post(
+        `${KLARNA_API_URL}/ordermanagement/v1/orders/${klarna_order_id}/cancel`,
+        null,
+        {
+            auth: KLARNA_AUTH,
+            headers: {
+                'Content-Type': 'application/json',
+                'Klarna-Idempotency-Key': klarna_order_id,
             },
-        );
-
-        return response.status === 204; // true if successfully canceled
-    } catch (error) {
-        console.error('Error canceling Klarna order:', error.response ? error.response.data : error.message);
-        throw error;
-    }
+        },
+    );
+    return response.status === 204; // true if successfully canceled
 }
 
 // Acknowledge a Klarna order
 async function acknowledgeKlarnaOrder(klarna_order_id) {
-    try {
-        const response = await axios.post(
-            `${KLARNA_API_URL}/ordermanagement/v1/orders/${klarna_order_id}/acknowledge`,
-            null,
-            {
-                auth: KLARNA_AUTH,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Klarna-Idempotency-Key': klarna_order_id,
-                },
+    const response = await axios.post(
+        `${KLARNA_API_URL}/ordermanagement/v1/orders/${klarna_order_id}/acknowledge`,
+        null,
+        {
+            auth: KLARNA_AUTH,
+            headers: {
+                'Content-Type': 'application/json',
+                'Klarna-Idempotency-Key': klarna_order_id,
             },
-        );
+        },
+    );
 
-        return response.status === 204; // true if successfully acknowledged
-    } catch (error) {
-        console.error('Error acknowledging Klarna order:', error.response ? error.response.data : error.message);
-        throw error;
-    }
+    return response.status === 204; // true if successfully acknowledged
 }
 
 const validateOrderDetails = async (klarnaOrder, order_id) => {
@@ -129,24 +103,15 @@ const validateOrderDetails = async (klarnaOrder, order_id) => {
     klarnaOrder.order_lines.forEach(orderElement => {
         if (orderElement.type !== 'shipping_fee') {
             const product = orderItemsMap.get(+orderElement.reference);
-
-            console.error('product', product);
-
             if (!product) {
                 error = `Missing product ID: ${orderElement.product_id}`;
                 return;
             }
             const klarna_unit_amount = orderElement.total_amount / 100;
-            const productPrice = (product.price - (product.discount || 0)) * product.quantity;
-
-            console.error('klarna_unit_amount', klarna_unit_amount);
-            console.error('product.price', productPrice);
-
-            if (productPrice !== klarna_unit_amount) {
+            if (product.price !== klarna_unit_amount) {
                 error = `Klarna unit amount does not match for product ID: ${orderElement.reference}`;
                 return;
             }
-            console.error('--------------------');
         }
     });
     return error;
@@ -200,7 +165,6 @@ async function captureKlarnaOrder(klarna_order_id, captureDetails) {
             };
         }
     } catch (error) {
-        console.error('Error capturing Klarna order:', error.response ? error.response.data : error.message);
         return {
             success: false,
             message: error.response ? error.response.data : error.message,
@@ -218,7 +182,6 @@ async function fetchOrderCaptures(orderId) {
             data: response.data,
         };
     } catch (error) {
-        console.error('Error fetching order captures:', error.response ? error.response.data : error.message);
         return {
             success: false,
             message: error.response ? error.response.data : error.message,
@@ -245,7 +208,6 @@ async function refundKlarnaOrder(orderId, refundDetails) {
             data: response.data,
         };
     } catch (error) {
-        console.error('Error refunding Klarna order:', error.response ? error.response.data : error.message);
         return {
             success: false,
             message: error.response ? error.response.data : error.message,

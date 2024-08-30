@@ -110,7 +110,6 @@ class Payments {
                 message: 'Payment status updated successfully',
             };
         } catch (error) {
-            console.error('Error updating payment status:', error.message);
             return {
                 success: false,
                 message: 'Failed to update payment status',

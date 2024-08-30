@@ -48,7 +48,7 @@ const sendOrderEmail = async (orderData, templatePath) => {
     orderData.storeInfo = storeInfo;
 
     const htmlTemplate = await ejs.renderFile(templatePath, { orderData, getFirstImage });
-    sendHtmlEmail(orderData.email, 'hello', 'customer', htmlTemplate, inlineImages);
+    sendHtmlEmail(orderData.email, 'Orderbekräftelse', '', htmlTemplate, inlineImages);
 };
 
 const commitOrder = async (orderId, isResend) => {
@@ -120,57 +120,52 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
             customer_id: orderData.customer_id,
         }),
         order_lines: products.map(product => {
-            let unitPriceInOres = product.price * 100;
             let discountInOres = (product.discount || 0) * 100;
-            let productImage = product.image;
+            let productPriceInOres = product.price * 100;
+
+            let quantityInKg = product.quantity;
             let unit_name = product.unit_name;
 
-            // If the weight is not 1 (i.e., the product is measured in grams rather than kilograms)
+            // Calculate unit price in öre before discount
+            let unitPriceInOres = productPriceInOres;
+
+            // If the product is measured in grams rather than kilograms
             if (product.weight !== 1) {
-                unitPriceInOres = unitPriceInOres / 1000; // Convert to price per gram
-                discountInOres = discountInOres / 1000; // Convert discount to per gram
-            }
-
-            console.error('discountInOres', discountInOres);
-            const discountedUnitPrice = unitPriceInOres - discountInOres; // Apply the discount
-
-            console.error('discountedUnitPrice', discountedUnitPrice);
-            let quantity = +product.quantity;
-
-            // If the product is in grams, adjust the quantity accordingly
-            if (product.weight !== 1) {
-                quantity = quantity * 1000; // Adjust for grams
+                unitPriceInOres = unitPriceInOres / 1000;
+                discountInOres = discountInOres / 1000;
+                quantityInKg = quantityInKg * 1000;
                 unit_name = 'g';
             }
 
-            const totalAmount = discountedUnitPrice * quantity; // Total amount after discount
-            const totalDiscountAmount = discountInOres * quantity; // Total discount applied
-            const taxRate = Math.round(tax * 100); // Tax rate as percentage * 100
-            const totalTaxAmount = calculateVatAmount(totalAmount, tax);
+            const totalAmountAfterDiscount = (unitPriceInOres - discountInOres) * quantityInKg;
 
+            // Calculate tax rate and total tax amount
+            const taxRate = Math.round(tax * 100); // Tax rate as percentage * 100
+            const totalTaxAmount = calculateVatAmount(totalAmountAfterDiscount, tax);
+            const totalDiscountAmount = discountInOres * quantityInKg;
+
+            // Process the product image URL
+            let productImage = product.image;
             if (productImage) {
                 productImage = JSON.parse(productImage);
                 productImage = productImage[0];
                 productImage = `https://www.exampleobjects.com/images/product_${product.product_id}/${productImage}`;
             }
-            console.error('quantity', quantity);
-            console.error('totalDiscountAmount', totalDiscountAmount);
-            console.error('--------');
 
             return {
                 type: 'physical',
                 reference: String(product.product_id),
                 name: product.name,
-                quantity: quantity,
-                quantity_unit: unit_name,
-                unit_price: unitPriceInOres,
-                tax_rate: taxRate,
-                total_amount: totalAmount,
-                total_discount_amount: totalDiscountAmount,
-                total_tax_amount: totalTaxAmount,
-                image_url: productImage ? productImage : '',
-                product_url: `https://www.estore.com/products/${product.product_id}`,
-                merchant_data: JSON.stringify({ articelNumber: product.articelNumber }),
+                quantity: quantityInKg, // Quantity in kilograms or grams
+                quantity_unit: unit_name, // Unit of measurement (kg or g)
+                unit_price: unitPriceInOres, // Unit price in öre
+                tax_rate: taxRate, // Tax rate as a percentage * 100
+                total_amount: totalAmountAfterDiscount, // Total amount after discount in öre
+                total_discount_amount: totalDiscountAmount, // Total discount in öre
+                total_tax_amount: totalTaxAmount, // Total tax amount in öre
+                image_url: productImage ? productImage : '', // Product image URL
+                product_url: `https://www.estore.com/products/${product.product_id}`, // Product URL
+                merchant_data: JSON.stringify({ articelNumber: product.articelNumber }), // Merchant data
             };
         }),
         merchant_urls: {

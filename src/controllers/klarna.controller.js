@@ -22,7 +22,6 @@ const klarna_paymentrequests = async (orderData) => {
             html_snippet: session.html_snippet,
         };
     } catch (error) {
-        console.error('Error creating Klarna payment request:', error.message);
         return {
             success: false,
             message: 'Failed to create Klarna payment request',
@@ -49,7 +48,6 @@ const getOrder = async (req, res) => {
             order: order,
         });
     } catch (error) {
-        console.error('Error fetching Klarna order:', error.message);
         return res.status(500).json({
             success: false,
             message: 'Failed to retrieve Klarna order status',
@@ -90,7 +88,6 @@ const cancelKlarnaOrder = async (req, res) => {
             });
         }
     } catch (error) {
-        console.error('Error canceling Klarna order:', error.message);
         return res.status(500).json({
             success: false,
             message: 'Failed to cancel Klarna order',
@@ -115,7 +112,6 @@ const acknowledgeKlarnaCheckoutOrder = async (req, res) => {
             });
         }
     } catch (error) {
-        console.error('Error acknowledging Klarna order:', error.message);
         return res.status(500).json({
             success: false,
             message: 'Failed to acknowledge Klarna order',
@@ -165,13 +161,12 @@ const createOrder = async (req, res) => {
         return sendResponse(res, 200, 'Order already created', 'CREATED', null, null);
     }
 
-    const klarnaOrder = await klarnaModel.getOrder(klarna_order_id);
-
-    if (klarnaOrder.status !== ORDER_STATUS.AUTHORIZED) {
-        return sendResponse(res, 400, 'Klarna order status is not authorized', null, null, null);
-    }
-
     try {
+        const klarnaOrder = await klarnaModel.getOrder(klarna_order_id);
+        if (klarnaOrder.status !== ORDER_STATUS.AUTHORIZED) {
+            return sendResponse(res, 400, 'Klarna order status is not authorized', null, null, null);
+        }
+
         const orderData = unmigrateKlarnaStruct(klarnaOrder);
         const order_id = await createOrderFromKlarnaStruct(orderData);
 
@@ -183,8 +178,7 @@ const createOrder = async (req, res) => {
         const error = await klarnaModel.validateOrderDetails(klarnaOrder, order_id);
 
         if (error) {
-            console.error('error', error);
-            throw new Error('Failed to validate order details' + error);
+            throw new Error('Failed to validate order details - ' + error);
         }
 
         const accRes = klarnaModel.acknowledgeKlarnaOrder(klarna_order_id);
@@ -261,21 +255,20 @@ const getOrderCaptures = async (req, res) => {
 const refundOrder = async (req, res) => {
     const { orderId } = req.params; // Assuming the orderId is passed as a URL parameter
     // const { refundDetails } = req.body;
-
-    const klarnaOrder = await klarnaModel.getOrder(orderId);
-
-    // Prepare capture details
-    const refundDetails = {
-        refunded_amount: klarnaOrder.order_amount,
-        order_lines: klarnaOrder.order_lines,
-        description: 'Refund for returned items for order ' + orderId,
-    };
-
-    if (klarnaOrder.refunded_amount === refundDetails.refunded_amount) {
-        return sendResponse(res, 400, 'The refund is already done with the refund amount', null, null, null);
-    }
-
     try {
+        const klarnaOrder = await klarnaModel.getOrder(orderId);
+
+        // Prepare capture details
+        const refundDetails = {
+            refunded_amount: klarnaOrder.order_amount,
+            order_lines: klarnaOrder.order_lines,
+            description: 'Refund for returned items for order ' + orderId,
+        };
+
+        if (klarnaOrder.refunded_amount === refundDetails.refunded_amount) {
+            return sendResponse(res, 400, 'The refund is already done with the refund amount', null, null, null);
+        }
+
         // Process the refund for the given order ID
         const result = await klarnaModel.refundKlarnaOrder(orderId, refundDetails);
 

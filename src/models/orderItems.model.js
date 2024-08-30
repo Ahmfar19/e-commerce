@@ -35,14 +35,19 @@ class OrderItems {
             ?,
             ?
         )`;
+
+        const priceAfterDiscount = this.price - (this.discount || 0);
+        const productPrice = priceAfterDiscount * this.quantity;
+        const totalDiscount = this.quantity * (this.discount || 0);
+
         const values = [
             this.order_id,
             this.product_id,
             this.product_name,
             this.articelNumber,
-            this.price,
+            productPrice,
             this.unit_name,
-            this.discount,
+            totalDiscount,
             this.image,
             this.quantity,
         ];
@@ -60,14 +65,19 @@ class OrderItems {
             const sql = `INSERT INTO order_items 
             (order_id, product_id ,product_name, articelNumber, price, unit_name, discount, image, quantity) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+            const priceAfterDiscount = product.price - (product.discount || 0);
+            const productPrice = priceAfterDiscount * product.quantity;
+            const totalDiscount = product.quantity * (product.discount || 0);
+
             const values = [
                 product_items.order_id,
                 product.product_id,
                 product.name,
                 product.articelNumber,
-                product.price,
+                productPrice,
                 product.unit_name,
-                product.discount,
+                totalDiscount,
                 product.image,
                 product.quantity,
             ];
