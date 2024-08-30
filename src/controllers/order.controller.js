@@ -197,7 +197,8 @@ const createOrder = async (req, res) => {
         // Enusre the all products are available
         const { success, message, insufficientProducts } = await Product.checkQuantities(products);
         if (!success) {
-            return sendResponse(res, 500, message, null, message, insufficientProducts);
+            const err = 401;
+            return sendResponse(res, 500, message, err, message, insufficientProducts);
         }
 
         // Create the order object data
