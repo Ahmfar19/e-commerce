@@ -80,6 +80,7 @@ router.get('/products/specificForDiscount', productController.getSpecificForDisc
 router.get('/products/discountId/:id', productController.getProductsByDiscountId);
 router.get('/productCount/category', productController.getProductsCountByCategory);
 router.put('/product/discountId/productId/edit/:id', productController.updateDiscountId);
+router.get('/products/specificForChoices', productController.getProductsForChoices);
 
 // Top products
 router.put('/top-products/:id', topProductController.updateTopProduct);

@@ -592,6 +592,32 @@ class Product {
             return result;
         }
     }
+
+    static async getAllAsChioceType() {
+        const sql = `SELECT 
+                 product_id as value, 
+                 CONCAT(name,'-',articelNumber) as label, 
+                 categories.category_id, 
+                 discounts.discount_id, 
+                 units.unit_id,
+                 unit_name, 
+                 articelNumber, 
+                 image,
+                 name, 
+                 description,
+                 price, 
+                 quantity, 
+                 available,
+                 category_name,
+                 discounts.discount_value As discount
+                 FROM products 
+                 INNER JOIN categories ON products.category_id = categories.category_id
+                 INNER JOIN units ON products.unit_id = units.unit_id
+                 LEFT JOIN discounts ON products.discount_id = discounts.discount_id
+                 `;
+        const [rows] = await pool.execute(sql);
+        return rows;
+    }
 }
 
 module.exports = Product;

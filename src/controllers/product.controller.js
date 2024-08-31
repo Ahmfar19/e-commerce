@@ -351,6 +351,15 @@ const checkQuantitiesForCheckout = async (req, res) => {
     }
 };
 
+const getProductsForChoices = async (req, res) => {
+    try {
+        const products = await Product.getAllAsChioceType();
+        sendResponse(res, 200, 'Ok', 'Successfully retrieved all the products.', null, products);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
 module.exports = {
     createProduct,
     updateProduct,
@@ -374,4 +383,5 @@ module.exports = {
     getProductsCountByCategory,
     updateDiscountId,
     checkQuantitiesForCheckout,
+    getProductsForChoices,
 };
