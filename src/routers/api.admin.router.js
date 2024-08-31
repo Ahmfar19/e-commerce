@@ -19,6 +19,8 @@ const shippingController = require('../controllers/shipping.controller');
 const discountsController = require('../controllers/discounts.controller');
 const swishController = require('../controllers/swish.controller');
 const klarnaController = require('../controllers/klarna.controller');
+const orderItemsController = require('../controllers/orderItems.controller');
+
 const uploadUser = multer({
     dest: path.join(__dirname, 'public/users'),
     limits: {
@@ -121,5 +123,8 @@ router.post('/discount/new', discountsController.createDiscount);
 router.get('/discount/:id', discountsController.getSingleDiscount);
 router.put('/discount/edit/:id', discountsController.updateDiscount);
 router.delete('/discount/delete/:id', discountsController.deleteDiscount);
+
+// productItems
+router.put('/product/items/:id', orderItemsController.updateItems);
 
 module.exports = router;

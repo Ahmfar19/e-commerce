@@ -106,6 +106,28 @@ class OrderItems {
             throw new Error('Failed to get the order items');
         }
     }
+
+    async updateById(id) {
+        const sql = `UPDATE products SET 
+        order_id = ?,
+        product_id = ?,
+        product_name = ?,
+        price = ?,
+        discount = ?,
+        quantity = ?
+        WHERE item_id = ?`;
+        const values = [
+            this.order_id,
+            this.product_id,
+            this.product_name,
+            this.price,
+            this.discount,
+            this.quantity,
+            id,
+        ];
+        const [rows] = await pool.execute(sql, values);
+        return rows;
+    }
 }
 
 module.exports = OrderItems;

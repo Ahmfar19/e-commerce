@@ -11,6 +11,30 @@ const getOrderItems = async (req, res) => {
     }
 };
 
+const updateItems = async (req, res) => {
+    try {
+        const id = req.params.id;
+
+        const items = new OrderItems(req.body);
+
+        const data = await items.updateById(id);
+
+        if (data.affectedRows === 0) {
+            return res.json({
+                status: 404,
+                ok: false,
+                statusCode: 'Bad Request',
+                message: 'No items found for update',
+            });
+        }
+
+        sendResponse(res, 202, 'Accepted', 'Successfully updated a items.', null, items);
+    } catch (err) {
+        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+    }
+};
+
 module.exports = {
     getOrderItems,
+    updateItems,
 };

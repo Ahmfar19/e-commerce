@@ -609,6 +609,7 @@ class Product {
                  quantity, 
                  available,
                  category_name,
+                 product_id,
                  discounts.discount_value As discount
                  FROM products 
                  INNER JOIN categories ON products.category_id = categories.category_id
