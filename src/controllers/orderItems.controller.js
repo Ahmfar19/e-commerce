@@ -1,6 +1,14 @@
 const OrderItems = require('../models/orderItems.model');
 const { sendResponse } = require('../helpers/apiResponse');
 
+const addProductItems = async (req, res) => {
+    try {
+        await OrderItems.saveMulti(req.body);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
 const getOrderItems = async (req, res) => {
     const id = req.params.id;
     try {
@@ -37,4 +45,5 @@ const updateItems = async (req, res) => {
 module.exports = {
     getOrderItems,
     updateItems,
+    addProductItems,
 };
