@@ -34,8 +34,8 @@ const createOrderData = async (body) => {
         }
 
         // Store tax
-        const tax = await StoreInfo.getTax();
-        if (!tax || tax.length === 0) {
+        const [storeInfo] = await StoreInfo.getAll();
+        if (!storeInfo.tax_percentage) {
             throw new Error('Tax information not found');
         }
 
@@ -55,11 +55,11 @@ const createOrderData = async (body) => {
             return roundToTwoDecimals(res);
         }, 0);
 
-        if (totalPriceAfterDiscount >= shipping_price) {
+        if (totalPriceAfterDiscount >= storeInfo.free_shipping) {
             shipping_price = 0;
         }
 
-        const vatAmount = calculateVatAmount(totalPriceAfterDiscount, tax[0].tax_percentage);
+        const vatAmount = calculateVatAmount(totalPriceAfterDiscount, storeInfo.tax_percentage);
 
         // Calculate total discount
         const totalDiscount = products.reduce((acc, current) => {
@@ -83,7 +83,7 @@ const createOrderData = async (body) => {
             shipping_id,
         };
     } catch (error) {
-        return null;
+        return error.message;
     }
 };
 
@@ -362,6 +362,24 @@ const deleteOrderById = async (req, res) => {
     }
 };
 
+const deleteUnPaidOrder = async (req, res) => {
+    try {
+        const order_id = req.params.order_id;
+        const payment_id = req.params.payment_id;
+
+        const payment = await Payments.getPaymentsByPaymentId(payment_id);
+
+        if (payment?.length === 1 && payment[0].status === 1) {
+            const data = await Order.deleteById(order_id);
+            console.error('data', data);
+        }
+
+        sendResponse(res, 202, 'Accepted', 'Successfully deleted  order.', null, null);
+    } catch (err) {
+        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+    }
+};
+
 const getOrderById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -515,4 +533,5 @@ module.exports = {
     getOrdersTotalPriceForChart,
     resendEmail,
     createOrderFromKlarnaStruct,
+    deleteUnPaidOrder,
 };
