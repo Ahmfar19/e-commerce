@@ -74,6 +74,7 @@ router.get('/top-products/:id', topProductController.getTopProduct);
 // orders
 router.post('/order/new', orderController.createOrder);
 router.get('/orders/customer/:id', orderController.getOrderByCustomerId);
+router.delete('/order/unpaid/:order_id/:payment_id', orderController.deleteUnPaidOrder);
 
 // OrderType
 router.get('/orderTypes', orderTypeController.getOrderTypes);

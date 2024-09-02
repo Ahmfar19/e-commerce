@@ -11,6 +11,7 @@ const PAYMENT_STATUS = {
     CREATED: 'CREATED',
     PAID: 'PAID',
     DECLINED: 'DECLINED',
+    PENDING: 'PENDING',
 };
 
 const testConfig = {
