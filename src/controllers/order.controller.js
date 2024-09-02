@@ -45,7 +45,7 @@ const createOrderData = async (body) => {
             throw new Error('Shipping information not found');
         }
 
-        const shipping_price = +shipping[0].shipping_price || 0;
+        let shipping_price = +shipping[0].shipping_price || 0;
         const shipping_name = shipping[0].shipping_name || '';
         const shipping_time = shipping[0].shipping_time || '';
 
@@ -54,6 +54,10 @@ const createOrderData = async (body) => {
             const res = acc + (product.price - product.discount) * product.quantity;
             return roundToTwoDecimals(res);
         }, 0);
+
+        if (totalPriceAfterDiscount >= shipping_price) {
+            shipping_price = 0;
+        }
 
         const vatAmount = calculateVatAmount(totalPriceAfterDiscount, tax[0].tax_percentage);
 
@@ -203,6 +207,9 @@ const createOrder = async (req, res) => {
 
         // Create the order object data
         const orderData = await createOrderData(req.body);
+
+        // console.error('orderData', orderData);
+
         if (!orderData) {
             return sendResponse(res, 400, 'Failed to create order data', null, null);
         }
