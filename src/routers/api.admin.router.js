@@ -127,5 +127,5 @@ router.delete('/discount/delete/:id', discountsController.deleteDiscount);
 // productItems
 router.put('/product/items/:id', orderItemsController.updateItems);
 router.post('/product/items/new', orderItemsController.addProductItems);
-
+router.post('/product/items/put', orderItemsController.putOrderItems);
 module.exports = router;

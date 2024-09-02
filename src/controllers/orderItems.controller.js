@@ -16,14 +16,16 @@ const addProductItems = async (req, res) => {
         await Promise.all([
             OrderItems.saveMulti(req.body),
             Order.updateProductQuantities(products),
+            OrderItems.updateOrderByOrderItems(),
         ]);
 
         return sendResponse(res, 201, 'Created', 'Successfully created items.', null, null);
     } catch (error) {
-        console.error('Error in addProductItems:', error);
+        console.error('Error in addProductItems:', error.message);
         return sendResponse(res, 500, 'Internal Server Error', 'An unexpected error occurred.', null, null);
     }
 };
+
 const getOrderItems = async (req, res) => {
     const id = req.params.id;
     try {
@@ -57,8 +59,38 @@ const updateItems = async (req, res) => {
     }
 };
 
+const putOrderItems = async (req, res) => {
+    try {
+        const { deleteItems, updatedItems } = req.body;
+
+        if (deleteItems?.length) {
+            await Promise.all([
+                OrderItems.deleteMulti(deleteItems),
+                Order.updateProductQuantitiesPlus(deleteItems),
+                OrderItems.updateOrderByOrderItems(),
+            ]);
+        }
+
+        if (updatedItems?.length) {
+            const { success, message, insufficientProducts } = await Product.checkQuantities(updateItems);
+
+            if (!success) {
+                return sendResponse(res, 400, 'Bad Request', message, null, insufficientProducts);
+            }
+            await Promise.all([
+                OrderItems.updateMulti(updatedItems),
+                Order.updateProductQuantities(updatedItems),
+            ]);
+        }
+        sendResponse(res, 202, 'Accepted', 'Successfully deleted a items.', null, null);
+    } catch (err) {
+        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+    }
+};
+
 module.exports = {
     getOrderItems,
     updateItems,
     addProductItems,
+    putOrderItems,
 };

@@ -237,6 +237,41 @@ class Order {
         }
     }
 
+    static async updateProductQuantitiesPlus(products) {
+        try {
+            for (const product of products) {
+                const updateQuantitySql = `
+                     UPDATE products
+                     SET quantity = quantity + ?
+                     WHERE product_id = ?
+                 `;
+                await pool.execute(updateQuantitySql, [
+                    product.quantity,
+                    product.product_id,
+                ]);
+
+                const checkQuantitySql = `
+                     SELECT quantity
+                     FROM products
+                     WHERE product_id = ?
+                 `;
+                const [rows] = await pool.execute(checkQuantitySql, [product.product_id]);
+
+                if (parseInt(rows[0].quantity) === 0) {
+                    const updateAvailabilitySql = `
+                         UPDATE products
+                         SET available = false
+                         WHERE product_id = ?
+                     `;
+                    await pool.execute(updateAvailabilitySql, [product.product_id]);
+                }
+            }
+        } catch (error) {
+            console.error('Error updating product quantities:', error);
+            throw error;
+        }
+    }
+
     static async getByOrderedType() {
         const sql = `
             SELECT orders.*, 

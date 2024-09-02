@@ -107,26 +107,92 @@ class OrderItems {
         }
     }
 
-    async updateById(id) {
-        const sql = `UPDATE products SET 
-        order_id = ?,
-        product_id = ?,
-        product_name = ?,
-        price = ?,
-        discount = ?,
-        quantity = ?
-        WHERE item_id = ?`;
-        const values = [
-            this.order_id,
-            this.product_id,
-            this.product_name,
-            this.price,
-            this.discount,
-            this.quantity,
-            id,
-        ];
-        const [rows] = await pool.execute(sql, values);
-        return rows;
+    static async updateMulti(product_items) {
+        if (!Array.isArray(product_items) || product_items.length === 0) {
+            throw new Error('Invalid order items');
+        }
+        const updatePromises = product_items.map(async (item) => {
+            const sql = `UPDATE order_items SET 
+                         product_name = ?,
+                         price = ?,
+                         quantity = ?,
+                         discount = ?
+                         WHERE item_id = ? AND order_id = ? AND product_id = ?`;
+
+            const values = [
+                item.product_name,
+                item.price,
+                item.quantity,
+                item.discount,
+                item.item_id,
+                item.order_id,
+                item.product_id,
+            ];
+
+            try {
+                const [result] = await pool.query(sql, values);
+                return result;
+            } catch (error) {
+                console.error(`Error updating item ${item.item_id}:`, error);
+                throw error;
+            }
+        });
+        try {
+            const results = await Promise.all(updatePromises);
+            return results;
+        } catch (error) {
+            console.error('Error updating multiple order items:', error);
+            throw error;
+        }
+    }
+
+    static async deleteMulti(product_items) {
+        if (!Array.isArray(product_items) || product_items.length === 0) {
+            throw new Error('Invalid order items');
+        }
+
+        const itemIds = product_items.map(item => item.item_id);
+
+        const sql = `DELETE FROM order_items WHERE item_id IN (?)`;
+
+        try {
+            const result = await pool.query(sql, [itemIds]);
+            return result;
+        } catch (error) {
+            console.error('Error deleting multiple order items:', error);
+            throw error;
+        }
+    }
+
+    static async updateOrderByOrderItems() {
+        const sql = `
+        UPDATE orders
+        SET sub_total = (
+            SELECT SUM(price)
+            FROM order_items
+            WHERE order_items.order_id = orders.order_id
+        ),
+        items_discount = (
+            SELECT SUM(discount)
+            FROM order_items
+            WHERE order_items.order_id = orders.order_id
+        ),
+        total = (
+            SELECT SUM(price)
+            FROM order_items
+            WHERE order_items.order_id = orders.order_id
+        ) + orders.shipping_price
+        WHERE orders.order_id IN (
+            SELECT DISTINCT order_id
+            FROM order_items
+        )
+    `;
+        try {
+            const [rows] = await pool.execute(sql);
+            return rows;
+        } catch {
+            throw new Error('Failed to update the order items');
+        }
     }
 }
 
