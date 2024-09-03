@@ -1,11 +1,14 @@
-/* eslint-disable no-unused-vars */
-const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
 const { sendResponse } = require('../helpers/apiResponse');
 const Payments = require('../models/payments.model');
 const { commitOrder } = require('../helpers/orderUtils');
 const { deleteById } = require('../models/order.model');
+const {
+    swishPaymentRequests,
+    getPaymentRequests,
+    createRefund,
+    getRefund,
+    cancelPaymentRequest,
+} = require('../models/swish.model');
 
 const PAYMENT_STATUS = {
     CREATED: 'CREATED',
@@ -14,105 +17,55 @@ const PAYMENT_STATUS = {
     PENDING: 'PENDING',
 };
 
-const testConfig = {
-    payeeAlias: '1231181189',
-    host: 'https://mss.cpc.getswish.net/swish-cpcapi',
-    qrHost: 'https://mpc.getswish.net/qrg-swish',
-    cert: path.resolve(__dirname, '../ssl/swish/Swish_Merchant_TestCertificate_1234679304.pem'),
-    key: path.resolve(__dirname, '../ssl/swish/Swish_Merchant_TestCertificate_1234679304.key'),
-    ca: path.resolve(__dirname, '../ssl/swish/Swish_TLS_RootCA.pem'),
-    passphrase: 'swish',
-};
-
-const prodConfig = {
-    payeeAlias: 'YOUR_PAYEE_ALIAS',
-    host: 'https://cpc.getswish.net/swish-cpcapi',
-    qrHost: 'https://mpc.getswish.net/qrg-swish',
-    cert: path.resolve(__dirname, 'ssl/prod.pem'),
-    key: path.resolve(__dirname, 'ssl/prod.key'),
-    passphrase: null,
-};
-
-const config = process.env.NODE_ENV === 'production' ? prodConfig : testConfig;
-
-const axiosInstance = axios.create({
-    baseURL: config.host,
-    httpsAgent: new require('https').Agent({
-        cert: fs.readFileSync(config.cert),
-        key: fs.readFileSync(config.key),
-        ca: config.ca ? fs.readFileSync(config.ca) : undefined,
-        passphrase: config.passphrase,
-    }),
-    headers: {
-        'Content-Type': 'application/json',
-    },
-});
-
 // Create Payment Request
-async function swish_paymentrequests(data) {
-    try {
-        const requestBody = {
-            payeePaymentReference: '0123456789',
-            callbackUrl: 'https://webhook.site/3c565038-5dfb-4ff8-add2-c76b0052b6bc',
-            payeeAlias: config.payeeAlias,
-            payerAlias: data.payerAlias,
-            amount: data.amount,
-            currency: 'SEK',
-            message: data.message,
-        };
+async function createPaymentRequest(req, res) {
+    const data = req.body;
 
-        const response = await axiosInstance.post('/api/v1/paymentrequests', requestBody);
+    console.error('data', data);
+    const paymentRequest = await swishPaymentRequests(data);
 
-        if (response.status === 201) {
-            const location = response.headers['location'];
-            const statusResponse = await axiosInstance.get(location);
-
-            return {
-                id: statusResponse.data.id,
-                paymentReference: statusResponse.data.paymentReference || '',
-                status: statusResponse.data.status,
-                url: location,
-            };
-        } else {
-            return false;
-        }
-    } catch (error) {
-        console.error('Error creating payment request:', error.message || error);
-        return false;
+    if (paymentRequest) {
+        return sendResponse(res, 201, 'Created', 'Payment request created successfully.', paymentRequest);
+    } else {
+        return sendResponse(res, 500, 'Error', 'Failed to create payment request.', null, null);
     }
 }
 
-// Receive Payment Status
+// **Receive Payment Status**
 async function receivePaymentStatus(req, res) {
     try {
         const { id, status } = req.body;
-        if (id && status === PAYMENT_STATUS.PAID) {
-            const [payment] = await Payments.getPaymentsByPaymentId(id);
-            if (!payment) {
-                throw new Error('Payment not found.');
-            }
-            if (payment.status === 2) {
+
+        // Retrieve payment details by payment ID
+        const paymentStatus = await getPaymentRequests(id);
+        if (!paymentStatus) {
+            return sendResponse(res, 404, 'Error', 'Payment not found.', null, null);
+        }
+
+        // Handle payment status
+        if (status === PAYMENT_STATUS.PAID) {
+            if (paymentStatus.status === 2) {
                 return sendResponse(res, 400, 'Error', 'Payment already received.', null, null);
             }
-            const result = await Payments.updatePaymentsStatus(id, 2);
 
+            // Update payment status in the database
+            const result = await Payments.updatePaymentsStatus(id, 2);
             if (!result || !result.order_id) {
-                throw new Error('Invalid payment update result.');
+                return sendResponse(res, 500, 'Error', 'Failed to update payment status.', null, null);
             }
+
+            // Commit order after payment is confirmed
             commitOrder(result.order_id);
             return sendResponse(res, 201, 'Received', 'Successfully received the payment status.', null, null);
-        } else if (id && status === PAYMENT_STATUS.DECLINED) {
-            const [payment] = await Payments.getPaymentsByPaymentId(id);
-            if (!payment) {
-                throw new Error('Payment not found.');
-            }
-            if (payment.status === 1) {
-                const delRes = await deleteById(payment.order_id);
+        } else if (status === PAYMENT_STATUS.DECLINED) {
+            if (paymentStatus.status === 1) {
+                // Delete the associated order if the payment was declined
+                const delRes = await deleteById(paymentStatus.order_id);
                 if (!delRes) {
-                    throw new Error('Failed to delete order.');
-                } else {
-                    return sendResponse(res, 200, 'Declined', 'Successfully declined the payment.', null, null);
+                    return sendResponse(res, 500, 'Error', 'Failed to delete order.', null, null);
                 }
+
+                return sendResponse(res, 200, 'Declined', 'Payment request declined successfully.', null, null);
             }
         }
 
@@ -130,105 +83,110 @@ async function receivePaymentStatus(req, res) {
 }
 
 // Get Payment Request
-async function getPaymentrequests(req, res) {
-    try {
-        const response = await axiosInstance.get(`/api/v1/paymentrequests/${req.params.requestId}`);
-        return res.status(response.status).json({
-            id: response.data.id,
-            paymentReference: response.data.paymentReference || '',
-            status: response.data.status,
-        });
-    } catch (error) {
-        return res.status(500).send(error.message || 'An error occurred.');
+async function fetchPaymentRequest(req, res) {
+    const paymentRequest = await getPaymentRequests(req.params.requestId);
+    if (paymentRequest) {
+        return sendResponse(res, 200, 'Ok', 'Successfully retrieved the payment request.', null, paymentRequest);
     }
+    return sendResponse(res, 500, 'Error', 'Invalid payment ID.', null, null);
 }
 
 // Create Refund
-async function refunds(req, res) {
+async function createRefundRequest(req, res) {
+    const { payment_id } = req.body;
+
     try {
-        const requestBody = {
-            payeePaymentReference: '0123456789',
-            originalPaymentReference: req.body.originalPaymentReference,
-            callbackUrl: 'http://localhost:4000/server/api/payments/klaran',
-            payerAlias: config.payeeAlias,
-            amount: req.body.amount,
-            currency: 'SEK',
-            message: req.body.message,
-        };
-
-        const response = await axiosInstance.post('/api/v1/refunds', requestBody);
-
-        if (response.status === 201) {
-            const location = response.headers['location'];
-            const statusResponse = await axiosInstance.get(location);
-
-            return res.json({
-                url: location,
-                token: response.headers['paymentrequesttoken'],
-                originalPaymentReference: statusResponse.data.originalPaymentReference,
-                status: statusResponse.data.status,
-                id: statusResponse.data.id,
-            });
-        } else {
-            return res.status(response.status).send(response.data);
+        if (!payment_id) {
+            return sendResponse(res, 400, 'Error', 'Payment ID is required.', null, null);
         }
+
+        const [payment] = await Payments.getPaymentsByPaymentId(payment_id);
+
+        if (!payment) {
+            return sendResponse(res, 404, 'Error', 'Payment not found.', null, null);
+        }
+
+        const { id, status } = payment;
+
+        if (status !== 2) {
+            return sendResponse(res, 400, 'Error', 'Payment not in a paid state.', null, null);
+        }
+
+        const paymentData = await getPaymentRequests(payment_id);
+
+        if (!paymentData) {
+            return sendResponse(res, 404, 'Error', 'Payment not found.', null, null);
+        }
+
+        const refundRequest = await createRefund(paymentData);
+
+        if (refundRequest) {
+            const success = await Payments.updatePaymentsStatusAndPaymentId({
+                id,
+                payment_id: refundRequest.id,
+                status: 6, // Refunded
+            });
+
+            if (!success) {
+                return sendResponse(res, 500, 'Error', 'Failed to update payment with refund ID.', null, null);
+            }
+            return sendResponse(res, 201, 'Created', 'Refund request created successfully.', null, refundRequest);
+        }
+
+        return sendResponse(res, 500, 'Error', 'Failed to create refund request.', null, null);
     } catch (error) {
-        return res.status(500).send(error.message || 'An error occurred.');
+        return sendResponse(
+            res,
+            500,
+            'Server Error',
+            'An error occurred while creating the refund request.',
+            null,
+            error.message,
+        );
     }
 }
 
 // Get Refund
-async function getRefunds(req, res) {
-    try {
-        const response = await axiosInstance.get(`/api/v1/refunds/${req.params.refundId}`);
+async function fetchRefund(req, res) {
+    const { refundId } = req.params;
 
-        return res.status(response.status).json({
-            id: response.data.id,
-            originalPaymentReference: response.data.originalPaymentReference || '',
-            status: response.data.status,
-        });
+    if (!refundId) {
+        return sendResponse(res, 400, 'Error', 'Refund ID is required.', null, null);
+    }
+
+    try {
+        const refund = await getRefund(refundId);
+
+        if (refund) {
+            return sendResponse(res, 200, 'Ok', 'Successfully retrieved the refund.', null, refund);
+        }
+        return sendResponse(res, 404, 'Error', 'Refund not found.', null, null);
     } catch (error) {
-        return res.status(500).send(error.message || 'An error occurred.');
+        return sendResponse(
+            res,
+            500,
+            'Server Error',
+            'An error occurred while fetching the refund.',
+            null,
+            error.message,
+        );
     }
 }
 
 // Cancel Payment Request
-async function cancelPaymentRequest(req, res) {
-    try {
-        const { requestId } = req.params;
-
-        // Construct the request body for the PATCH operation
-        const patchBody = [{
-            op: 'replace',
-            path: '/status',
-            value: 'cancelled'
-        }];
-
-        // Send the PATCH request to the Swish API
-        const response = await axiosInstance.patch(`/api/v1/paymentrequests/${requestId}`, patchBody, {
-            headers: {
-                'Content-Type': 'application/json-patch+json'
-            }
-        });
-
-        if (response.status === 200) {
-            return res.status(200).json({
-                message: 'Payment request successfully canceled.',
-                data: response.data
-            });
-        } else {
-            return res.status(response.status).send(response.data);
-        }
-    } catch (error) {
-        return res.status(500).send(error.message || 'An error occurred while canceling the payment request.');
+async function cancelPayment(req, res) {
+    const cancelResponse = await cancelPaymentRequest(req.params.requestId);
+    if (cancelResponse) {
+        return sendResponse(res, 200, 'Ok', 'Payment request successfully canceled.', null, cancelResponse);
     }
+    return sendResponse(res, 500, 'Error', 'Failed to cancel payment request.', null, null);
 }
 
 module.exports = {
-    swish_paymentrequests,
+    createPaymentRequest,
     receivePaymentStatus,
-    getPaymentrequests,
-    refunds,
-    getRefunds,
-    cancelPaymentRequest
+    fetchPaymentRequest,
+    createRefundRequest,
+    fetchRefund,
+    cancelPayment,
 };

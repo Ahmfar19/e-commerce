@@ -8,7 +8,7 @@ const Shipping = require('../models/shipping.model');
 const klarnaModel = require('../models/klarna.model.js');
 const { sendResponse } = require('../helpers/apiResponse');
 const { roundToTwoDecimals, normalizePhoneNumber } = require('../helpers/utils');
-const { swish_paymentrequests } = require('./swish.controller');
+const { swishPaymentRequests, cancelPaymentRequest } = require('../models/swish.model.js');
 const { sendOrderEmail, migrateProductsToKlarnaStructure, commitOrder } = require('../helpers/orderUtils');
 const path = require('path');
 const { sequelize } = require('../databases/mysql.db');
@@ -166,7 +166,7 @@ const handleSwishPayment = async (payment, order, customerId, transaction) => {
         message: payment.message || '',
     };
 
-    const paymentResponse = await swish_paymentrequests(payData);
+    const paymentResponse = await swishPaymentRequests(payData);
 
     if (paymentResponse && paymentResponse.id) {
         await (new Payments({
@@ -368,10 +368,9 @@ const deleteUnPaidOrder = async (req, res) => {
         const payment_id = req.params.payment_id;
 
         const payment = await Payments.getPaymentsByPaymentId(payment_id);
-
         if (payment?.length === 1 && payment[0].status === 1) {
-            const data = await Order.deleteById(order_id);
-            console.error('data', data);
+            await Order.deleteById(order_id);
+            await cancelPaymentRequest(payment_id);
         }
 
         sendResponse(res, 202, 'Accepted', 'Successfully deleted  order.', null, null);

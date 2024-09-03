@@ -94,6 +94,21 @@ class Payments {
         await pool.execute(sql, values);
     }
 
+    static async updatePaymentsStatusAndPaymentId(data) {
+        const sql = `
+            UPDATE payments SET 
+            payment_id = ?, 
+            status = ? 
+            WHERE id = ?`;
+        const values = [
+            data.payment_id,
+            data.status,
+            data.id,
+        ];
+        const [rows] = await pool.execute(sql, values);
+        return rows.affectedRows;
+    }
+
     static async updatePaymentStatus(payment_id, status) {
         const sql = `
             UPDATE payments SET 
