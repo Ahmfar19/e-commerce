@@ -2,26 +2,35 @@ const OrderItems = require('../models/orderItems.model');
 const { sendResponse } = require('../helpers/apiResponse');
 const Product = require('../models/product.model');
 const Order = require('../models/order.model');
+const { sequelize } = require('../databases/mysql.db');
 
 const addProductItems = async (req, res) => {
+    let transaction = null;
     try {
-        const { products } = req.body;
+        const { order_id, products } = req.body;
+        if (!order_id || isNaN(order_id) || !products?.length) {
+            return sendResponse(res, 400, 'Bad Request', 'The request contains invalid parameters.', null, null);
+        }
 
         const { success, message, insufficientProducts } = await Product.checkQuantities(products);
 
         if (!success) {
-            return sendResponse(res, 400, 'Bad Request', message, null, insufficientProducts);
+            return sendResponse(res, 409, 'Conflict', message, null, insufficientProducts);
         }
 
-        await Promise.all([
-            OrderItems.saveMulti(req.body),
-            Order.updateProductQuantities(products),
-            OrderItems.updateOrderByOrderItems(),
-        ]);
+        transaction = await sequelize.transaction();
+
+        await OrderItems.saveMulti(req.body, transaction);
+
+        await Order.updateProductQuantities(products, transaction);
+
+        await OrderItems.updateOrderByOrderItems(order_id, transaction);
+
+        await transaction.commit();
 
         return sendResponse(res, 201, 'Created', 'Successfully created items.', null, null);
     } catch (error) {
-        console.error('Error in addProductItems:', error.message);
+        await transaction?.rollback();
         return sendResponse(res, 500, 'Internal Server Error', 'An unexpected error occurred.', null, null);
     }
 };
@@ -36,61 +45,55 @@ const getOrderItems = async (req, res) => {
     }
 };
 
-const updateItems = async (req, res) => {
+const putOrderItems = async (req, res) => {
+    let transaction = null;
+
     try {
-        const id = req.params.id;
+        const { deletedItems, updatedItems, order_id } = req.body;
 
-        const items = new OrderItems(req.body);
-
-        const data = await items.updateById(id);
-
-        if (data.affectedRows === 0) {
-            return res.json({
-                status: 404,
-                ok: false,
-                statusCode: 'Bad Request',
-                message: 'No items found for update',
-            });
+        if (!deletedItems.length && !updatedItems.length) {
+            return sendResponse(res, 400, 'Bad Request', 'Invalid request body.', null, null);
         }
 
-        sendResponse(res, 202, 'Accepted', 'Successfully updated a items.', null, items);
-    } catch (err) {
-        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
-    }
-};
+        if (deletedItems?.length) {
+            transaction = await sequelize.transaction();
 
-const putOrderItems = async (req, res) => {
-    try {
-        const { deleteItems, updatedItems } = req.body;
+            await OrderItems.deleteMulti(deletedItems, transaction);
+            await Order.updateProductQuantitiesPlus(deletedItems, transaction);
+            await OrderItems.updateOrderByOrderItems(order_id, transaction);
 
-        if (deleteItems?.length) {
-            await Promise.all([
-                OrderItems.deleteMulti(deleteItems),
-                Order.updateProductQuantitiesPlus(deleteItems),
-                OrderItems.updateOrderByOrderItems(),
-            ]);
+            await transaction.commit();
         }
 
         if (updatedItems?.length) {
-            const { success, message, insufficientProducts } = await Product.checkQuantities(updateItems);
+            const { success, message, insufficientProducts } = await Product.checkQuantities(updatedItems);
 
             if (!success) {
-                return sendResponse(res, 400, 'Bad Request', message, null, insufficientProducts);
+                return sendResponse(res, 409, 'Conflict', message, null, insufficientProducts);
             }
-            await Promise.all([
-                OrderItems.updateMulti(updatedItems),
-                Order.updateProductQuantities(updatedItems),
-            ]);
+
+            transaction = await sequelize.transaction();
+            const newUpdatedItems = updatedItems.map((updatedItem) => {
+                return {
+                    ...updatedItem,
+                    orginalQuantity: updatedItem.quantity,
+                    quantity: updatedItem.quantity - updatedItem.oldQuantity,
+                };
+            });
+            await OrderItems.updateMulti(newUpdatedItems, transaction);
+            await Order.updateProductQuantities(newUpdatedItems, transaction);
+            await OrderItems.updateOrderByOrderItems(order_id, transaction);
+            await transaction.commit();
         }
-        sendResponse(res, 202, 'Accepted', 'Successfully deleted a items.', null, null);
+        sendResponse(res, 202, 'Accepted', 'Successfully edit a items.', null, null);
     } catch (err) {
+        await transaction?.rollback();
         sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
     }
 };
 
 module.exports = {
     getOrderItems,
-    updateItems,
     addProductItems,
     putOrderItems,
 };

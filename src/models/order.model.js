@@ -202,7 +202,7 @@ class Order {
         return rows;
     }
 
-    static async updateProductQuantities(products) {
+    static async updateProductQuantities(products, transaction) {
         try {
             for (const product of products) {
                 const updateQuantitySql = `
@@ -210,25 +210,55 @@ class Order {
                     SET quantity = quantity - ?
                     WHERE product_id = ?
                 `;
-                await pool.execute(updateQuantitySql, [
-                    product.quantity,
-                    product.product_id,
-                ]);
+
+                if (transaction) {
+                    await sequelize.query(updateQuantitySql, {
+                        replacements: [
+                            product.quantity,
+                            product.product_id,
+                        ],
+                        transaction,
+                    });
+                } else {
+                    await pool.execute(updateQuantitySql, [
+                        product.quantity,
+                        product.product_id,
+                    ]);
+                }
 
                 const checkQuantitySql = `
                     SELECT quantity
                     FROM products
                     WHERE product_id = ?
                 `;
-                const [rows] = await pool.execute(checkQuantitySql, [product.product_id]);
 
-                if (parseInt(rows[0].quantity) === 0) {
-                    const updateAvailabilitySql = `
-                        UPDATE products
-                        SET available = false
-                        WHERE product_id = ?
-                    `;
-                    await pool.execute(updateAvailabilitySql, [product.product_id]);
+                if (transaction) {
+                    const [rows] = await sequelize.query(checkQuantitySql, {
+                        replacements: [product.product_id],
+                        transaction,
+                    });
+
+                    if (parseInt(rows[0].quantity) === 0) {
+                        const updateAvailabilitySql = `
+                            UPDATE products
+                            SET available = false
+                            WHERE product_id = ?
+                        `;
+                        await sequelize.query(updateAvailabilitySql, {
+                            replacements: [product.product_id],
+                            transaction,
+                        });
+                    }
+                } else {
+                    const [rows] = await pool.execute(checkQuantitySql, [product.product_id]);
+                    if (parseInt(rows[0].quantity) === 0) {
+                        const updateAvailabilitySql = `
+                            UPDATE products
+                            SET available = false
+                            WHERE product_id = ?
+                        `;
+                        await pool.execute(updateAvailabilitySql, [product.product_id]);
+                    }
                 }
             }
         } catch (error) {
@@ -237,33 +267,63 @@ class Order {
         }
     }
 
-    static async updateProductQuantitiesPlus(products) {
+    static async updateProductQuantitiesPlus(products, transaction) {
         try {
             for (const product of products) {
                 const updateQuantitySql = `
-                     UPDATE products
-                     SET quantity = quantity + ?
-                     WHERE product_id = ?
-                 `;
-                await pool.execute(updateQuantitySql, [
-                    product.quantity,
-                    product.product_id,
-                ]);
+                    UPDATE products
+                    SET quantity = quantity + ?
+                    WHERE product_id = ?
+                `;
+
+                if (transaction) {
+                    await sequelize.query(updateQuantitySql, {
+                        replacements: [
+                            product.quantity,
+                            product.product_id,
+                        ],
+                        transaction,
+                    });
+                } else {
+                    await pool.execute(updateQuantitySql, [
+                        product.quantity,
+                        product.product_id,
+                    ]);
+                }
 
                 const checkQuantitySql = `
-                     SELECT quantity
-                     FROM products
-                     WHERE product_id = ?
-                 `;
-                const [rows] = await pool.execute(checkQuantitySql, [product.product_id]);
+                    SELECT quantity
+                    FROM products
+                    WHERE product_id = ?
+                `;
 
-                if (parseInt(rows[0].quantity) === 0) {
-                    const updateAvailabilitySql = `
-                         UPDATE products
-                         SET available = false
-                         WHERE product_id = ?
-                     `;
-                    await pool.execute(updateAvailabilitySql, [product.product_id]);
+                if (transaction) {
+                    const [rows] = await sequelize.query(checkQuantitySql, {
+                        replacements: [product.product_id],
+                        transaction,
+                    });
+
+                    if (parseInt(rows[0].quantity) === 0) {
+                        const updateAvailabilitySql = `
+                            UPDATE products
+                            SET available = false
+                            WHERE product_id = ?
+                        `;
+                        await sequelize.query(updateAvailabilitySql, {
+                            replacements: [product.product_id],
+                            transaction,
+                        });
+                    }
+                } else {
+                    const [rows] = await pool.execute(checkQuantitySql, [product.product_id]);
+                    if (parseInt(rows[0].quantity) === 0) {
+                        const updateAvailabilitySql = `
+                            UPDATE products
+                            SET available = false
+                            WHERE product_id = ?
+                        `;
+                        await pool.execute(updateAvailabilitySql, [product.product_id]);
+                    }
                 }
             }
         } catch (error) {

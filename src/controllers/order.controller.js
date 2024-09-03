@@ -7,8 +7,8 @@ const Payments = require('../models/payments.model');
 const Shipping = require('../models/shipping.model');
 const klarnaModel = require('../models/klarna.model.js');
 const { sendResponse } = require('../helpers/apiResponse');
-const { roundToTwoDecimals, normalizePhoneNumber } = require('../helpers/utils');
-const { swishPaymentRequests, cancelPaymentRequest } = require('../models/swish.model.js');
+const { roundToTwoDecimals, normalizePhoneNumber, calculateVatAmount } = require('../helpers/utils');
+const { swish_paymentrequests } = require('./swish.controller');
 const { sendOrderEmail, migrateProductsToKlarnaStructure, commitOrder } = require('../helpers/orderUtils');
 const path = require('path');
 const { sequelize } = require('../databases/mysql.db');
@@ -17,11 +17,6 @@ const PAYMNT_TYPE = {
     SWISH: 'swish',
     KLARNA: 'klarna',
     CARD: 'card',
-};
-
-const calculateVatAmount = (totalWithVat, vatRate) => {
-    const res = totalWithVat * ((vatRate) / (100 + (+vatRate)));
-    return roundToTwoDecimals(res);
 };
 
 const createOrderData = async (body) => {

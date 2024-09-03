@@ -1,4 +1,5 @@
 const { pool, sequelize } = require('../databases/mysql.db');
+const { calculateVatAmount } = require('../helpers/utils');
 
 class OrderItems {
     constructor(options) {
@@ -81,6 +82,7 @@ class OrderItems {
                 product.image,
                 product.quantity,
             ];
+
             if (transaction) {
                 return await sequelize.query(sql, { replacements: values, transaction });
             } else {
@@ -107,7 +109,7 @@ class OrderItems {
         }
     }
 
-    static async updateMulti(product_items) {
+    static async updateMulti(product_items, transaction) {
         if (!Array.isArray(product_items) || product_items.length === 0) {
             throw new Error('Invalid order items');
         }
@@ -119,18 +121,22 @@ class OrderItems {
                          discount = ?
                          WHERE item_id = ? AND order_id = ? AND product_id = ?`;
 
+            const priceAfterDiscount = item.price - (item.discount || 0);
+            const productPrice = priceAfterDiscount * item.orginalQuantity;
+            const totalDiscount = item.orginalQuantity * (item.discount || 0);
+
             const values = [
                 item.product_name,
-                item.price,
-                item.quantity,
-                item.discount,
+                productPrice,
+                item.orginalQuantity,
+                totalDiscount,
                 item.item_id,
                 item.order_id,
                 item.product_id,
             ];
 
             try {
-                const [result] = await pool.query(sql, values);
+                const [result] = await sequelize.query(sql, { replacements: values, transaction });
                 return result;
             } catch (error) {
                 console.error(`Error updating item ${item.item_id}:`, error);
@@ -146,7 +152,7 @@ class OrderItems {
         }
     }
 
-    static async deleteMulti(product_items) {
+    static async deleteMulti(product_items, transaction) {
         if (!Array.isArray(product_items) || product_items.length === 0) {
             throw new Error('Invalid order items');
         }
@@ -156,44 +162,85 @@ class OrderItems {
         const sql = `DELETE FROM order_items WHERE item_id IN (?)`;
 
         try {
-            const result = await pool.query(sql, [itemIds]);
-            return result;
+            if (transaction) {
+                const result = await sequelize.query(sql, { replacements: [itemIds], transaction });
+                return result;
+            } else {
+                const result = await pool.query(sql, [itemIds]);
+                return result;
+            }
         } catch (error) {
             console.error('Error deleting multiple order items:', error);
             throw error;
         }
     }
 
-    static async updateOrderByOrderItems() {
-        const sql = `
-        UPDATE orders
-        SET sub_total = (
-            SELECT SUM(price)
-            FROM order_items
-            WHERE order_items.order_id = orders.order_id
-        ),
-        items_discount = (
-            SELECT SUM(discount)
-            FROM order_items
-            WHERE order_items.order_id = orders.order_id
-        ),
-        total = (
-            SELECT SUM(price)
-            FROM order_items
-            WHERE order_items.order_id = orders.order_id
-        ) + orders.shipping_price
-        WHERE orders.order_id IN (
-            SELECT DISTINCT order_id
-            FROM order_items
-        )
-    `;
-        try {
-            const [rows] = await pool.execute(sql);
-            return rows;
-        } catch {
-            throw new Error('Failed to update the order items');
+    static async updateOrderByOrderItems(order_id, transaction) {
+        const storeInfoSql = 'SELECT * FROM store_info LIMIT 1';
+        let storeInfoRows;
+        if (transaction) {
+            [storeInfoRows] = await sequelize.query(storeInfoSql, { transaction });
+        } else {
+            [storeInfoRows] = await pool.execute(storeInfoSql);
+        }
+
+        if (storeInfoRows.length === 0) {
+            throw new Error('Store info not found.');
+        }
+
+        const storeInfo = storeInfoRows[0];
+
+        const selectSql = `
+            SELECT 
+                SUM(price) AS sub_total, 
+                SUM(discount) AS items_discount
+            FROM order_items 
+            WHERE order_id = ?
+        `;
+        let rows = [];
+        if (transaction) {
+            [rows] = await sequelize.query(selectSql, {
+                replacements: [order_id],
+                transaction,
+            });
+        } else {
+            [rows] = await pool.execute(selectSql, [order_id]);
+        }
+        if (rows.length === 0) {
+            throw new Error('No order items found for this order.');
+        }
+
+        const { sub_total, items_discount } = rows[0];
+
+        // حساب الضريبة باستخدام storeInfo.tax_percentage
+        const vatAmount = calculateVatAmount(sub_total, storeInfo.tax_percentage);
+
+        const updateSql = `
+            UPDATE orders 
+            SET 
+                sub_total = ?, 
+                items_discount = ?, 
+                total = ? + shipping_price,
+                tax = ?
+            WHERE order_id = ?
+        `;
+
+        const total = sub_total;
+
+        if (transaction) {
+            const [result] = await sequelize.query(updateSql, {
+                replacements: [sub_total, items_discount, total, vatAmount, order_id],
+                transaction,
+            });
+
+            return result;
+        } else {
+            const [result] = await pool.execute(updateSql, [sub_total, items_discount, total, order_id]);
+            return result;
         }
     }
+
+
 }
 
 module.exports = OrderItems;

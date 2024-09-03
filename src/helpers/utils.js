@@ -147,6 +147,11 @@ const normalizePhoneNumber = (phone) => {
 
 const roundToTwoDecimals = (value) => Math.floor(value * 100) / 100;
 
+const calculateVatAmount = (totalWithVat, vatRate) => {
+    const res = totalWithVat * ((vatRate) / (100 + (+vatRate)));
+    return roundToTwoDecimals(res);
+};
+
 module.exports = {
     getSwedenTimestamp,
     normalizePhoneNumber,
@@ -160,4 +165,5 @@ module.exports = {
     verifyEmail,
     isProduction,
     roundToTwoDecimals,
+    calculateVatAmount
 };
