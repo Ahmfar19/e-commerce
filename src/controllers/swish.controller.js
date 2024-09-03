@@ -139,7 +139,6 @@ async function getPaymentrequests(req, res) {
             status: response.data.status,
         });
     } catch (error) {
-        logError('Get Payment Request', error);
         return res.status(500).send(error.message || 'An error occurred.');
     }
 }
@@ -174,7 +173,6 @@ async function refunds(req, res) {
             return res.status(response.status).send(response.data);
         }
     } catch (error) {
-        logError('Create Refund', error);
         return res.status(500).send(error.message || 'An error occurred.');
     }
 }
@@ -190,13 +188,40 @@ async function getRefunds(req, res) {
             status: response.data.status,
         });
     } catch (error) {
-        logError('Get Refund', error);
         return res.status(500).send(error.message || 'An error occurred.');
     }
 }
 
-function logError(context, error) {
-    console.error(`Error in ${context}:`, error.message || error);
+// Cancel Payment Request
+async function cancelPaymentRequest(req, res) {
+    try {
+        const { requestId } = req.params;
+
+        // Construct the request body for the PATCH operation
+        const patchBody = [{
+            op: 'replace',
+            path: '/status',
+            value: 'cancelled'
+        }];
+
+        // Send the PATCH request to the Swish API
+        const response = await axiosInstance.patch(`/api/v1/paymentrequests/${requestId}`, patchBody, {
+            headers: {
+                'Content-Type': 'application/json-patch+json'
+            }
+        });
+
+        if (response.status === 200) {
+            return res.status(200).json({
+                message: 'Payment request successfully canceled.',
+                data: response.data
+            });
+        } else {
+            return res.status(response.status).send(response.data);
+        }
+    } catch (error) {
+        return res.status(500).send(error.message || 'An error occurred while canceling the payment request.');
+    }
 }
 
 module.exports = {
@@ -205,4 +230,5 @@ module.exports = {
     getPaymentrequests,
     refunds,
     getRefunds,
+    cancelPaymentRequest
 };
