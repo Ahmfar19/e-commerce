@@ -165,5 +165,5 @@ module.exports = {
     verifyEmail,
     isProduction,
     roundToTwoDecimals,
-    calculateVatAmount
+    calculateVatAmount,
 };

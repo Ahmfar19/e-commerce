@@ -31,7 +31,7 @@ const addProductItems = async (req, res) => {
         return sendResponse(res, 201, 'Created', 'Successfully created items.', null, null);
     } catch (error) {
         await transaction?.rollback();
-        return sendResponse(res, 500, 'Internal Server Error', 'An unexpected error occurred.', null, null);
+        return sendResponse(res, 500, 'Internal Server Error', error.message, null, null);
     }
 };
 
@@ -59,7 +59,7 @@ const putOrderItems = async (req, res) => {
             transaction = await sequelize.transaction();
 
             await OrderItems.deleteMulti(deletedItems, transaction);
-            await Order.updateProductQuantitiesPlus(deletedItems, transaction);
+            await Order.updateProductQuantities(deletedItems, transaction);
             await OrderItems.updateOrderByOrderItems(order_id, transaction);
 
             await transaction.commit();

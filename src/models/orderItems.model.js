@@ -1,5 +1,6 @@
 const { pool, sequelize } = require('../databases/mysql.db');
 const { calculateVatAmount } = require('../helpers/utils');
+const StoreInfo = require('./storeInfo.model');
 
 class OrderItems {
     constructor(options) {
@@ -176,19 +177,7 @@ class OrderItems {
     }
 
     static async updateOrderByOrderItems(order_id, transaction) {
-        const storeInfoSql = 'SELECT * FROM store_info LIMIT 1';
-        let storeInfoRows;
-        if (transaction) {
-            [storeInfoRows] = await sequelize.query(storeInfoSql, { transaction });
-        } else {
-            [storeInfoRows] = await pool.execute(storeInfoSql);
-        }
-
-        if (storeInfoRows.length === 0) {
-            throw new Error('Store info not found.');
-        }
-
-        const storeInfo = storeInfoRows[0];
+        const [tax] = await StoreInfo.getTax();
 
         const selectSql = `
             SELECT 
@@ -212,8 +201,7 @@ class OrderItems {
 
         const { sub_total, items_discount } = rows[0];
 
-        // حساب الضريبة باستخدام storeInfo.tax_percentage
-        const vatAmount = calculateVatAmount(sub_total, storeInfo.tax_percentage);
+        const vatAmount = calculateVatAmount(sub_total, tax.tax_percentage);
 
         const updateSql = `
             UPDATE orders 
@@ -239,8 +227,6 @@ class OrderItems {
             return result;
         }
     }
-
-
 }
 
 module.exports = OrderItems;
