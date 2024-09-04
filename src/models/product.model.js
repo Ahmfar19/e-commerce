@@ -1,4 +1,4 @@
-const { pool } = require('../databases/mysql.db');
+const { pool, sequelize } = require('../databases/mysql.db');
 
 class Product {
     constructor(options) {
@@ -72,6 +72,52 @@ class Product {
         const sql = 'SELECT COUNT(*) AS row_count FROM products';
         const [rows] = await pool.execute(sql);
         return rows;
+    }
+
+    static async getQuantity(product_id, transaction) {
+        const sql = `
+            SELECT quantity
+            FROM products
+            WHERE product_id = ?
+        `;
+
+        let rows;
+        if (transaction) {
+            rows = await sequelize.query(sql, {
+                replacements: [product_id],
+                transaction,
+            });
+        } else {
+            rows = await pool.execute(sql, [product_id]);
+        }
+        return rows[0];
+    }
+
+    static async updateProduct(product_id, key, value, transaction) {
+        let sql = `
+            UPDATE products
+            SET ${key} = ?
+            WHERE product_id = ?
+        `;
+
+        if (key === 'quantity') {
+            sql = `
+                UPDATE products
+                SET ${key} = ${key} - ?
+                WHERE product_id = ?
+            `;
+        }
+
+        if (transaction) {
+            await sequelize.query(sql, {
+                replacements: [value, product_id],
+                transaction: transaction,
+            });
+        } else {
+            await sequelize.query(sql, {
+                replacements: [value, product_id],
+            });
+        }
     }
 
     static async getSingleById(id) {

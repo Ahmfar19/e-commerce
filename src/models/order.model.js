@@ -1,5 +1,6 @@
 const { pool, sequelize } = require('../databases/mysql.db');
 const { getSwedenTimestamp } = require('../helpers/utils');
+const productModel = require('./product.model');
 const Joi = require('joi');
 
 const orderSchema = Joi.object({
@@ -205,60 +206,12 @@ class Order {
     static async updateProductQuantities(products, transaction) {
         try {
             for (const product of products) {
-                const updateQuantitySql = `
-                    UPDATE products
-                    SET quantity = quantity - ?
-                    WHERE product_id = ?
-                `;
+                await productModel.updateProduct(product.product_id, 'quantity', product.quantity, transaction);
 
-                if (transaction) {
-                    await sequelize.query(updateQuantitySql, {
-                        replacements: [
-                            product.quantity,
-                            product.product_id,
-                        ],
-                        transaction,
-                    });
-                } else {
-                    await pool.execute(updateQuantitySql, [
-                        product.quantity,
-                        product.product_id,
-                    ]);
-                }
+                const [qty] = await productModel.getQuantity(product.product_id, transaction);
 
-                const checkQuantitySql = `
-                    SELECT quantity
-                    FROM products
-                    WHERE product_id = ?
-                `;
-
-                if (transaction) {
-                    const [rows] = await sequelize.query(checkQuantitySql, {
-                        replacements: [product.product_id],
-                        transaction,
-                    });
-
-                    if (parseInt(rows[0].quantity) === 0) {
-                        const updateAvailabilitySql = `
-                            UPDATE products
-                            SET available = false
-                            WHERE product_id = ?
-                        `;
-                        await sequelize.query(updateAvailabilitySql, {
-                            replacements: [product.product_id],
-                            transaction,
-                        });
-                    }
-                } else {
-                    const [rows] = await pool.execute(checkQuantitySql, [product.product_id]);
-                    if (parseInt(rows[0].quantity) === 0) {
-                        const updateAvailabilitySql = `
-                            UPDATE products
-                            SET available = false
-                            WHERE product_id = ?
-                        `;
-                        await pool.execute(updateAvailabilitySql, [product.product_id]);
-                    }
+                if (parseFloat(qty?.quantity) === 0) {
+                    await productModel.updateProduct(products.product_id, 'available', 'false', transaction);
                 }
             }
         } catch (error) {
