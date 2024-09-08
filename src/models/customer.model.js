@@ -22,14 +22,14 @@ const userSchema = Joi.object({
         'string.email': 'ec_validation_customer_email_mustTypeEmail',
         'any.required': 'ec_validation_customer_email_requierd',
     }),
-    password: Joi.string().messages({
+    password: Joi.string().allow('').messages({
         'any.required': 'ec_validation_customer_password_required',
     }),
     address: Joi.string().trim().max(255).allow('').messages({
         'string.base': 'ec_validation_customer_address_mustBeString',
         'string.max': 'ec_validation_customer_address_maxlength',
     }),
-    zip: Joi.string().trim().max(20).allow('').messages({
+    zip: Joi.string().trim().max(5).allow('').messages({
         'string.base': 'ec_validation_customer_zip_mustBeString',
         'string.max': 'ec_validation_customer_zip_maxlength',
     }),
@@ -37,8 +37,9 @@ const userSchema = Joi.object({
         'string.base': 'ec_validation_customer_city_mustBeString',
         'string.max': 'ec_validation_customer_city_maxlength',
     }),
-    phone: Joi.string().pattern(/^\+?[0-9]\d{1,14}$/).allow('').messages({
+    phone: Joi.string().pattern(/^\+?[0-9]\d{1,14}$/).allow('').min(9).messages({
         'string.base': 'ec_validation_customer_phone_mustBeString',
+        'string.min': 'ec_validation_customer_phone_minlength',
         'string.pattern.base': 'ec_validation_customer_phone_pattern',
     }),
     registered: Joi.alternatives().try(
