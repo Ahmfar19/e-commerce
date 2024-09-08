@@ -14,6 +14,7 @@ const { connectionOptions } = require('./databases/mysql.db');
 const MySQLStore = require('express-mysql-session')(session);
 const sessionStore = new MySQLStore(connectionOptions);
 require('./paymentsController');
+const axios = require('axios');
 
 const app = express();
 app.use(cookieParser());
@@ -80,6 +81,31 @@ app.use(session({
         maxAge: 24 * 60 * 60 * 1000, // Cookie expiration (1 day)
     },
 }));
+
+// Endpoint to proxy requests to the PostnummerService API
+app.get('/server/api/postcode', async (req, res) => {
+    const postcode = req.query.postcode || 50437
+
+    if (!postcode) {
+        return res.status(400).json({ error: 'Postcode is required' });
+    }
+    try {
+        const response = await axios.get(`https://www.postnummerservice.se/umbraco/api/address/SearchAddress`, {
+            params: {
+                countryCode: 'se',
+                postcode: postcode,
+                street: '',
+                locality: ''
+            }
+        });
+
+        // Send the API response data to the client
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error fetching postcode data:', error);
+        res.status(500).json({ error: 'Failed to fetch postcode data' });
+    }
+});
 
 app.get('/server/api/test', (req, res) => {
     res.send('It works');
