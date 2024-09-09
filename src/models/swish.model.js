@@ -1,6 +1,9 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const config = require('config');
+
+const SWISH_CALLBACK = config.get('SWISH_CALLBACK');
 
 const testConfig = {
     payeeAlias: '1231181189',
@@ -21,15 +24,15 @@ const prodConfig = {
     passphrase: null,
 };
 
-const config = process.env.NODE_ENV === 'production' ? prodConfig : testConfig;
+const swishConfig = process.env.NODE_ENV === 'production' ? prodConfig : testConfig;
 
 const axiosInstance = axios.create({
-    baseURL: config.host,
+    baseURL: swishConfig.host,
     httpsAgent: new require('https').Agent({
-        cert: fs.readFileSync(config.cert),
-        key: fs.readFileSync(config.key),
-        ca: config.ca ? fs.readFileSync(config.ca) : undefined,
-        passphrase: config.passphrase,
+        cert: fs.readFileSync(swishConfig.cert),
+        key: fs.readFileSync(swishConfig.key),
+        ca: swishConfig.ca ? fs.readFileSync(swishConfig.ca) : undefined,
+        passphrase: swishConfig.passphrase,
     }),
     headers: {
         'Content-Type': 'application/json',
@@ -38,11 +41,12 @@ const axiosInstance = axios.create({
 
 // Create Payment Request
 async function swishPaymentRequests(data) {
+    // https://webhook.site/3c565038-5dfb-4ff8-add2-c76b0052b6bc
     try {
         const requestBody = {
             payeePaymentReference: '0123456789',
-            callbackUrl: 'https://webhook.site/3c565038-5dfb-4ff8-add2-c76b0052b6bc',
-            payeeAlias: config.payeeAlias,
+            callbackUrl: SWISH_CALLBACK,
+            payeeAlias: swishConfig.payeeAlias,
             payerAlias: data.payerAlias,
             amount: data.amount,
             currency: 'SEK',
@@ -86,7 +90,7 @@ async function createRefund(paymentData) {
     try {
         const refundRequest = {
             originalPaymentReference: paymentData.paymentReference,
-            callbackUrl: 'https://example.com/api/swishcb/paymentrequests',
+            callbackUrl: SWISH_CALLBACK,
             payerAlias: paymentData.payeeAlias,
             payeeAlias: paymentData.payerAlias,
             amount: paymentData.amount,
