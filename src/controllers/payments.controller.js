@@ -27,7 +27,7 @@ const createPayment = async (req, res) => {
             status,
         });
 
-        await payment.createPayments();
+        await payment.createPayment();
 
         return sendResponse(res, 201, 'Created', 'Successfully created a payment.', null, payment);
     } catch (error) {
