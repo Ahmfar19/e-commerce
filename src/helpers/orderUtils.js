@@ -6,6 +6,13 @@ const OrderModel = require('../models/order.model');
 const OrderItemsModel = require('../models/orderItems.model');
 const { sendHtmlEmail } = require('../controllers/sendEmail.controller');
 const { roundToTwoDecimals } = require('../helpers/utils');
+const config = require('config');
+
+const PRODUCTS_IMAGE_URL = config.get('PRODUCTS_IMAGE_URL');
+const PRODUCTS_URL = config.get('PRODUCTS_URL');
+const CHECKOUT_URL = config.get('CHECKOUT_URL');
+const KLARNA_CALLBACK = config.get('KLARNA_CALLBACK');
+const KLARNA_CONFIRMATION = config.get('KLARNA_CONFIRMATION');
 
 function getFirstImage(item) {
     const images = JSON.parse(item.image);
@@ -149,7 +156,7 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
             if (productImage) {
                 productImage = JSON.parse(productImage);
                 productImage = productImage[0];
-                productImage = `https://www.exampleobjects.com/images/product_${product.product_id}/${productImage}`;
+                productImage = `${PRODUCTS_IMAGE_URL}${product.product_id}/${productImage}`;
             }
 
             return {
@@ -164,16 +171,15 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
                 total_discount_amount: totalDiscountAmount, // Total discount in öre
                 total_tax_amount: totalTaxAmount, // Total tax amount in öre
                 image_url: productImage ? productImage : '', // Product image URL
-                product_url: `https://www.estore.com/products/${product.product_id}`, // Product URL
+                product_url: `${PRODUCTS_URL}${product.product_id}`, // Product URL
                 merchant_data: JSON.stringify({ articelNumber: product.articelNumber }), // Merchant data
             };
         }),
         merchant_urls: {
             terms: 'https://www.example.com/terms',
-            checkout: 'https://localhost:3000/checkout?klarna_order_id={checkout.order.id}',
-            confirmation: 'https://localhost:3000/order/confirmation?klarna_order_id={checkout.order.id}',
-            // push: 'https://127.0.0.1:3000/server/api/klarna/paymentrequests/status?klarna_order_id={checkout.order.id}',
-            push: 'https://webhook.site/3c565038-5dfb-4ff8-add2-c76b0052b6bc',
+            checkout: CHECKOUT_URL,
+            confirmation: `${KLARNA_CONFIRMATION}?klarna_order_id={checkout.order.id}`,
+            push: KLARNA_CALLBACK,
         },
     };
 };
