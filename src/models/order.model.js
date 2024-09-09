@@ -238,9 +238,9 @@ class Order {
         return rows;
     }
 
-    static async updateOrderType(order_id, trackingNumber) {
-        const sql = 'UPDATE orders SET type_id = 2, trackingNumber = ? WHERE order_id = ?';
-        const [rows] = await pool.execute(sql, [trackingNumber || '', order_id]);
+    static async updateOrderType(order_id, type_id, trackingNumber) {
+        const sql = 'UPDATE orders SET type_id = ?, trackingNumber = ? WHERE order_id = ?';
+        const [rows] = await pool.execute(sql, [type_id, trackingNumber || '', order_id]);
         return rows;
     }
 

@@ -396,9 +396,9 @@ const getOrderByType = async (req, res) => {
 const updateOrderType = async (req, res) => {
     try {
         const id = req.params.id;
-        const { trackingNumber } = req.body;
+        const { trackingNumber, type_id } = req.body;
 
-        const updateResult = await Order.updateOrderType(id, trackingNumber);
+        const updateResult = await Order.updateOrderType(id, type_id, trackingNumber);
         if (updateResult.affectedRows === 0) {
             return res.status(404).json({
                 ok: false,
