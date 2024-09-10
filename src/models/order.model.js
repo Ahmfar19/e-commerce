@@ -188,10 +188,12 @@ class Order {
             customers.phone,
             customers.registered,
             customers.isCompany,
+            CONCAT(customers.fname, ' ', customers.lname) AS customerName,
             transaction_type.type_name as payment_name,
             order_type.type_name,
             payments.payment_type_id,
             payments.payment_id,
+            payments.payment_reference,
             DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS order_date
         FROM orders 
         LEFT JOIN customers ON orders.customer_id = customers.customer_id
