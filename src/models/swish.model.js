@@ -4,6 +4,9 @@ const path = require('path');
 const config = require('config');
 
 const SWISH_CALLBACK = config.get('SWISH_CALLBACK');
+const SWISH_REFUND_CALLBACK = config.get('SWISH_REFUND_CALLBACK');
+
+const paymentMessage = 'Almondo';
 
 const testConfig = {
     payeeAlias: '1231181189',
@@ -50,7 +53,7 @@ async function swishPaymentRequests(data) {
             payerAlias: data.payerAlias,
             amount: data.amount,
             currency: 'SEK',
-            message: data.message,
+            message: paymentMessage,
         };
 
         const response = await axiosInstance.post('/api/v1/paymentrequests', requestBody);
@@ -90,12 +93,12 @@ async function createRefund(paymentData) {
     try {
         const refundRequest = {
             originalPaymentReference: paymentData.paymentReference,
-            callbackUrl: SWISH_CALLBACK,
+            callbackUrl: SWISH_REFUND_CALLBACK,
             payerAlias: paymentData.payeeAlias,
             payeeAlias: paymentData.payerAlias,
             amount: paymentData.amount,
             currency: paymentData.currency,
-            message: paymentData.message,
+            message: paymentMessage,
         };
 
         const response = await axiosInstance.post('/api/v1/refunds', refundRequest);

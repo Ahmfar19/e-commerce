@@ -246,6 +246,12 @@ class Order {
         return rows;
     }
 
+    static async updateOrderStatus(order_id, type_id) {
+        const sql = 'UPDATE orders SET type_id = ? WHERE order_id = ?';
+        const [rows] = await pool.execute(sql, [type_id, order_id]);
+        return rows;
+    }
+
     static async getOrdersByMonth(date) {
         const [year, month] = date.split('-');
         const sql = 'SELECT * FROM orders WHERE MONTH(orders.order_date) = ? AND YEAR(orders.order_date) = ?';

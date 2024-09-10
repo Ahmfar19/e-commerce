@@ -1,5 +1,7 @@
 const { sendResponse } = require('../helpers/apiResponse');
 const Payments = require('../models/payments.model');
+const OrderItemsModel = require('../models/orderItems.model');
+const OrderModel = require('../models/order.model');
 const { commitOrder } = require('../helpers/orderUtils');
 const { deleteById } = require('../models/order.model');
 const {
@@ -37,17 +39,18 @@ async function receivePaymentStatus(req, res) {
         const { id, status } = req.body;
 
         // Retrieve payment details by payment ID
-        const paymentStatus = await getPaymentRequests(id);
+        const [paymentStatus] = await Payments.getPaymentsByPaymentId(id);
+
         if (!paymentStatus) {
             return sendResponse(res, 404, 'Error', 'Payment not found.', null, null);
         }
 
+        if (paymentStatus.status === 2) {
+            return sendResponse(res, 400, 'Error', 'Payment already received.', null, null);
+        }
+
         // Handle payment status
         if (status === PAYMENT_STATUS.PAID) {
-            if (paymentStatus.status === 2) {
-                return sendResponse(res, 400, 'Error', 'Payment already received.', null, null);
-            }
-
             // Update payment status in the database
             const result = await Payments.updatePaymentsStatus(id, 2);
             if (!result || !result.order_id) {
@@ -101,35 +104,28 @@ async function createRefundRequest(req, res) {
         }
 
         const [payment] = await Payments.getPaymentsByPaymentId(payment_id);
-
         if (!payment) {
             return sendResponse(res, 404, 'Error', 'Payment not found.', null, null);
         }
 
-        const { id, status } = payment;
-
-        if (status !== 2) {
+        if (payment.status !== 2) {
             return sendResponse(res, 400, 'Error', 'Payment not in a paid state.', null, null);
         }
 
         const paymentData = await getPaymentRequests(payment_id);
 
         if (!paymentData) {
-            return sendResponse(res, 404, 'Error', 'Payment not found.', null, null);
+            return sendResponse(res, 404, 'Error', 'Payment not found on Swish portal.', null, null);
         }
 
         const refundRequest = await createRefund(paymentData);
 
-        if (refundRequest) {
-            const success = await Payments.updatePaymentsStatusAndPaymentId({
-                id,
+        if (refundRequest && refundRequest.status === PAYMENT_STATUS.CREATED) {
+            await Payments.updatePaymentsStatusAndPaymentId({
+                id: payment.id,
                 payment_id: refundRequest.id,
-                status: 6, // Refunded
+                status: 2,
             });
-
-            if (!success) {
-                return sendResponse(res, 500, 'Error', 'Failed to update payment with refund ID.', null, null);
-            }
             return sendResponse(res, 201, 'Created', 'Refund request created successfully.', null, refundRequest);
         }
 
@@ -140,6 +136,55 @@ async function createRefundRequest(req, res) {
             500,
             'Server Error',
             'An error occurred while creating the refund request.',
+            null,
+            error.message,
+        );
+    }
+}
+
+async function receiveRefundStatus(req, res) {
+    try {
+        const { id, status } = req.body;
+
+        if (id && status === PAYMENT_STATUS.PAID) {
+            const [payment] = await Payments.getPaymentsByPaymentId(id);
+
+            if (!payment) {
+                return sendResponse(res, 404, 'Error', 'Payment not found.', null, null);
+            }
+
+            if (payment.status !== 2) {
+                return sendResponse(res, 400, 'Error', 'Payment not in a paid state.', null, null);
+            }
+
+            const success = await Payments.updatePaymentsStatusAndPaymentId({
+                id: payment.id,
+                payment_id: id,
+                status: 6, // Refunded
+            });
+
+            if (!success) {
+                return sendResponse(res, 500, 'Error', 'Failed to update payment with refund ID.', null, null);
+            }
+
+            // update the order status and the product qty
+            const products = await OrderItemsModel.getItemsByOrderId(payment.order_id);
+            const updatedProducts = products?.map((product) => {
+                return { ...product, quantity: -product.quantity };
+            });
+            await OrderModel.updateOrderStatus(payment.order_id, 3); // 3 Cancelled
+            await OrderModel.updateProductQuantities(updatedProducts);
+
+            return sendResponse(res, 201, 'Created', 'Refund request created successfully.', null, null);
+        } else {
+            return sendResponse(res, 400, 'Error', 'Invalid refund status or missing ID.', null, null);
+        }
+    } catch (error) {
+        return sendResponse(
+            res,
+            500,
+            'Server Error',
+            'An error occurred while processing the refund status.',
             null,
             error.message,
         );
@@ -185,6 +230,7 @@ async function cancelPayment(req, res) {
 module.exports = {
     createPaymentRequest,
     receivePaymentStatus,
+    receiveRefundStatus,
     fetchPaymentRequest,
     createRefundRequest,
     fetchRefund,
