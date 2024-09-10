@@ -194,6 +194,7 @@ class Order {
             payments.payment_type_id,
             payments.payment_id,
             payments.payment_reference,
+            payments.status,
             DATE_FORMAT(orders.order_date, '%Y-%m-%d %H:%i:%s') AS order_date
         FROM orders 
         LEFT JOIN customers ON orders.customer_id = customers.customer_id
