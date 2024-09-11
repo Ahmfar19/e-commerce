@@ -37,7 +37,7 @@ const userSchema = Joi.object({
         'string.base': 'ec_validation_customer_city_mustBeString',
         'string.max': 'ec_validation_customer_city_maxlength',
     }),
-    phone: Joi.string().pattern(/^\+?[0-9]\d{1,14}$/).allow('').min(9).messages({
+    phone: Joi.string().pattern(/^\+?[0-9]\d{1,14}$/).allow('').min(10).messages({
         'string.base': 'ec_validation_customer_phone_mustBeString',
         'string.min': 'ec_validation_customer_phone_minlength',
         'string.pattern.base': 'ec_validation_customer_phone_pattern',

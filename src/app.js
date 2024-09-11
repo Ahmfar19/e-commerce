@@ -81,13 +81,8 @@ app.use(session({
     },
 }));
 
-app.get('/server/api/test', (req, res) => {
-    res.send('It works');
-});
-
 // Middleware to initialize user session
 app.post('/server/api/auth/initSIDSession', initSIDSession);
-
 app.use('/server/api/verify-customer', verifyEmail);
 
 app.use('/server/api/admin', isAdmin, apiAdminRouter);
