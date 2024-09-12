@@ -79,12 +79,10 @@ async function acknowledgeKlarnaOrder(klarna_order_id) {
     return response.status === 204; // true if successfully acknowledged
 }
 
+// When reciving the confirmation form the frontend
 const validateOrderDetails = async (klarnaOrder, order_id) => {
     const [order] = await orderModel.getById(order_id);
     const orderItems = await orderItemsModel.getItemsByOrderId(order_id);
-
-    // console.error('klarnaOrder', klarnaOrder);
-    // console.error('orderItems', orderItems);
 
     let error = '';
     const total = order.total;
@@ -117,7 +115,7 @@ const validateOrderDetails = async (klarnaOrder, order_id) => {
     return error;
 };
 
-// Report order status
+// Report order status when reciving the push notefication
 async function completeOrderValidation(klarna_order_id, order_id) {
     try {
         const klarnaOrder = await this.getOrder(klarna_order_id);

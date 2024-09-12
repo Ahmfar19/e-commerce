@@ -396,9 +396,34 @@ const getOrderByType = async (req, res) => {
 const updateOrderType = async (req, res) => {
     try {
         const id = req.params.id;
-        const { trackingNumber, type_id } = req.body;
+        const { trackingNumber, type_id, payment_id, payment_type_id } = req.body;
+
+        // When Klarna, we need to capture the order.
+        if (payment_type_id === 3) {
+            const klarnaOrder = await klarnaModel.getOrder(payment_id);
+            // The payment status should be authorized
+            if (klarnaOrder.status !== 'AUTHORIZED') {
+                return sendResponse(res, 400, 'Klarna order status is not authorized', null, null, null);
+            }
+
+            // Prepare capture details
+            const captureDetails = {
+                captured_amount: klarnaOrder.order_amount,
+                order_lines: klarnaOrder.order_lines,
+                description: 'Capturing payment for order ' + payment_id,
+            };
+
+            const captureResult = await klarnaModel.captureKlarnaOrder(payment_id, captureDetails);
+
+            if (!captureResult.success) {
+                throw new Error('Order is canceled. Capture not possible');
+            }
+
+            await Payments.updatePaymentStatus(payment_id, 5);
+        }
 
         const updateResult = await Order.updateOrderType(id, type_id, trackingNumber);
+
         if (updateResult.affectedRows === 0) {
             return res.status(404).json({
                 ok: false,

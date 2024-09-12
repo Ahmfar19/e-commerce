@@ -104,7 +104,9 @@ class Product {
         if (key === 'quantity') {
             sql = `
                 UPDATE products
-                SET ${key} = ${key} - ?
+                SET 
+                    quantity = quantity - ?,
+                    available = CASE WHEN quantity > 0 THEN TRUE ELSE FALSE END
                 WHERE product_id = ?
             `;
         }

@@ -210,12 +210,6 @@ class Order {
         try {
             for (const product of products) {
                 await productModel.updateProduct(product.product_id, 'quantity', product.quantity, transaction);
-
-                const [qty] = await productModel.getQuantity(product.product_id, transaction);
-
-                if (parseFloat(qty?.quantity) === 0) {
-                    await productModel.updateProduct(product.product_id, 'available', false, transaction);
-                }
             }
         } catch (error) {
             console.error('Error updating product quantities:', error);

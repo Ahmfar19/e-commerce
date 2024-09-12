@@ -85,7 +85,7 @@ app.use(session({
 app.post('/server/api/auth/initSIDSession', initSIDSession);
 app.use('/server/api/verify-customer', verifyEmail);
 
-app.use('/server/api/admin', isAdmin, apiAdminRouter);
+app.use('/server/api/admin', apiAdminRouter);
 app.use('/server/api', isAuthorized, apiRouter);
 
 module.exports = app;
