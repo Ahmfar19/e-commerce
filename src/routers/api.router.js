@@ -17,20 +17,17 @@ const orderTypeController = require('../controllers/orderType.controller');
 const swishController = require('../controllers/swish.controller');
 const klarnaController = require('../controllers/klarna.controller');
 
-// Payments
+// Payments Swish
 router.post('/swish/paymentrequests/status', swishController.receivePaymentStatus);
 router.post('/swish/refund/status', swishController.receiveRefundStatus);
 router.get('/swish/paymentrequests/:requestId', swishController.fetchPaymentRequest);
 
+// Payments Klarna
 router.post('/klarna/paymentrequests', klarnaController.klarna_paymentrequests);
 router.get('/klarna/paymentrequests/status', klarnaController.getOrderStatus);
 router.post('/klarna/paymentrequests/push', klarnaController.receivePush);
-router.post('/klarna/paymentrequests/acknowledgeOrder', klarnaController.acknowledgeKlarnaCheckoutOrder);
 router.get('/klarna/ordermanagement/getorder', klarnaController.getOrder);
 router.post('/klarna/order/create', klarnaController.createOrder);
-router.post('/klarna/order/capture', klarnaController.captureOrder);
-router.get('/klarna/order/:orderId/captures', klarnaController.getOrderCaptures);
-router.post('/klarna/order/:orderId/refund', klarnaController.refundOrder);
 
 // Authentication
 router.post('/auth/customer/verifyToken', customerController.verifyToken);

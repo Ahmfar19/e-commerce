@@ -2,7 +2,8 @@ const klarnaModel = require('../models/klarna.model.js');
 const { unmigrateKlarnaStruct } = require('../helpers/orderUtils.js');
 const { createOrderFromKlarnaStruct } = require('./order.controller.js');
 const Payments = require('../models/payments.model');
-const orderModel = require('../models/order.model.js');
+const OrderModel = require('../models/order.model.js');
+const OrderItemsModel = require('../models/orderItems.model');
 const { sendResponse } = require('../helpers/apiResponse');
 
 // Read here for more information
@@ -11,6 +12,18 @@ const { sendResponse } = require('../helpers/apiResponse');
 const ORDER_STATUS = {
     AUTHORIZED: 'AUTHORIZED',
     PAID: 'PAID',
+    CAPTURED: 'CAPTURED',
+    CANCELLED: 'CANCELLED',
+};
+
+const updateOrderAfterCancelation = async (order_id) => {
+    // update the order status and the product qty
+    const products = await OrderItemsModel.getItemsByOrderId(order_id);
+    const updatedProducts = products?.map((product) => {
+        return { ...product, quantity: -product.quantity };
+    });
+    await OrderModel.updateOrderStatus(order_id, 3); // 3 Cancelled
+    await OrderModel.updateProductQuantities(updatedProducts);
 };
 
 const klarna_paymentrequests = async (orderData) => {
@@ -72,30 +85,6 @@ const getOrderStatus = async (req, res) => {
     }
 };
 
-const cancelKlarnaOrder = async (req, res) => {
-    const { klarna_order_id } = req.body;
-    try {
-        const success = await klarnaModel.cancelKlarnaOrder(klarna_order_id);
-        if (success) {
-            return res.status(200).json({
-                success: true,
-                message: 'Klarna order successfully canceled',
-            });
-        } else {
-            return res.status(500).json({
-                success: false,
-                message: 'Failed to cancel Klarna order',
-            });
-        }
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: 'Failed to cancel Klarna order',
-            error: error.message,
-        });
-    }
-};
-
 const acknowledgeKlarnaCheckoutOrder = async (req, res) => {
     const { klarna_order_id } = req.body;
     try {
@@ -127,8 +116,14 @@ const receivePush = async (req, res) => {
             throw new Error('Missing Klarna order ID');
         }
 
-        const response = await orderModel.isOrderCommited(klarna_order_id);
-        let order_id = response.order_id;
+        const existingPayment = await Payments.getPaymentsByPaymentId(klarna_order_id);
+
+        if (existingPayment.length > 0) {
+            return sendResponse(res, 200, 'Order already created', 'CREATED', null, null);
+        }
+
+        const response = await OrderModel.isOrderCommited(klarna_order_id);
+        let order_id = response?.order_id;
         if (!response.ok) {
             // Klarna order not found - i should create it here
             const klarnaOrder = await klarnaModel.getOrder(klarna_order_id);
@@ -162,6 +157,7 @@ const createOrder = async (req, res) => {
     }
 
     try {
+        // Get the order status from the ordermanagment
         const klarnaOrder = await klarnaModel.getOrder(klarna_order_id);
         if (klarnaOrder.status !== ORDER_STATUS.AUTHORIZED) {
             return sendResponse(res, 400, 'Klarna order status is not authorized', null, null, null);
@@ -214,7 +210,7 @@ const captureOrder = async (req, res) => {
         const captureResult = await klarnaModel.captureKlarnaOrder(klarna_order_id, captureDetails);
 
         if (!captureResult.success) {
-            throw new Error(captureResult.message || 'Failed to capture Klarna order');
+            throw new Error('Order is canceled. Capture not possible');
         }
 
         // Update payment status to CAPTURED
@@ -252,34 +248,151 @@ const getOrderCaptures = async (req, res) => {
     }
 };
 
-const refundOrder = async (req, res) => {
-    const { orderId } = req.params; // Assuming the orderId is passed as a URL parameter
-    // const { refundDetails } = req.body;
+const cancelKlarnaOrder = async (req, res) => {
+    const { klarna_order_id } = req.body;
+
     try {
-        const klarnaOrder = await klarnaModel.getOrder(orderId);
+        const [existingPayment] = await Payments.getPaymentsByPaymentId(klarna_order_id);
+        if (!existingPayment) {
+            return sendResponse(res, 404, 'Error', 'Payment not found.', 'ec_order_cancel_klarna_error', null);
+        }
+
+        // Get the order status from the ordermanagment
+        const klarnaOrder = await klarnaModel.getOrder(klarna_order_id);
+
+        if (klarnaOrder.status === ORDER_STATUS.CANCELLED) {
+            return sendResponse(
+                res,
+                400,
+                'Error',
+                'Klarna order is already cancelled',
+                'ec_order_cancel_klarna_cancel_alreadyCanceld',
+                null,
+            );
+        }
+
+        // Not captured yet - just cancel it and handel order/qty update
+        if (klarnaOrder.status === ORDER_STATUS.AUTHORIZED) {
+            const success = await klarnaModel.cancelKlarnaOrder(klarna_order_id);
+
+            if (success) {
+                await Payments.updatePaymentsStatusAndPaymentId({
+                    id: existingPayment.id,
+                    payment_id: existingPayment.payment_id,
+                    status: 7, // CANCELLED
+                });
+
+                await updateOrderAfterCancelation(existingPayment.order_id);
+
+                return sendResponse(
+                    res,
+                    200,
+                    'ec_order_cancel_klarna_cancel_success',
+                    'Klarna order successfully canceled. Order and product quantities updated.',
+                    null,
+                    { payment_id: existingPayment.payment_id, status: 7, type_id: 3 }, // 7 - payment CANCELLED, 3 - order cancelled
+                );
+            } else {
+                return sendResponse(
+                    res,
+                    403,
+                    'Error',
+                    'Cancel not allowed (e.g. order has captures or is closed)',
+                    'ec_order_cancel_klarna_alreayCaptured',
+                    null,
+                );
+            }
+        } else if (klarnaOrder.status === ORDER_STATUS.CAPTURED) {
+            // We need to make a refund here
+            return refundOrder(req, res, existingPayment);
+        } else {
+            return sendResponse(
+                res,
+                500,
+                'Error',
+                'Failed to cancel Klarna order',
+                'ec_order_cancel_klarna_error',
+                null,
+            );
+        }
+    } catch (error) {
+        return sendResponse(
+            res,
+            500,
+            error.message,
+            'Failed to cancel Klarna order',
+            'ec_order_cancel_klarna_error',
+            null,
+        );
+    }
+};
+
+const refundOrder = async (req, res, existingPayment) => {
+    const { klarna_order_id } = req.body;
+
+    // Already refunded
+    if (existingPayment.status === 6) {
+        return sendResponse(res, 400, 'The refund is already done', null, 'ec_order_cancel_klarna_alreadydone', null);
+    }
+
+    try {
+        const klarnaOrder = await klarnaModel.getOrder(klarna_order_id);
 
         // Prepare capture details
         const refundDetails = {
             refunded_amount: klarnaOrder.order_amount,
             order_lines: klarnaOrder.order_lines,
-            description: 'Refund for returned items for order ' + orderId,
+            description: 'Refund for returned items for order ' + klarna_order_id,
         };
 
         if (klarnaOrder.refunded_amount === refundDetails.refunded_amount) {
-            return sendResponse(res, 400, 'The refund is already done with the refund amount', null, null, null);
+            return sendResponse(
+                res,
+                400,
+                'The refund is already done with the refund amount',
+                null,
+                'ec_order_cancel_klarna_alreadyDoneWithThisAmount',
+                null,
+            );
         }
 
         // Process the refund for the given order ID
-        const result = await klarnaModel.refundKlarnaOrder(orderId, refundDetails);
+        const result = await klarnaModel.refundKlarnaOrder(klarna_order_id, refundDetails);
 
         if (result.success) {
-            await Payments.updatePaymentStatus(orderId, 6);
-            return sendResponse(res, 200, 'Order refunded successfully', null, result.data, null);
+            await Payments.updatePaymentsStatusAndPaymentId({
+                id: existingPayment.id,
+                payment_id: existingPayment.payment_id,
+                status: 6, // REFUNDED
+            });
+            await updateOrderAfterCancelation(existingPayment.order_id);
+            return sendResponse(
+                res,
+                200,
+                'ec_order_cancel_klarna_refund_success',
+                'Order refunded successfully',
+                null,
+                { payment_id: existingPayment.payment_id, status: 6, type_id: 3 }, // 6 - payment REFUNDED, 3 - order cancelled
+            );
         } else {
-            return sendResponse(res, 500, 'Failed to refund Klarna order', null, result.message, null);
+            return sendResponse(
+                res,
+                500,
+                'Failed to refund Klarna order',
+                result.message,
+                'ec_order_cancel_klarna_error',
+                null,
+            );
         }
     } catch (error) {
-        return sendResponse(res, 500, 'An error occurred while refunding the order', null, error.message, null);
+        return sendResponse(
+            res,
+            500,
+            'An error occurred while refunding the order',
+            error.message,
+            'ec_order_cancel_klarna_error',
+            null,
+        );
     }
 };
 
@@ -293,5 +406,4 @@ module.exports = {
     acknowledgeKlarnaCheckoutOrder,
     captureOrder,
     getOrderCaptures,
-    refundOrder,
 };

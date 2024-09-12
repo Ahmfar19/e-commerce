@@ -100,22 +100,36 @@ async function createRefundRequest(req, res) {
 
     try {
         if (!payment_id) {
-            return sendResponse(res, 400, 'Error', 'Payment ID is required.', null, null);
+            return sendResponse(res, 404, 'Error', 'Payment not found.', 'ec_order_cancel_klarna_error', null);
         }
 
         const [payment] = await Payments.getPaymentsByPaymentId(payment_id);
         if (!payment) {
-            return sendResponse(res, 404, 'Error', 'Payment not found.', null, null);
+            return sendResponse(res, 404, 'Error', 'Payment not found.', 'ec_order_cancel_klarna_error', null);
         }
 
         if (payment.status !== 2) {
-            return sendResponse(res, 400, 'Error', 'Payment not in a paid state.', null, null);
+            return sendResponse(
+                res,
+                400,
+                'Error',
+                'Payment not in a paid state.',
+                'ec_order_cancel_order_notPaid',
+                null,
+            );
         }
 
         const paymentData = await getPaymentRequests(payment_id);
 
         if (!paymentData) {
-            return sendResponse(res, 404, 'Error', 'Payment not found on Swish portal.', null, null);
+            return sendResponse(
+                res,
+                404,
+                'Error',
+                'Payment not found on Swish portal.',
+                'ec_order_cancel_klarna_error',
+                null,
+            );
         }
 
         const refundRequest = await createRefund(paymentData);
@@ -126,18 +140,27 @@ async function createRefundRequest(req, res) {
                 payment_id: refundRequest.id,
                 status: 2,
             });
-            return sendResponse(res, 201, 'Created', 'Refund request created successfully.', null, refundRequest);
+            return sendResponse(res, 201, 'Created', 'Refund request created successfully.', null, {
+                payment_id: refundRequest.id,
+            });
         }
 
-        return sendResponse(res, 500, 'Error', 'Failed to create refund request.', null, null);
+        return sendResponse(
+            res,
+            500,
+            'Error',
+            'Failed to create refund request.',
+            'ec_order_cancel_klarna_error',
+            null,
+        );
     } catch (error) {
         return sendResponse(
             res,
             500,
-            'Server Error',
-            'An error occurred while creating the refund request.',
-            null,
             error.message,
+            'An error occurred while creating the refund request.',
+            'ec_order_cancel_klarna_error',
+            null,
         );
     }
 }

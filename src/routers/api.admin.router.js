@@ -29,10 +29,16 @@ const uploadUser = multer({
     },
 });
 
-// Payments
+// Payments Swish
 router.post('/swish/refunds', swishController.createRefundRequest);
 router.get('/swish/refunds/:refundId', swishController.fetchRefund);
-router.post('/klarna/refundsPayment', klarnaController.cancelKlarnaOrder);
+
+// Payments Klarna
+router.post('/klarna/order/cancel', klarnaController.cancelKlarnaOrder);
+// router.post('/klarna/order/:orderId/refund', klarnaController.refundOrder);
+router.get('/klarna/order/:orderId/captures', klarnaController.getOrderCaptures);
+router.post('/klarna/order/capture', klarnaController.captureOrder);
+router.post('/klarna/paymentrequests/acknowledgeOrder', klarnaController.acknowledgeKlarnaCheckoutOrder);
 
 // Customers
 router.get('/customers', customerController.getUsers);
