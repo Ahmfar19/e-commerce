@@ -214,7 +214,7 @@ class Order {
                 const [qty] = await productModel.getQuantity(product.product_id, transaction);
 
                 if (parseFloat(qty?.quantity) === 0) {
-                    await productModel.updateProduct(products.product_id, 'available', 'false', transaction);
+                    await productModel.updateProduct(product.product_id, 'available', false, transaction);
                 }
             }
         } catch (error) {

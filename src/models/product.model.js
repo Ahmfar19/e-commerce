@@ -90,6 +90,7 @@ class Product {
         } else {
             rows = await pool.execute(sql, [product_id]);
         }
+
         return rows[0];
     }
 
@@ -114,9 +115,7 @@ class Product {
                 transaction: transaction,
             });
         } else {
-            await sequelize.query(sql, {
-                replacements: [value, product_id],
-            });
+            await pool.execute(sql, [value, product_id]);
         }
     }
 
