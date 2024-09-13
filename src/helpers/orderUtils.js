@@ -37,8 +37,27 @@ const sendOrderEmail = async (orderData, templatePath) => {
 
     // Construct inline images data
     const inlineImages = await Promise.all(orderData.products.map(async (product) => {
-        const firstImage = JSON.parse(product.image)[0];
-        const imagePath = await getImagePath(product, firstImage);
+        let firstImage;
+        let imagePath;
+        console.log("product", product);
+        
+        // Check if product.image exists and is a non-empty string
+        if (product?.image && typeof product.image === 'string' && product.image.trim() !== '') {
+            // Try to parse the image string as JSON
+            const imageArray = JSON.parse(product.image);
+            if (Array.isArray(imageArray) && imageArray.length > 0) {
+                firstImage = imageArray[0];
+                imagePath = await getImagePath(product, firstImage);
+            } else {
+                firstImage = 'no-product-image-available.png';
+                imagePath = path.resolve('public/image', firstImage);
+            }
+        }
+
+        console.log("firstImage: " , firstImage);
+        console.log("imagePath: " , imagePath);
+        
+        
         return {
             filename: firstImage,
             path: imagePath,
