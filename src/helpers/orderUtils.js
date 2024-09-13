@@ -16,6 +16,9 @@ const KLARNA_CONFIRMATION = config.get('KLARNA_CONFIRMATION');
 
 function getFirstImage(item) {
     const images = JSON.parse(item.image);
+    if (!images?.length) {
+        return 'no-product-image-available.png';
+    }
     return images[0];
 }
 
@@ -39,8 +42,7 @@ const sendOrderEmail = async (orderData, templatePath) => {
     const inlineImages = await Promise.all(orderData.products.map(async (product) => {
         let firstImage;
         let imagePath;
-        console.log("product", product);
-        
+
         // Check if product.image exists and is a non-empty string
         if (product?.image && typeof product.image === 'string' && product.image.trim() !== '') {
             // Try to parse the image string as JSON
@@ -50,14 +52,10 @@ const sendOrderEmail = async (orderData, templatePath) => {
                 imagePath = await getImagePath(product, firstImage);
             } else {
                 firstImage = 'no-product-image-available.png';
-                imagePath = path.resolve('public/image', firstImage);
+                imagePath = path.resolve('public/image', 'no-product-image-available.png');
             }
         }
 
-        console.log("firstImage: " , firstImage);
-        console.log("imagePath: " , imagePath);
-        
-        
         return {
             filename: firstImage,
             path: imagePath,
