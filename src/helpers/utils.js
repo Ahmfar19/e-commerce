@@ -145,7 +145,7 @@ const normalizePhoneNumber = (phone) => {
     return phone;
 };
 
-const roundToTwoDecimals = (value) => Math.floor(value * 100) / 100;
+const roundToTwoDecimals = (value) => Math.round(value * 100) / 100;
 
 const calculateVatAmount = (totalWithVat, vatRate) => {
     const res = totalWithVat * ((vatRate) / (100 + (+vatRate)));
