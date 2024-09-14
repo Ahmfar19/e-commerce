@@ -75,7 +75,6 @@
             color: #333;
         }
         .order-summary .total, .order-summary .customer-info, .order-summary .store-info {
-            border-top: 1px solid #ddd;
             padding-top: 10px;
             margin-top: 10px;
         }
@@ -130,18 +129,21 @@
                     meddelande på en helgdag, kan det ta något längre tid innan paketet når dig.
                 </p>
             <% } %>
-          
-
+            
             <div class="customer-info">
-                <h3 class="bottom-border">Kundinformation</h3>
-                <div><strong>Order ID:</strong> <%= orderData.order_id %></div>
-                <div><strong>Adress:</strong> <%= orderData.address %></div>
-                <div><strong>Postnummer:</strong> <%= orderData.zip %></div>
-                <div><strong>Stad:</strong> <%= orderData.city %></div>
+                <h3 class="bottom-border">Beställningsinformation</h3>
+                <div><strong>Ordernummer: #<%= orderData.order_id %></strong></div>
                 <div><strong>Orderdatum:</strong> <%= orderData.order_date %></div>
             </div>
 
-            <h3 class="bottom-border">Produkters</h3>
+            <div class="customer-info">
+                <h3 class="bottom-border">Kundinformation</h3>
+                <div><strong>Adress:</strong> <%= orderData.address %></div>
+                <div><strong>Postnummer:</strong> <%= orderData.zip %></div>
+                <div><strong>Stad:</strong> <%= orderData.city %></div>
+            </div>
+
+            <h3 class="bottom-border">Produkter</h3>
 
             <% orderData.products.forEach(item => { %>
                 <div class="item">

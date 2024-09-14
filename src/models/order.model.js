@@ -241,6 +241,12 @@ class Order {
         return rows;
     }
 
+    static async updateOrder(order_id, key, value) {
+        const sql = `UPDATE orders SET ${key} = ? WHERE order_id = ?`;
+        const [rows] = await pool.execute(sql, [value, order_id]);
+        return rows;
+    }
+
     static async updateOrderStatus(order_id, type_id) {
         const sql = 'UPDATE orders SET type_id = ? WHERE order_id = ?';
         const [rows] = await pool.execute(sql, [type_id, order_id]);

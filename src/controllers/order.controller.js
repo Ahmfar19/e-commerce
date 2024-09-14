@@ -536,7 +536,45 @@ const resendEmail = async (req, res) => {
     }
 };
 
+const resendShippedEmail = async (req, res) => {
+    try {
+        const { order_id, trackingNumber } = req.body;
+
+        if (trackingNumber) {
+            await Order.updateOrder(order_id, 'trackingNumber', String(trackingNumber));
+        }
+
+        const [products, orderDetails] = await Promise.all([
+            OrderItems.getItemsByOrderId(order_id),
+            Order.getById(order_id),
+        ]);
+
+        if (!orderDetails.length) {
+            return res.status(404).json({
+                ok: false,
+                statusCode: 'Not Found',
+                message: 'Order details not found',
+            });
+        }
+
+        const shipping_url = await Shipping.getByName(orderDetails[0].shipping_name);
+
+        const orderData = {
+            products,
+            shipping_url: shipping_url?.shipping_url || null,
+            ...orderDetails[0],
+        };
+
+        const templatePath = path.resolve(`public/orderTamplate/shipping.html`);
+        await sendOrderEmail(orderData, templatePath);
+        sendResponse(res, 200, 'Ok', 'Successfully resend Email', null, null);
+    } catch (error) {
+        sendResponse(res, 500, 'Internal Server Error', null, error.message || error, null);
+    }
+};
+
 module.exports = {
+    resendShippedEmail,
     createOrder,
     getAllOrders,
     deleteAllOrders,
