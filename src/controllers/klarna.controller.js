@@ -290,7 +290,12 @@ const cancelKlarnaOrder = async (req, res) => {
                     'ec_order_cancel_klarna_cancel_success',
                     'Klarna order successfully canceled. Order and product quantities updated.',
                     null,
-                    { payment_id: existingPayment.payment_id, status: 7, type_id: 3 }, // 7 - payment CANCELLED, 3 - order cancelled
+                    {
+                        payment_id: existingPayment.payment_id,
+                        status: 7,
+                        type_id: 3,
+                        type_name: 'ec_orderType_canceled',
+                    }, // 7 - payment CANCELLED, 3 - order cancelled
                 );
             } else {
                 return sendResponse(
@@ -372,7 +377,7 @@ const refundOrder = async (req, res, existingPayment) => {
                 'ec_order_cancel_klarna_refund_success',
                 'Order refunded successfully',
                 null,
-                { payment_id: existingPayment.payment_id, status: 6, type_id: 3 }, // 6 - payment REFUNDED, 3 - order cancelled
+                { payment_id: existingPayment.payment_id, status: 6, type_id: 3, type_name: 'ec_orderType_canceled' }, // 6 - payment REFUNDED, 3 - order cancelled
             );
         } else {
             return sendResponse(
