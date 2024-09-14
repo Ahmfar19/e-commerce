@@ -66,13 +66,6 @@ const putOrderItems = async (req, res) => {
         }
 
         if (updatedItems?.length) {
-            const { success, message, insufficientProducts } = await Product.checkQuantities(updatedItems);
-
-            if (!success) {
-                return sendResponse(res, 409, 'Conflict', message, null, insufficientProducts);
-            }
-
-            transaction = await sequelize.transaction();
             const newUpdatedItems = updatedItems.map((updatedItem) => {
                 return {
                     ...updatedItem,
@@ -80,6 +73,19 @@ const putOrderItems = async (req, res) => {
                     quantity: updatedItem.quantity - updatedItem.oldQuantity,
                 };
             });
+
+            const getItems = newUpdatedItems.filter((item) => item.quantity > 0);
+
+            const { success, message, insufficientProducts } = getItems?.length
+                ? await Product.checkQuantities(getItems)
+                : { success: true };
+
+            if (!success) {
+                return sendResponse(res, 409, 'Conflict', message, null, insufficientProducts);
+            }
+
+            transaction = await sequelize.transaction();
+
             await OrderItems.updateMulti(newUpdatedItems, transaction);
             await Order.updateProductQuantities(newUpdatedItems, transaction);
             await OrderItems.updateOrderByOrderItems(order_id, transaction);
