@@ -585,11 +585,13 @@ class Product {
           products.name,
           products.price,
           products.quantity,
+          categories.category_name,
           discounts.discount_value As discount,
           DATE_FORMAT(discounts.start_date, "%Y-%m-%d") As start_date,
           DATE_FORMAT(discounts.end_date, "%Y-%m-%d") As end_date
           FROM products
           INNER JOIN discounts ON products.discount_id = discounts.discount_id
+          INNER JOIN categories ON products.category_id = categories.category_id
           INNER JOIN units ON products.unit_id = units.unit_id 
           WHERE products.discount_id =?`;
         const [rows] = await pool.execute(sql, [discountId]);
