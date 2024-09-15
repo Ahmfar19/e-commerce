@@ -127,7 +127,7 @@ const receivePush = async (req, res) => {
         if (!response.ok) {
             // Klarna order not found - i should create it here
             const klarnaOrder = await klarnaModel.getOrder(klarna_order_id);
-            const orderData = unmigrateKlarnaStruct(klarnaOrder);
+            const orderData = await unmigrateKlarnaStruct(klarnaOrder);
             order_id = await createOrderFromKlarnaStruct(orderData);
         }
 
@@ -163,7 +163,7 @@ const createOrder = async (req, res) => {
             return sendResponse(res, 400, 'Klarna order status is not authorized', null, null, null);
         }
 
-        const orderData = unmigrateKlarnaStruct(klarnaOrder);
+        const orderData = await unmigrateKlarnaStruct(klarnaOrder);
         const order_id = await createOrderFromKlarnaStruct(orderData);
 
         if (!order_id) {

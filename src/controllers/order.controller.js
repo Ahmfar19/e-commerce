@@ -203,8 +203,6 @@ const createOrder = async (req, res) => {
         // Create the order object data
         const orderData = await createOrderData(req.body);
 
-        // console.error('orderData', orderData);
-
         if (!orderData) {
             return sendResponse(res, 400, 'Failed to create order data', null, null);
         }

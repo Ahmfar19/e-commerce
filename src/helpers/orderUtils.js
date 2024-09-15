@@ -154,6 +154,7 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
         ],
         merchant_data: JSON.stringify({
             customer_id: orderData.customer_id,
+            tax: tax
         }),
         order_lines: products.map(product => {
             let discountInOres = (product.discount || 0) * 100;
@@ -213,11 +214,17 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
     };
 };
 
-const unmigrateKlarnaStruct = (data) => {
+const unmigrateKlarnaStruct = async (data) => {
     const customer = data.billing_address;
     const order_lines = data.order_lines;
     const shipping_options = data.selected_shipping_option;
     const merchantData = JSON.parse(data.merchant_data || {});
+
+    let storeTax = merchantData.tax;
+    if (!storeTax) {
+        let [tax] = await StoreInfo.getTax();
+        storeTax = tax.tax_percentage;
+    }
 
     // Unmigrated customer data
     const unMigratedCustomer = {
@@ -231,35 +238,7 @@ const unmigrateKlarnaStruct = (data) => {
         phone: customer.phone,
     };
 
-    let order_date = new Date(data.created_at);
-    order_date = order_date.toLocaleString();
-
-    const totals = order_lines.reduce(
-        (acc, curr) => {
-            if (curr.type !== 'shipping_fee') {
-                acc.total_discount += curr.total_discount_amount;
-                acc.total_tax += curr.total_tax_amount;
-            }
-            return acc;
-        },
-        { total_discount: 0, total_tax: 0 },
-    );
-
-    // Calculate order details
-    const unMigratedOrder = {
-        customer_id: merchantData.customer_id,
-        type_id: 1,
-        date: order_date,
-        shipping_price: shipping_options.price / 100,
-        address: customer.street_address,
-        zip: customer.postal_code,
-        city: customer.city,
-        sub_total: (data.order_amount / 100) - ((shipping_options.price / 100) || 0),
-        tax: totals.total_tax / 100,
-        items_discount: totals.total_discount / 100,
-        total: data.order_amount / 100,
-    };
-
+    let total_discount = 0;
     // Unmigrated order items using reduce
     const unmigratedOrderItems = order_lines.reduce((acc, item) => {
         if (item.type !== 'shipping_fee') {
@@ -268,6 +247,9 @@ const unmigrateKlarnaStruct = (data) => {
             let quantity = item.quantity;
             let merchantData = item.merchant_data;
             let unitname = item.quantity_unit;
+
+            // Sum the order_lines total discount
+            total_discount += totalDiscount
 
             // Calculate discount per unit
             let discountPerUnit = totalDiscount / quantity;
@@ -309,6 +291,26 @@ const unmigrateKlarnaStruct = (data) => {
         }
         return acc;
     }, []);
+
+    let order_date = new Date(data.created_at);
+    order_date = order_date.toLocaleString();
+
+    const sub_total = (data.order_amount / 100) - ((shipping_options.price / 100) || 0)
+
+    // Calculate order details
+    const unMigratedOrder = {
+        customer_id: merchantData.customer_id,
+        type_id: 1,
+        date: order_date,
+        shipping_price: shipping_options.price / 100,
+        address: customer.street_address,
+        zip: customer.postal_code,
+        city: customer.city,
+        sub_total: sub_total,
+        tax: calculateVatAmount(sub_total, storeTax),
+        items_discount: total_discount,
+        total: data.order_amount / 100,
+    };
 
     return {
         customer: unMigratedCustomer,
