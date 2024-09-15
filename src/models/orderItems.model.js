@@ -122,9 +122,9 @@ class OrderItems {
                          discount = ?
                          WHERE item_id = ? AND order_id = ? AND product_id = ?`;
 
-            const priceAfterDiscount = item.price - (item.discount || 0);
-            const productPrice = priceAfterDiscount * item.orginalQuantity;
-            const totalDiscount = item.orginalQuantity * (item.discount || 0);
+            const priceAfterDiscount = (item.price - (item.discount || 0)).toFixed(2);
+            const productPrice = (priceAfterDiscount * item.orginalQuantity).toFixed(2);;
+            const totalDiscount = (item.orginalQuantity * (item.discount || 0)).toFixed(2);
 
             const values = [
                 item.product_name,
