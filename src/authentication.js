@@ -74,6 +74,15 @@ const isAuthorized = (req, res, next) => {
     if (!isProduction()) {
         return next();
     }
+
+    const whiteList = [
+        '/swish/paymentrequests/status',
+        '/klarna/paymentrequests/push',
+    ];
+    if (whiteList.includes(req.path)) {
+        return next();
+    }
+
     const reqIpAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     if (reqIpAddress !== req.session.ipAddress) {
         return res.status(401).json({ ok: false, message: 'Unauthorized' });
