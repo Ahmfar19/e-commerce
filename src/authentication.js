@@ -78,6 +78,7 @@ const isAuthorized = (req, res, next) => {
     const whiteList = [
         '/swish/paymentrequests/status',
         '/klarna/paymentrequests/push',
+        '/swish/refund/status'
     ];
     if (whiteList.includes(req.path)) {
         return next();
