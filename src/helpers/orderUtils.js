@@ -154,7 +154,7 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
         ],
         merchant_data: JSON.stringify({
             customer_id: orderData.customer_id,
-            tax: tax
+            tax: tax,
         }),
         order_lines: products.map(product => {
             let discountInOres = (product.discount || 0) * 100;
@@ -249,7 +249,7 @@ const unmigrateKlarnaStruct = async (data) => {
             let unitname = item.quantity_unit;
 
             // Sum the order_lines total discount
-            total_discount += totalDiscount
+            total_discount += totalDiscount;
 
             // Calculate discount per unit
             let discountPerUnit = totalDiscount / quantity;
@@ -295,7 +295,7 @@ const unmigrateKlarnaStruct = async (data) => {
     let order_date = new Date(data.created_at);
     order_date = order_date.toLocaleString();
 
-    const sub_total = (data.order_amount / 100) - ((shipping_options.price / 100) || 0)
+    const sub_total = (data.order_amount / 100) - ((shipping_options.price / 100) || 0);
 
     // Calculate order details
     const unMigratedOrder = {

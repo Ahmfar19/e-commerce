@@ -123,9 +123,9 @@ class OrderItems {
                          discount = ?
                          WHERE item_id = ? AND order_id = ? AND product_id = ?`;
 
-            const priceAfterDiscount = (item.price - (item.discount || 0)).toFixed(2);
-            const productPrice = (priceAfterDiscount * item.orginalQuantity).toFixed(2);
-            const totalDiscount = (item.orginalQuantity * (item.discount || 0)).toFixed(2);
+            const priceAfterDiscount = (item.price - (item.discount || 0));
+            const productPrice = (priceAfterDiscount * item.orginalQuantity);
+            const totalDiscount = (item.orginalQuantity * (item.discount || 0));
 
             const values = [
                 item.product_name,
@@ -178,8 +178,10 @@ class OrderItems {
     }
 
     static async updateOrderByOrderItems(order_id, transaction) {
-        const [tax] = await StoreInfo.getTax();
+        const [storeInfo] = await StoreInfo.getAll();
+
         const { shipping_price } = await Shipping.getShippingPrice();
+
         const selectSql = `
             SELECT 
                 SUM(price) AS sub_total, 
@@ -202,13 +204,13 @@ class OrderItems {
 
         const { sub_total, items_discount } = rows[0];
 
-        const vatAmount = calculateVatAmount(sub_total, tax.tax_percentage);
+        const vatAmount = calculateVatAmount(sub_total, storeInfo.tax_percentage);
 
         const updateSql = `
            UPDATE orders 
               SET 
               sub_total = ?, 
-              shipping_price = CASE WHEN sub_total >= 700 THEN 0 ELSE ${shipping_price} END,
+              shipping_price = CASE WHEN sub_total >= ${storeInfo.free_shipping} THEN 0 ELSE ${shipping_price} END,
               items_discount = ?, 
               total = ? + shipping_price,
               tax = ? 
