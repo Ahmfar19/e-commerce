@@ -9,6 +9,7 @@ const { roundToTwoDecimals, getSwedenTimestamp } = require('../helpers/utils');
 const config = require('config');
 
 const PRODUCTS_IMAGE_URL = config.get('PRODUCTS_IMAGE_URL');
+const PRODUCTS_NO_IMAGE_URL = config.get('PRODUCTS_NO_IMAGE_URL');
 const PRODUCTS_URL = config.get('PRODUCTS_URL');
 const CHECKOUT_URL = config.get('CHECKOUT_URL');
 const KLARNA_CALLBACK = config.get('KLARNA_CALLBACK');
@@ -114,6 +115,7 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
     const shippingPrice = Math.round(orderData.shipping_price * 100);
     const shippingInfo = orderData.shipping_name + ' 2-' + orderData.shipping_time + ' Dagar';
 
+    // console.error(orderData);
     return {
         purchase_country: 'SE',
         purchase_currency: 'SEK',
@@ -183,10 +185,16 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
 
             // Process the product image URL
             let productImage = product.image;
-            if (productImage) {
-                productImage = JSON.parse(productImage);
-                productImage = productImage[0];
-                productImage = `${PRODUCTS_IMAGE_URL}${product.product_id}/${productImage}`;
+            try {
+                if (productImage && productImage !== 'undefined') {
+                    productImage = JSON.parse(productImage);
+                    productImage = productImage[0];
+                    productImage = `${PRODUCTS_IMAGE_URL}${product.product_id}/${productImage}`;
+                } else {
+                    productImage = PRODUCTS_NO_IMAGE_URL;
+                }
+            } catch {
+                productImage = PRODUCTS_NO_IMAGE_URL;
             }
 
             return {

@@ -47,12 +47,12 @@ async function swishPaymentRequests(data) {
     // https://webhook.site/3c565038-5dfb-4ff8-add2-c76b0052b6bc
     try {
         const requestBody = {
-            payeePaymentReference: '0123456789',
             callbackUrl: SWISH_CALLBACK,
             payeeAlias: swishConfig.payeeAlias,
             payerAlias: data.payerAlias,
             amount: data.amount,
             currency: 'SEK',
+            payeePaymentReference: data.order_id,
             message: paymentMessage,
         };
 

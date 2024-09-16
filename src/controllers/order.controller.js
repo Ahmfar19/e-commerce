@@ -153,12 +153,12 @@ const handleSwishPayment = async (payment, order, customerId, transaction) => {
     if (!payment.phone) {
         return { error: true, statusCode: 401, message: 'No valid phone number.' };
     }
-
     payment.phone = normalizePhoneNumber(payment.phone);
     const payData = {
         payerAlias: payment.phone,
         amount: Number(order.total).toFixed(2),
         message: payment.message || '',
+        order_id: order.order_id,
     };
 
     const paymentResponse = await swishPaymentRequests(payData);

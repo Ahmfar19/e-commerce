@@ -213,8 +213,43 @@ async function refundKlarnaOrder(orderId, refundDetails) {
     }
 }
 
+// Update authorization for a Klarna order
+async function updateKlarnaAuthorization(orderId, authorizationDetails) {
+    try {
+        const response = await axios.patch(
+            `${KLARNA_API_URL}/ordermanagement/v1/orders/${orderId}/authorization`,
+            authorizationDetails,
+            {
+                auth: KLARNA_AUTH,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Klarna-Idempotency-Key': orderId, // Unique key to avoid duplicate requests
+                },
+            },
+        );
+
+        if (response.status === 200 || response.status === 204) {
+            return {
+                success: true,
+                data: response.data,
+            };
+        } else {
+            return {
+                success: false,
+                message: 'Failed to update Klarna authorization',
+            };
+        }
+    } catch (error) {
+        return {
+            success: false,
+            message: error.response ? error.response.data : error.message,
+        };
+    }
+}
+
 module.exports = {
     createKlarnaSession,
+    updateKlarnaAuthorization,
     getOrder,
     getOrderStatus,
     cancelKlarnaOrder,
