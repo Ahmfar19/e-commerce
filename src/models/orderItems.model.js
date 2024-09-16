@@ -1,5 +1,6 @@
 const { pool, sequelize } = require('../databases/mysql.db');
 const { calculateVatAmount } = require('../helpers/utils');
+const Shipping = require('./shipping.model');
 const StoreInfo = require('./storeInfo.model');
 
 class OrderItems {
@@ -123,7 +124,7 @@ class OrderItems {
                          WHERE item_id = ? AND order_id = ? AND product_id = ?`;
 
             const priceAfterDiscount = (item.price - (item.discount || 0)).toFixed(2);
-            const productPrice = (priceAfterDiscount * item.orginalQuantity).toFixed(2);;
+            const productPrice = (priceAfterDiscount * item.orginalQuantity).toFixed(2);
             const totalDiscount = (item.orginalQuantity * (item.discount || 0)).toFixed(2);
 
             const values = [
@@ -178,7 +179,7 @@ class OrderItems {
 
     static async updateOrderByOrderItems(order_id, transaction) {
         const [tax] = await StoreInfo.getTax();
-
+        const { shipping_price } = await Shipping.getShippingPrice();
         const selectSql = `
             SELECT 
                 SUM(price) AS sub_total, 
@@ -204,14 +205,15 @@ class OrderItems {
         const vatAmount = calculateVatAmount(sub_total, tax.tax_percentage);
 
         const updateSql = `
-            UPDATE orders 
-            SET 
-                sub_total = ?, 
-                items_discount = ?, 
-                total = ? + shipping_price,
-                tax = ?
-            WHERE order_id = ?
-        `;
+           UPDATE orders 
+              SET 
+              sub_total = ?, 
+              shipping_price = CASE WHEN sub_total >= 700 THEN 0 ELSE ${shipping_price} END,
+              items_discount = ?, 
+              total = ? + shipping_price,
+              tax = ? 
+              WHERE order_id = ?;
+           `;
 
         const total = sub_total;
 
