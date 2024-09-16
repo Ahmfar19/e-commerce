@@ -3,6 +3,7 @@ const { sendResponse } = require('../helpers/apiResponse');
 const Product = require('../models/product.model');
 const Order = require('../models/order.model');
 const { sequelize } = require('../databases/mysql.db');
+const { createRefundRequest } = require('./swish.controller');
 
 const addProductItems = async (req, res) => {
     let transaction = null;
@@ -47,22 +48,30 @@ const getOrderItems = async (req, res) => {
 
 const putOrderItems = async (req, res) => {
     let transaction = null;
-
     try {
         const { deletedItems, updatedItems, order_id } = req.body;
 
         if (!deletedItems.length && !updatedItems.length) {
-            return sendResponse(res, 400, 'Bad Request', 'Invalid request body.', null, null);
+            return sendResponse(
+                res,
+                400,
+                'Bad Request',
+                'Invalid request body.',
+                'ec_Invalid_request_parameters',
+                null,
+            );
         }
+
+        let refundAmount = 0;
 
         if (deletedItems?.length) {
             transaction = await sequelize.transaction();
 
+            refundAmount = deletedItems.reduce((acc, product) => acc += +product.price, 0);
+
             await OrderItems.deleteMulti(deletedItems, transaction);
             await Order.updateProductQuantities(deletedItems, transaction);
             await OrderItems.updateOrderByOrderItems(order_id, transaction);
-
-            await transaction.commit();
         }
 
         if (updatedItems?.length) {
@@ -74,6 +83,13 @@ const putOrderItems = async (req, res) => {
                 };
             });
 
+            refundAmount += newUpdatedItems.reduce((acc, product) => {
+                if (product.quantity < 0) {
+                    acc += (product.quantity * -1) * product.price;
+                }
+                return acc;
+            }, 0);
+
             const getItems = newUpdatedItems.filter((item) => item.quantity > 0);
 
             const { success, message, insufficientProducts } = getItems?.length
@@ -84,17 +100,27 @@ const putOrderItems = async (req, res) => {
                 return sendResponse(res, 409, 'Conflict', message, null, insufficientProducts);
             }
 
-            transaction = await sequelize.transaction();
+            if (!transaction) {
+                transaction = await sequelize.transaction();
+            }
 
             await OrderItems.updateMulti(newUpdatedItems, transaction);
             await Order.updateProductQuantities(newUpdatedItems, transaction);
             await OrderItems.updateOrderByOrderItems(order_id, transaction);
-            await transaction.commit();
         }
+
+        if (refundAmount) {
+            // Make a refund with this amount
+            createRefundRequest(req, res, refundAmount, transaction);
+            return;
+        } else {
+            transaction.commit();
+        }
+
         sendResponse(res, 202, 'Accepted', 'Successfully edit a items.', null, null);
     } catch (err) {
         await transaction?.rollback();
-        sendResponse(res, 500, 'Internal Server Error', null, err.message || err, null);
+        sendResponse(res, 500, null, err.message || err, 'ec_server_fail', null);
     }
 };
 

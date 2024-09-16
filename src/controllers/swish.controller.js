@@ -2,6 +2,7 @@ const { sendResponse } = require('../helpers/apiResponse');
 const Payments = require('../models/payments.model');
 const OrderItemsModel = require('../models/orderItems.model');
 const OrderModel = require('../models/order.model');
+const PaymentRefundModel = require('../models/paymentRefund.model');
 const { commitOrder } = require('../helpers/orderUtils');
 const { deleteById } = require('../models/order.model');
 const {
@@ -22,8 +23,6 @@ const PAYMENT_STATUS = {
 // Create Payment Request
 async function createPaymentRequest(req, res) {
     const data = req.body;
-
-    console.error('data', data);
     const paymentRequest = await swishPaymentRequests(data);
 
     if (paymentRequest) {
@@ -95,33 +94,37 @@ async function fetchPaymentRequest(req, res) {
 }
 
 // Create Refund
-async function createRefundRequest(req, res) {
+async function createRefundRequest(req, res, subRefund, transaction) {
     const { payment_id } = req.body;
 
     try {
         if (!payment_id) {
-            return sendResponse(res, 404, 'Error', 'Payment not found.', 'ec_order_cancel_klarna_error', null);
+            transaction?.rollback();
+            return sendResponse(res, 404, 'Error', 'Invalid request parameter', 'ec_order_cancel_klarna_error', null);
         }
 
         const [payment] = await Payments.getPaymentsByPaymentId(payment_id);
         if (!payment) {
+            transaction?.rollback();
             return sendResponse(res, 404, 'Error', 'Payment not found.', 'ec_order_cancel_klarna_error', null);
         }
 
-        if (payment.status !== 2) {
+        if (payment.status !== 2 && payment.status !== 8) { // The payment is not in a paid/subrefunded state
+            transaction?.rollback();
             return sendResponse(
                 res,
                 400,
                 'Error',
-                'Payment not in a paid state.',
+                'Payment not in a paid/subrefunded state.',
                 'ec_order_cancel_order_notPaid',
                 null,
             );
         }
 
-        const paymentData = await getPaymentRequests(payment_id);
+        let paymentData = await getPaymentRequests(payment_id);
 
-        if (!paymentData) {
+        if (!paymentData || (+paymentData.payeePaymentReference != +payment.order_id)) {
+            transaction?.rollback();
             return sendResponse(
                 res,
                 404,
@@ -132,19 +135,49 @@ async function createRefundRequest(req, res) {
             );
         }
 
-        const refundRequest = await createRefund(paymentData);
+        let haveSubRefund = false;
+        if (subRefund && subRefund > 0 && (+subRefund <= +paymentData.amount)) {
+            haveSubRefund = true;
+            paymentData.amount = +subRefund;
+        }
 
+        const refundRequest = await createRefund(paymentData);
         if (refundRequest && refundRequest.status === PAYMENT_STATUS.CREATED) {
-            await Payments.updatePaymentsStatusAndPaymentId({
-                id: payment.id,
-                payment_id: refundRequest.id,
-                status: 2,
+            const newRefundEntry = new PaymentRefundModel({
+                status: 1, // PENDING
+                order_id: payment.order_id,
+                refund_id: refundRequest.id,
+                amount: paymentData.amount,
             });
+
+            const intertedId = await newRefundEntry.save(transaction);
+
+            if (!intertedId) {
+                transaction?.rollback();
+                return sendResponse(
+                    res,
+                    404,
+                    'Error',
+                    'Couldnt create the a refund.',
+                    'ec_order_cancel_klarna_error',
+                    null,
+                );
+            }
+
+            transaction?.commit();
+
+            await Payments.updatePaymentsStatusAndPaymentId({
+                payment_id,
+                status: haveSubRefund ? 8 : 6, // 8 - SUB_REFUNDEN, 6 - Refunded
+                id: payment.id,
+            });
+
             return sendResponse(res, 201, 'Created', 'Refund request created successfully.', null, {
                 payment_id: refundRequest.id,
             });
         }
 
+        transaction?.rollback();
         return sendResponse(
             res,
             500,
@@ -154,6 +187,7 @@ async function createRefundRequest(req, res) {
             null,
         );
     } catch (error) {
+        transaction?.rollback();
         return sendResponse(
             res,
             500,
@@ -170,32 +204,31 @@ async function receiveRefundStatus(req, res) {
         const { id, status } = req.body;
 
         if (id && status === PAYMENT_STATUS.PAID) {
-            const [payment] = await Payments.getPaymentsByPaymentId(id);
+            const [refundPayment] = await PaymentRefundModel.getByRefundId(id);
 
-            if (!payment) {
-                return sendResponse(res, 404, 'Error', 'Payment not found.', null, null);
+            if (!refundPayment) {
+                return sendResponse(res, 404, 'Error', 'RefundPayment not found.', null, null);
             }
 
-            if (payment.status !== 2) {
-                return sendResponse(res, 400, 'Error', 'Payment not in a paid state.', null, null);
+            if (refundPayment.status !== 1) {
+                return sendResponse(res, 400, 'Error', 'The refund is alredy done.', null, null);
             }
 
-            const success = await Payments.updatePaymentsStatusAndPaymentId({
-                id: payment.id,
-                payment_id: id,
-                status: 6, // Refunded
+            const success = await PaymentRefundModel.updateStatusByRefundId({
+                refund_id: id,
+                status: 2, // PAID
             });
 
             if (!success) {
-                return sendResponse(res, 500, 'Error', 'Failed to update payment with refund ID.', null, null);
+                return sendResponse(res, 500, 'Error', 'Failed to update RefunPayment with refund ID.', null, null);
             }
 
             // update the order status and the product qty
-            const products = await OrderItemsModel.getItemsByOrderId(payment.order_id);
+            const products = await OrderItemsModel.getItemsByOrderId(refundPayment.order_id);
             const updatedProducts = products?.map((product) => {
                 return { ...product, quantity: -product.quantity };
             });
-            await OrderModel.updateOrderStatus(payment.order_id, 3); // 3 Cancelled
+            await OrderModel.updateOrderStatus(refundPayment.order_id, 3); // 3 Cancelled
             await OrderModel.updateProductQuantities(updatedProducts);
 
             return sendResponse(res, 201, 'Created', 'Refund request created successfully.', null, null);
