@@ -95,23 +95,20 @@ async function fetchPaymentRequest(req, res) {
 }
 
 // Create Refund
-async function createRefundRequest(req, res, subRefund, transaction) {
+async function createRefundRequest(req, res) {
     const { payment_id } = req.body;
 
     try {
         if (!payment_id) {
-            transaction?.rollback();
             return sendResponse(res, 404, 'Error', 'Payment not found.', 'ec_order_cancel_klarna_error', null);
         }
 
         const [payment] = await Payments.getPaymentsByPaymentId(payment_id);
         if (!payment) {
-            transaction?.rollback();
             return sendResponse(res, 404, 'Error', 'Payment not found.', 'ec_order_cancel_klarna_error', null);
         }
 
         if (payment.status !== 2) {
-            transaction?.rollback();
             return sendResponse(
                 res,
                 400,
@@ -122,10 +119,9 @@ async function createRefundRequest(req, res, subRefund, transaction) {
             );
         }
 
-        let paymentData = await getPaymentRequests(payment_id);
+        const paymentData = await getPaymentRequests(payment_id);
 
         if (!paymentData) {
-            transaction?.rollback();
             return sendResponse(
                 res,
                 404,
@@ -136,10 +132,6 @@ async function createRefundRequest(req, res, subRefund, transaction) {
             );
         }
 
-        if (subRefund && subRefund > 0 && (+subRefund <= +paymentData.amount)) {
-            paymentData.amount = +subRefund;
-        }
-
         const refundRequest = await createRefund(paymentData);
 
         if (refundRequest && refundRequest.status === PAYMENT_STATUS.CREATED) {
@@ -148,13 +140,11 @@ async function createRefundRequest(req, res, subRefund, transaction) {
                 payment_id: refundRequest.id,
                 status: 2,
             });
-            transaction?.commit();
             return sendResponse(res, 201, 'Created', 'Refund request created successfully.', null, {
                 payment_id: refundRequest.id,
             });
         }
 
-        transaction?.rollback();
         return sendResponse(
             res,
             500,
@@ -164,7 +154,6 @@ async function createRefundRequest(req, res, subRefund, transaction) {
             null,
         );
     } catch (error) {
-        transaction?.rollback();
         return sendResponse(
             res,
             500,

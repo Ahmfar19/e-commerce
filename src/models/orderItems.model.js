@@ -14,6 +14,8 @@ class OrderItems {
         this.discount = options.discount;
         this.image = options.image;
         this.quantity = options.quantity;
+        this.returned = options.returned || false;
+        this.refundedQuantity = options.refundedQuantity || 0;
     }
 
     async save() {
@@ -115,23 +117,26 @@ class OrderItems {
         if (!Array.isArray(product_items) || product_items.length === 0) {
             throw new Error('Invalid order items');
         }
+
         const updatePromises = product_items.map(async (item) => {
             const sql = `UPDATE order_items SET 
                          product_name = ?,
                          price = ?,
                          quantity = ?,
-                         discount = ?
+                         discount = ?,
+                         refundedQuantity = refundedQuantity + ?
                          WHERE item_id = ? AND order_id = ? AND product_id = ?`;
 
             const priceAfterDiscount = item.price - (item.discount || 0);
             const productPrice = priceAfterDiscount * item.orginalQuantity;
             const totalDiscount = item.orginalQuantity * (item.discount || 0);
-
+            const refundedQuantity = (item.quantity) * (-1);
             const values = [
                 item.product_name,
                 productPrice,
                 item.orginalQuantity,
                 totalDiscount,
+                refundedQuantity,
                 item.item_id,
                 item.order_id,
                 item.product_id,
@@ -161,7 +166,9 @@ class OrderItems {
 
         const itemIds = product_items.map(item => item.item_id);
 
-        const sql = `DELETE FROM order_items WHERE item_id IN (?)`;
+        const sql = `UPDATE order_items
+                     SET returned = true
+                     WHERE item_id IN (?)`;
 
         try {
             if (transaction) {
@@ -187,7 +194,8 @@ class OrderItems {
                 SUM(price) AS sub_total, 
                 SUM(discount) AS items_discount
             FROM order_items 
-            WHERE order_id = ?
+            WHERE order_id = ? 
+            AND returned = false;
         `;
         let rows = [];
         if (transaction) {
