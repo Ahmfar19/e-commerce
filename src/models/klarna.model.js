@@ -197,7 +197,7 @@ async function refundKlarnaOrder(orderId, refundDetails) {
                 auth: KLARNA_AUTH,
                 headers: {
                     'Content-Type': 'application/json',
-                    'Klarna-Idempotency-Key': orderId, // Unique key to avoid duplicate requests
+                    // 'Klarna-Idempotency-Key': orderId,
                 },
             },
         );
@@ -223,11 +223,9 @@ async function updateKlarnaAuthorization(orderId, authorizationDetails) {
                 auth: KLARNA_AUTH,
                 headers: {
                     'Content-Type': 'application/json',
-                    'Klarna-Idempotency-Key': orderId, // Unique key to avoid duplicate requests
                 },
             },
         );
-
         if (response.status === 200 || response.status === 204) {
             return {
                 success: true,
@@ -247,7 +245,40 @@ async function updateKlarnaAuthorization(orderId, authorizationDetails) {
     }
 }
 
+// Update shipping information for a captured Klarna order
+async function updateKlarnaShippingInfo(orderId, shippingDetails) {
+    try {
+        const response = await axios.post(
+            `${KLARNA_API_URL}/ordermanagement/v1/orders/${orderId}/shipping-info`,
+            shippingDetails,
+            {
+                auth: KLARNA_AUTH,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            },
+        );
+        if (response.status === 204) {
+            return {
+                success: true,
+                message: 'Shipping information updated successfully',
+            };
+        } else {
+            return {
+                success: false,
+                message: 'Failed to update Klarna shipping information',
+            };
+        }
+    } catch (error) {
+        return {
+            success: false,
+            message: error.response ? error.response.data : error.message,
+        };
+    }
+}
+
 module.exports = {
+    updateKlarnaShippingInfo,
     createKlarnaSession,
     updateKlarnaAuthorization,
     getOrder,

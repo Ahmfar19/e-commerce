@@ -4,6 +4,7 @@ const Product = require('../models/product.model');
 const Order = require('../models/order.model');
 const { sequelize } = require('../databases/mysql.db');
 const { createRefundRequest } = require('./swish.controller');
+const { updateKlarnaOrder } = require('./klarna.controller');
 
 const addProductItems = async (req, res) => {
     let transaction = null;
@@ -48,8 +49,9 @@ const getOrderItems = async (req, res) => {
 
 const putOrderItems = async (req, res) => {
     let transaction = null;
+
     try {
-        const { deletedItems, updatedItems, order_id } = req.body;
+        const { payment_id, deletedItems, updatedItems, order_id, payment_type_id } = req.body;
 
         if (!deletedItems.length && !updatedItems.length) {
             return sendResponse(
@@ -63,7 +65,7 @@ const putOrderItems = async (req, res) => {
         }
 
         let refundAmount = 0;
-
+        let newSubTotal = 0;
         if (deletedItems?.length) {
             transaction = await sequelize.transaction();
 
@@ -71,7 +73,7 @@ const putOrderItems = async (req, res) => {
 
             await OrderItems.deleteMulti(deletedItems, transaction);
             await Order.updateProductQuantities(deletedItems, transaction);
-            await OrderItems.updateOrderByOrderItems(order_id, transaction);
+            newSubTotal = await OrderItems.updateOrderByOrderItems(order_id, transaction);
         }
 
         if (updatedItems?.length) {
@@ -106,12 +108,22 @@ const putOrderItems = async (req, res) => {
 
             await OrderItems.updateMulti(newUpdatedItems, transaction);
             await Order.updateProductQuantities(newUpdatedItems, transaction);
-            await OrderItems.updateOrderByOrderItems(order_id, transaction);
+            newSubTotal = await OrderItems.updateOrderByOrderItems(order_id, transaction);
         }
 
-        if (refundAmount) {
-            // Make a refund with this amount
-            createRefundRequest(req, res, refundAmount, transaction);
+        if (refundAmount && newSubTotal) {
+            // When Swish
+            if (payment_type_id === 2) {
+                // Make a refund with this amount
+                createRefundRequest(req, res, refundAmount, transaction);
+            }
+            // When Klarna
+            if (payment_type_id === 3) {
+                req.body.klarna_order_id = payment_id;
+                req.body.refundAmount = refundAmount;
+                req.body.newSubTotal = newSubTotal;
+                updateKlarnaOrder(req, res, transaction);
+            }
             return;
         } else {
             transaction.commit();
