@@ -223,11 +223,9 @@ async function updateKlarnaAuthorization(orderId, authorizationDetails) {
                 auth: KLARNA_AUTH,
                 headers: {
                     'Content-Type': 'application/json',
-                    'Klarna-Idempotency-Key': orderId, // Unique key to avoid duplicate requests
                 },
             },
         );
-
         if (response.status === 200 || response.status === 204) {
             return {
                 success: true,

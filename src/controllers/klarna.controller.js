@@ -5,6 +5,8 @@ const Payments = require('../models/payments.model');
 const OrderModel = require('../models/order.model.js');
 const OrderItemsModel = require('../models/orderItems.model');
 const { sendResponse } = require('../helpers/apiResponse');
+const { calculateVatAmount } = require('../helpers/utils.js');
+const StoreInfo = require('../models/storeInfo.model');
 
 // Read here for more information
 // https://docs.klarna.com/klarna-checkout/additional-resources/confirm-purchase/
@@ -271,10 +273,9 @@ const cancelKlarnaOrder = async (req, res) => {
             );
         }
 
-        // Not captured yet - just cancel it and handel order/qty update
+        // Not captured yet - just cancel it
         if (klarnaOrder.status === ORDER_STATUS.AUTHORIZED) {
             const success = await klarnaModel.cancelKlarnaOrder(klarna_order_id);
-
             if (success) {
                 await Payments.updatePaymentsStatusAndPaymentId({
                     id: existingPayment.id,
@@ -309,7 +310,7 @@ const cancelKlarnaOrder = async (req, res) => {
             }
         } else if (klarnaOrder.status === ORDER_STATUS.CAPTURED) {
             // We need to make a refund here
-            return refundOrder(req, res, existingPayment);
+            return refundOrder(req, res, klarnaOrder, existingPayment);
         } else {
             return sendResponse(
                 res,
@@ -332,7 +333,154 @@ const cancelKlarnaOrder = async (req, res) => {
     }
 };
 
-const refundOrder = async (req, res, existingPayment) => {
+const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, newAmount) => {
+    let orderLines = klarnaOrder.order_lines;
+
+    const merchantData = JSON.parse(klarnaOrder.merchant_data || {});
+    const newAmountInOre = Math.round(newAmount * 100);
+
+    klarnaOrder.order_amount = newAmountInOre;
+
+    let storeTax = merchantData.tax;
+    if (!storeTax) {
+        let [tax] = await StoreInfo.getTax();
+        storeTax = tax.tax_percentage;
+    }
+
+    // console.error('klarnaOrder.id', klarnaOrder.id);
+    orderLines = orderLines.reduce((acc, item) => {
+        // Keep the item if it's a shipping fee
+        if (item.type === 'shipping_fee') {
+            acc.push(item);
+            return acc; // Ensure accumulator is returned
+        }
+
+        if (deletedItems?.length) {
+            const isDeleted = deletedItems.find(deletedItem => +deletedItem.product_id === +item.reference);
+
+            if (isDeleted) {
+                return acc; // Skip this item but return the accumulator
+            }
+        }
+
+        if (updatedItems?.length) {
+            const isUpdated = updatedItems.find(updatedItem => +updatedItem.product_id === +item.reference);
+
+            if (isUpdated) {
+                let discountInOres = (isUpdated.discount || 0) * 100;
+                let productPriceInOres = isUpdated.price * 100;
+
+                let quantityInKg = isUpdated.quantity;
+
+                // Calculate unit price in öre before discount
+                let unitPriceInOres = productPriceInOres;
+
+                // If the product is measured in grams rather than kilograms
+                if (isUpdated.unit_name !== 'kg') {
+                    unitPriceInOres = unitPriceInOres / 1000;
+                    discountInOres = discountInOres / 1000;
+                    quantityInKg = quantityInKg * 1000;
+                }
+                const totalAmountAfterDiscount = (unitPriceInOres - discountInOres) * quantityInKg;
+
+                // Calculate tax rate and total tax amount
+                const totalTaxAmount = calculateVatAmount(totalAmountAfterDiscount, storeTax);
+                const totalDiscountAmount = discountInOres * quantityInKg;
+
+                // Update the quantity and price
+                item.total_discount_amount = totalDiscountAmount;
+                item.total_tax_amount = totalTaxAmount;
+                item.quantity = quantityInKg;
+                item.total_amount = totalAmountAfterDiscount;
+                acc.push(item);
+                return acc; // Skip this item but return the accumulator
+            }
+        }
+        acc.push(item);
+        return acc; // Always return acc to avoid undefined
+    }, []);
+    klarnaOrder.order_lines = orderLines;
+    return klarnaOrder;
+};
+
+const updateKlarnaOrder = async (req, res, transaction) => {
+    const { klarna_order_id, newSubTotal, refundAmount, deletedItems, updatedItems } = req.body;
+
+    try {
+        const [existingPayment] = await Payments.getPaymentsByPaymentId(klarna_order_id);
+        if (!existingPayment) {
+            transaction?.rollback();
+            return sendResponse(res, 404, 'Error', 'Payment not found.', 'ec_order_cancel_klarna_error', null);
+        }
+
+        // Get the order status from the ordermanagment
+        const klarnaOrder = await klarnaModel.getOrder(klarna_order_id);
+
+        if (klarnaOrder.status === ORDER_STATUS.CANCELLED) {
+            transaction?.rollback();
+            return sendResponse(
+                res,
+                400,
+                'Error',
+                'Klarna order is already cancelled',
+                'ec_order_cancel_klarna_cancel_alreadyCanceld',
+                null,
+            );
+        }
+
+        // Not captured yet - just cancel it and handel order/qty update
+        if (klarnaOrder.status === ORDER_STATUS.AUTHORIZED) {
+            // Updatre the klarna not captured order
+            if (refundAmount && newSubTotal) {
+                if (!deletedItems?.length && !updatedItems?.length) {
+                    transaction?.rollback();
+                    return sendResponse(
+                        res,
+                        400,
+                        'Bad Request',
+                        'Invalid request body.',
+                        'ec_Invalid_request_parameters',
+                        null,
+                    );
+                }
+                const updatedKlarnaOrder = await updateKlarnaOrderLines(
+                    klarnaOrder,
+                    deletedItems,
+                    updatedItems,
+                    newSubTotal,
+                );
+
+                const updateResult = await klarnaModel.updateKlarnaAuthorization(klarna_order_id, updatedKlarnaOrder);
+                if (updateResult.success) {
+                    transaction?.commit();
+                    return sendResponse(res, 200, 'Klarna order has been updated', 'Success', null, updatedKlarnaOrder);
+                } else {
+                    transaction?.rollback();
+                }
+            }
+        }
+
+        return sendResponse(
+            res,
+            400,
+            'Error',
+            'Klarna order is already cancelled',
+            'ec_order_cancel_klarna_cancel_alreadyCanceld',
+            null,
+        );
+    } catch (error) {
+        return sendResponse(
+            res,
+            500,
+            error.message,
+            'Failed to cancel Klarna order',
+            'ec_order_cancel_klarna_error',
+            null,
+        );
+    }
+};
+
+const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
     const { klarna_order_id } = req.body;
 
     // Already refunded
@@ -341,8 +489,6 @@ const refundOrder = async (req, res, existingPayment) => {
     }
 
     try {
-        const klarnaOrder = await klarnaModel.getOrder(klarna_order_id);
-
         // Prepare capture details
         const refundDetails = {
             refunded_amount: klarnaOrder.order_amount,
@@ -370,7 +516,9 @@ const refundOrder = async (req, res, existingPayment) => {
                 payment_id: existingPayment.payment_id,
                 status: 6, // REFUNDED
             });
+
             await updateOrderAfterCancelation(existingPayment.order_id);
+
             return sendResponse(
                 res,
                 200,
@@ -401,8 +549,37 @@ const refundOrder = async (req, res, existingPayment) => {
     }
 };
 
+const updateKlarnaAuthorization = async (req, res) => {
+    const { orderId } = req.params;
+    const authorizationDetails = req.body; // Assuming the details are sent in the request body
+
+    try {
+        // Update authorization for the given order ID
+        const result = await klarnaModel.updateKlarnaAuthorization(orderId, authorizationDetails);
+
+        if (result.success) {
+            return res.status(200).json({
+                message: 'Authorization updated successfully',
+                data: result.data,
+            });
+        } else {
+            return res.status(500).json({
+                message: 'Failed to update authorization',
+                error: result.message,
+            });
+        }
+    } catch (error) {
+        return res.status(500).json({
+            message: 'An error occurred while updating authorization',
+            error: error.message,
+        });
+    }
+};
+
 module.exports = {
+    updateKlarnaOrder,
     createOrder,
+    updateKlarnaAuthorization,
     klarna_paymentrequests,
     cancelKlarnaOrder,
     getOrder,

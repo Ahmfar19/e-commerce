@@ -228,16 +228,14 @@ class OrderItems {
         const total = sub_total;
 
         if (transaction) {
-            const [result] = await sequelize.query(updateSql, {
+            await sequelize.query(updateSql, {
                 replacements: [sub_total, items_discount, total, vatAmount, order_id],
                 transaction,
             });
-
-            return result;
         } else {
-            const [result] = await pool.execute(updateSql, [sub_total, items_discount, total, order_id]);
-            return result;
+            await pool.execute(updateSql, [sub_total, items_discount, total, order_id]);
         }
+        return total;
     }
 }
 
