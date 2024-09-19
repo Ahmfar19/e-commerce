@@ -5,7 +5,7 @@ const StoreInfo = require('../models/storeInfo.model');
 const OrderModel = require('../models/order.model');
 const OrderItemsModel = require('../models/orderItems.model');
 const { sendHtmlEmail } = require('../controllers/sendEmail.controller');
-const { roundToTwoDecimals } = require('../helpers/utils');
+const { roundToTwoDecimals, getSwedenTimestamp } = require('../helpers/utils');
 const config = require('config');
 
 const PRODUCTS_IMAGE_URL = config.get('PRODUCTS_IMAGE_URL');
@@ -292,16 +292,13 @@ const unmigrateKlarnaStruct = async (data) => {
         return acc;
     }, []);
 
-    let order_date = new Date(data.created_at);
-    order_date = order_date.toLocaleString();
-
     const sub_total = (data.order_amount / 100) - ((shipping_options.price / 100) || 0);
 
     // Calculate order details
     const unMigratedOrder = {
         customer_id: merchantData.customer_id,
         type_id: 1,
-        date: order_date,
+        date: getSwedenTimestamp(),
         shipping_price: shipping_options.price / 100,
         address: customer.street_address,
         zip: customer.postal_code,
