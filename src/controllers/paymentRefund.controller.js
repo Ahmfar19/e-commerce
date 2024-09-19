@@ -85,7 +85,7 @@ const deleteRefund = async (req, res) => {
 // Sum total amount for a specific order ID
 const sumRefundAmountByOrderId = async (req, res) => {
     try {
-        const order_id = req.params.order_id;
+        const order_id = req.params.id;
         const totalAmount = await PaymentRefund.sumAmountByOrderId(order_id);
 
         sendResponse(res, 200, 'Ok', `Successfully summed the amount for order_id: ${order_id}.`, null, {
@@ -102,5 +102,5 @@ module.exports = {
     createRefund,
     updateRefund,
     deleteRefund,
-    sumRefundAmountByOrderId, // Export the new function
+    sumRefundAmountByOrderId,
 };

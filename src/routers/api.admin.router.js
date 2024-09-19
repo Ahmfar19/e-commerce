@@ -20,6 +20,7 @@ const discountsController = require('../controllers/discounts.controller');
 const swishController = require('../controllers/swish.controller');
 const klarnaController = require('../controllers/klarna.controller');
 const orderItemsController = require('../controllers/orderItems.controller');
+const paymentRefundController = require('../controllers/paymentRefund.controller');
 
 const uploadUser = multer({
     dest: path.join(__dirname, 'public/users'),
@@ -41,6 +42,9 @@ router.post('/klarna/order/cancel', klarnaController.cancelKlarnaOrder);
 router.get('/klarna/order/:orderId/captures', klarnaController.getOrderCaptures);
 router.post('/klarna/order/capture', klarnaController.captureOrder);
 router.post('/klarna/paymentrequests/acknowledgeOrder', klarnaController.acknowledgeKlarnaCheckoutOrder);
+
+// payment_refunde
+router.get('/payment_refunde/:id/total-amount', paymentRefundController.sumRefundAmountByOrderId);
 
 // Customers
 router.get('/customers', customerController.getUsers);
