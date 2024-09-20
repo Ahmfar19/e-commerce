@@ -178,6 +178,12 @@ class Order {
         return rows;
     }
 
+    static async getOrder(id) {
+        const sql = `SELECT * FROM orders where order_id = ?`;
+        const [rows] = await pool.execute(sql, [id]);
+        return rows;
+    }
+
     static async getById(id) {
         const sql = `SELECT 
             orders.*,

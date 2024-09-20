@@ -95,7 +95,7 @@ async function fetchPaymentRequest(req, res) {
 
 // Create Refund
 async function createRefundRequest(req, res, subRefund, transaction) {
-    const { payment_id } = req.body;
+    const { payment_id, order_id } = req.body;
 
     try {
         if (!payment_id) {
@@ -139,6 +139,26 @@ async function createRefundRequest(req, res, subRefund, transaction) {
         if (subRefund && subRefund > 0 && (+subRefund <= +paymentData.amount)) {
             haveSubRefund = true;
             paymentData.amount = +subRefund;
+        } else {
+            // In case canceling the order - no transection in this case
+            const [order] = await OrderModel.getOrder(order_id);
+            if (!order) {
+                return sendResponse(res, 404, 'Error', 'The order is not found', 'ec_order_cancel_klarna_error', null);
+            }
+            // Refund the total amount when the order id not completed ortherwise refund the subtotal
+            const refundAmount = order.type_id === 2 ? order.sub_total : order.total;
+
+            if (refundAmount > paymentData.amount) {
+                return sendResponse(
+                    res,
+                    400,
+                    'Error',
+                    'Refund amount exceeds the payment amount.',
+                    'ec_order_cancel_klarna_error',
+                    null,
+                );
+            }
+            paymentData.amount = refundAmount;
         }
 
         const refundRequest = await createRefund(paymentData);
