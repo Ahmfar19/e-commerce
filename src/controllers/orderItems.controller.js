@@ -69,7 +69,12 @@ const putOrderItems = async (req, res) => {
         if (deletedItems?.length) {
             transaction = await sequelize.transaction();
 
-            refundAmount = deletedItems.reduce((acc, product) => acc += +product.price, 0);
+            refundAmount = deletedItems.reduce((acc, product) => {
+                if (!product.returned) {
+                    acc += +product.price;
+                }
+                return acc;
+            }, 0);
 
             await OrderItems.deleteMulti(deletedItems, transaction);
             await Order.updateProductQuantities(deletedItems, transaction);

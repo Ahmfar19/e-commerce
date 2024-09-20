@@ -142,6 +142,7 @@ async function createRefundRequest(req, res, subRefund, transaction) {
         }
 
         const refundRequest = await createRefund(paymentData);
+
         if (refundRequest && refundRequest.status === PAYMENT_STATUS.CREATED) {
             const newRefundEntry = new PaymentRefundModel({
                 status: 1, // PENDING
@@ -171,6 +172,10 @@ async function createRefundRequest(req, res, subRefund, transaction) {
                 status: haveSubRefund ? 8 : 6, // 8 - SUB_REFUNDEN, 6 - Refunded
                 id: payment.id,
             });
+
+            if (!haveSubRefund) {
+                await OrderModel.updateOrderStatus(payment.order_id, 3); // 3 Cancelled
+            }
 
             return sendResponse(res, 201, 'Created', 'Refund request created successfully.', null, {
                 payment_id: refundRequest.id,
@@ -228,7 +233,6 @@ async function receiveRefundStatus(req, res) {
             const updatedProducts = products?.map((product) => {
                 return { ...product, quantity: -product.quantity };
             });
-            await OrderModel.updateOrderStatus(refundPayment.order_id, 3); // 3 Cancelled
             await OrderModel.updateProductQuantities(updatedProducts);
 
             return sendResponse(res, 201, 'Created', 'Refund request created successfully.', null, null);
