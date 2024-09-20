@@ -178,9 +178,14 @@ class Order {
         return rows;
     }
 
-    static async getOrder(id) {
+    static async getOrder(order_id, transaction) {
         const sql = `SELECT * FROM orders where order_id = ?`;
-        const [rows] = await pool.execute(sql, [id]);
+
+        if (transaction) {
+            const [rows] = await sequelize.query(sql, { replacements: [order_id], transaction });
+            return rows;
+        }
+        const [rows] = await pool.execute(sql, [order_id]);
         return rows;
     }
 

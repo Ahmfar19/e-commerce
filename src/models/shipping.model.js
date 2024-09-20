@@ -44,11 +44,19 @@ class Shipping {
         const [rows] = await pool.execute(sql);
         return rows;
     }
+
     static async getByName(name) {
         const sql = 'SELECT shipping_url FROM shipping WHERE shipping_name = ?';
         const [rows] = await pool.execute(sql, [name]);
         return rows[0];
     }
+
+    static async getShippingByname(name) {
+        const sql = 'SELECT * FROM shipping WHERE shipping_name = ?';
+        const [rows] = await pool.execute(sql, [name]);
+        return rows;
+    }
+
     static async getShippingPrice() {
         const sql = 'SELECT shipping_price FROM shipping';
         const [rows] = await pool.execute(sql);

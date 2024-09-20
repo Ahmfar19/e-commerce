@@ -31,9 +31,7 @@ const uploadUser = multer({
 });
 
 // Payments Swish
-router.post('/swish/refunds', (req, res) => {
-    return swishController.createRefundRequest(req, res, null, null);
-});
+router.post('/swish/order/cancel', swishController.cancelSwishOrder);
 router.get('/swish/refunds/:refundId', swishController.fetchRefund);
 
 // Payments Klarna

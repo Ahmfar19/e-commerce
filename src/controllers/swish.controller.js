@@ -5,6 +5,7 @@ const OrderModel = require('../models/order.model');
 const PaymentRefundModel = require('../models/paymentRefund.model');
 const { commitOrder } = require('../helpers/orderUtils');
 const { deleteById } = require('../models/order.model');
+const Shipping = require('../models/shipping.model');
 const {
     swishPaymentRequests,
     getPaymentRequests,
@@ -94,134 +95,151 @@ async function fetchPaymentRequest(req, res) {
 }
 
 // Create Refund
-async function createRefundRequest(req, res, subRefund, transaction) {
-    const { payment_id, order_id } = req.body;
-
+async function createRefundRequest(payment_id, refundAmount) {
     try {
-        if (!payment_id) {
-            transaction?.rollback();
-            return sendResponse(res, 404, 'Error', 'Invalid request parameter', 'ec_order_cancel_klarna_error', null);
+        if (!payment_id || !refundAmount) {
+            return { success: false, error: 'ec_order_cancel_klarna_error' };
         }
 
         const [payment] = await Payments.getPaymentsByPaymentId(payment_id);
         if (!payment) {
-            transaction?.rollback();
-            return sendResponse(res, 404, 'Error', 'Payment not found.', 'ec_order_cancel_klarna_error', null);
+            return { success: false, error: 'ec_order_cancel_klarna_error' };
         }
 
-        if (payment.status !== 2 && payment.status !== 8) { // The payment is not in a paid/subrefunded state
-            transaction?.rollback();
-            return sendResponse(
-                res,
-                400,
-                'Error',
-                'Payment not in a paid/subrefunded state.',
-                'ec_order_cancel_order_notPaid',
-                null,
-            );
+        // The payment is not in a paid/subrefunded state
+        if (payment.status !== 2 && payment.status !== 8) {
+            return {
+                success: false,
+                statusMessage: 'Payment not in a paid/subrefunded state.',
+                error: 'ec_order_cancel_order_notPaid',
+            };
         }
 
         let paymentData = await getPaymentRequests(payment_id);
 
         if (!paymentData || (+paymentData.payeePaymentReference != +payment.order_id)) {
-            transaction?.rollback();
-            return sendResponse(
-                res,
-                404,
-                'Error',
-                'Payment not found on Swish portal.',
-                'ec_order_cancel_klarna_error',
-                null,
-            );
+            return {
+                success: false,
+                statusMessage: 'Payment not found on Swish portal.',
+                error: 'ec_order_cancel_klarna_error',
+            };
         }
 
-        let haveSubRefund = false;
-        if (subRefund && subRefund > 0 && (+subRefund <= +paymentData.amount)) {
-            haveSubRefund = true;
-            paymentData.amount = +subRefund;
-        } else {
-            // In case canceling the order - no transection in this case
-            const [order] = await OrderModel.getOrder(order_id);
-            if (!order) {
-                return sendResponse(res, 404, 'Error', 'The order is not found', 'ec_order_cancel_klarna_error', null);
-            }
-            // Refund the total amount when the order id not completed ortherwise refund the subtotal
-            const refundAmount = order.type_id === 2 ? order.sub_total : order.total;
-
-            if (refundAmount > paymentData.amount) {
-                return sendResponse(
-                    res,
-                    400,
-                    'Error',
-                    'Refund amount exceeds the payment amount.',
-                    'ec_order_cancel_klarna_error',
-                    null,
-                );
-            }
-            paymentData.amount = refundAmount;
+        if (refundAmount > paymentData.amount) {
+            return {
+                success: false,
+                statusMessage: 'Refund amount exceeds the payment amount.',
+                error: 'ec_order_cancel_klarna_error',
+            };
         }
+
+        paymentData.amount = refundAmount;
 
         const refundRequest = await createRefund(paymentData);
-
         if (refundRequest && refundRequest.status === PAYMENT_STATUS.CREATED) {
-            const newRefundEntry = new PaymentRefundModel({
-                status: 1, // PENDING
-                order_id: payment.order_id,
+            return {
+                success: true,
                 refund_id: refundRequest.id,
-                amount: paymentData.amount,
-            });
-
-            const intertedId = await newRefundEntry.save(transaction);
-
-            if (!intertedId) {
-                transaction?.rollback();
-                return sendResponse(
-                    res,
-                    404,
-                    'Error',
-                    'Couldnt create the a refund.',
-                    'ec_order_cancel_klarna_error',
-                    null,
-                );
-            }
-
-            transaction?.commit();
-
-            await Payments.updatePaymentsStatusAndPaymentId({
-                payment_id,
-                status: haveSubRefund ? 8 : 6, // 8 - SUB_REFUNDEN, 6 - Refunded
-                id: payment.id,
-            });
-
-            if (!haveSubRefund) {
-                await OrderModel.updateOrderStatus(payment.order_id, 3); // 3 Cancelled
-            }
-
-            return sendResponse(res, 201, 'Created', 'Refund request created successfully.', null, {
-                payment_id: refundRequest.id,
-            });
+            };
         }
 
-        transaction?.rollback();
+        return {
+            success: false,
+            statusMessage: 'Failed to create refund request.',
+            error: 'ec_order_cancel_klarna_error',
+        };
+    } catch {
+        return {
+            success: false,
+            statusMessage: 'Failed to create refund request.',
+            error: 'ec_order_cancel_klarna_error',
+        };
+    }
+}
+
+async function cancelSwishOrder(req, res) {
+    const { order_id, payment_id } = req.body;
+
+    if (!order_id || !payment_id) {
         return sendResponse(
             res,
-            500,
+            400,
             'Error',
-            'Failed to create refund request.',
-            'ec_order_cancel_klarna_error',
+            'Missing order_id or payment_id.',
+            'ec_Invalid_request_parameters',
             null,
         );
-    } catch (error) {
-        transaction?.rollback();
+    }
+
+    let paymentData = await getPaymentRequests(payment_id);
+
+    if (!paymentData) {
         return sendResponse(
             res,
-            500,
-            error.message,
-            'An error occurred while creating the refund request.',
+            400,
+            'Error',
+            'Payment not found on Swish portal..',
             'ec_order_cancel_klarna_error',
             null,
         );
     }
+
+    const [order] = await OrderModel.getOrder(order_id);
+
+    if (!order) {
+        return sendResponse(
+            res,
+            400,
+            'Error',
+            'Order not found in the database.',
+            'ec_order_cancel_klarna_error',
+            null,
+        );
+    }
+
+    // Check if the order is already cancelled
+    if (order.status === 1) {
+        return sendResponse(
+            res,
+            400,
+            'Error',
+            'Order is already cancelled.',
+            'ec_order_cancel_klarna_error',
+            null,
+        );
+    }
+
+    const [shipping] = await Shipping.getShippingByname(order.shipping_name);
+
+    if (!shipping) {
+        return sendResponse(
+            res,
+            400,
+            'Error',
+            'Shipping method not found in the database.',
+            'ec_order_cancel_klarna_error',
+            null,
+        );
+    }
+    // Refund the amount minus the shipping when the order is returned eg. type_id is 2 meaning shipped
+    const refundAmount = order.type_id === 2 ? order.total - shipping.shipping_price : order.total;
+
+    const refundResult = await createRefundRequest(payment_id, refundAmount);
+
+    if (refundResult.success) {
+        await OrderModel.updateOrderStatus(order_id, 3); // 3 Cancelled
+        await Payments.updatePaymentsStatus(payment_id, 6); // 6 - REFUNDED
+        // Update the order status and the product qty
+        const products = await OrderItemsModel.getItemsByOrderId(order_id);
+        const updatedProducts = products?.map((product) => {
+            return { ...product, quantity: -product.quantity };
+        });
+        await OrderModel.updateProductQuantities(updatedProducts);
+        return sendResponse(res, 200, 'Cancelled', 'Order cancelled successfully.', null, {
+            payment_id: refundResult.refund_id,
+        });
+    }
+    return sendResponse(res, 500, 'Error', 'Failed to cancel the order.', refundResult.error, null);
 }
 
 async function receiveRefundStatus(req, res) {
@@ -247,13 +265,6 @@ async function receiveRefundStatus(req, res) {
             if (!success) {
                 return sendResponse(res, 500, 'Error', 'Failed to update RefunPayment with refund ID.', null, null);
             }
-
-            // update the order status and the product qty
-            const products = await OrderItemsModel.getItemsByOrderId(refundPayment.order_id);
-            const updatedProducts = products?.map((product) => {
-                return { ...product, quantity: -product.quantity };
-            });
-            await OrderModel.updateProductQuantities(updatedProducts);
 
             return sendResponse(res, 201, 'Created', 'Refund request created successfully.', null, null);
         } else {
@@ -308,6 +319,7 @@ async function cancelPayment(req, res) {
 }
 
 module.exports = {
+    cancelSwishOrder,
     createPaymentRequest,
     receivePaymentStatus,
     receiveRefundStatus,
