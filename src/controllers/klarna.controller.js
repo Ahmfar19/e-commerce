@@ -493,8 +493,6 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
 
             const result = await klarnaModel.refundKlarnaOrder(klarna_order_id, refundDetails);
 
-            console.error('updateResult', result);
-
             if (result.success) {
                 return {
                     refundAmount: refundAmount,
