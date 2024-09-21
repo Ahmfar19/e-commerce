@@ -229,11 +229,21 @@ async function cancelSwishOrder(req, res) {
     if (refundResult.success) {
         await OrderModel.updateOrderStatus(order_id, 3); // 3 Cancelled
         await Payments.updatePaymentsStatus(payment_id, 6); // 6 - REFUNDED
+
+        // Create a refund payment record in the refund_payments table
+        await (new PaymentRefundModel({
+            status: 1, // PENDING
+            order_id: order_id,
+            refund_id: refundResult.refund_id,
+            amount: refundAmount,
+        })).save();
+
         // Update the order status and the product qty
         const products = await OrderItemsModel.getItemsByOrderId(order_id);
         const updatedProducts = products?.map((product) => {
             return { ...product, quantity: -product.quantity };
         });
+
         await OrderModel.updateProductQuantities(updatedProducts);
         return sendResponse(res, 200, 'Cancelled', 'Order cancelled successfully.', null, {
             payment_id: refundResult.refund_id,
