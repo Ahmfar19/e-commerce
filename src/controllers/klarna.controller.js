@@ -377,39 +377,45 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
                 let productPriceInOres = isUpdated.price * 100;
 
                 let quantityInKg = isUpdated.quantity;
+                let unit_name = isUpdated.unit_name;
+                let orginalQuantity = item.quantity;
 
                 // Calculate unit price in öre before discount
                 let unitPriceInOres = productPriceInOres;
 
                 // If the product is measured in grams rather than kilograms
-                if (isUpdated.unit_name !== 'kg') {
+                if (isUpdated.unit_name === 'g' || !Number.isInteger(quantityInKg)) {
                     unitPriceInOres = unitPriceInOres / 1000;
                     discountInOres = discountInOres / 1000;
                     quantityInKg = quantityInKg * 1000;
+                    orginalQuantity = orginalQuantity * 1000;
+                    unit_name = 'g';
                 }
-                const totalAmountAfterDiscount = (unitPriceInOres - discountInOres) * quantityInKg;
+                const totalAmountAfterDiscount = Math.round((unitPriceInOres - discountInOres) * quantityInKg);
 
                 // Calculate tax rate and total tax amount
                 // const totalTaxAmount = calculateVatAmount(totalAmountAfterDiscount, storeTax);
-                const totalDiscountAmount = discountInOres * quantityInKg;
+                const totalDiscountAmount = Math.round(discountInOres * quantityInKg);
 
-                // Push the updated refunded/updated orderLine
-                refundedOrderLines.push({
+                // Update the quantity and price
+                const newItem = {
                     ...item,
+                    total_discount_amount: totalDiscountAmount,
+                    total_tax_amount: 0,
+                    quantity_unit: unit_name,
+                    quantity: quantityInKg,
+                    total_amount: totalAmountAfterDiscount,
+                };
+
+                refundedOrderLines.push({
+                    ...newItem,
                     total_discount_amount: item.total_discount_amount - totalDiscountAmount,
                     total_tax_amount: 0,
-                    // total_tax_amount: item.total_tax_amount - totalTaxAmount,
-                    quantity: item.quantity - quantityInKg,
+                    quantity: orginalQuantity - quantityInKg,
                     total_amount: item.total_amount - totalAmountAfterDiscount,
                 });
 
-                // Update the quantity and price
-                item.total_discount_amount = totalDiscountAmount;
-                item.total_tax_amount = 0;
-                // item.total_tax_amount = totalDiscountAmount;
-                item.quantity = quantityInKg;
-                item.total_amount = totalAmountAfterDiscount;
-                acc.push(item);
+                acc.push(newItem);
                 return acc; // Skip this item but return the accumulator
             }
         }
@@ -461,13 +467,10 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
             updatedItems,
             updatedOrder,
         );
-        console.error('klarnaOrder.status', klarnaOrder.status);
+
         // When the order is not paid yet, just udpate it
         if (klarnaOrder.status === ORDER_STATUS.AUTHORIZED) {
             const updateResult = await klarnaModel.updateKlarnaAuthorization(klarna_order_id, updatedKlarnaOrder);
-
-            console.error('updateResult', updateResult);
-
             if (updateResult.success) {
                 return {
                     success: true,
@@ -483,12 +486,14 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
         // When the order is captured, a refund should be made is this case
         if (klarnaOrder.status === ORDER_STATUS.CAPTURED) {
             const refundDetails = {
-                refunded_amount: (refundAmount * 100),
+                refunded_amount: Math.round(refundAmount * 100),
                 order_lines: refundedOrderLines,
                 description: 'Refund for returned/updated items for order ' + klarna_order_id,
             };
 
             const result = await klarnaModel.refundKlarnaOrder(klarna_order_id, refundDetails);
+
+            console.error('updateResult', result);
 
             if (result.success) {
                 return {
