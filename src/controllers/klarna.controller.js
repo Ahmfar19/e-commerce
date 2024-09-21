@@ -562,7 +562,7 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
 
             // Refund the amount minus the shipping when the order is returned eg. type_id is 2 meaning shipped
             refundDetails.refunded_amount = refundDetails.refunded_amount - (shipping.shipping_price * 100);
-            shippingPrice = shipping.shipping_price * 100;
+            shippingPrice = shipping.shipping_price;
         }
 
         if (klarnaOrder.refunded_amount === refundDetails.refunded_amount) {
