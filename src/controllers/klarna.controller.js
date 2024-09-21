@@ -600,7 +600,7 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
                 status: 2, // PENDING
                 order_id: existingPayment.order_id,
                 refund_id: existingPayment.payment_id,
-                amount: klarnaOrder.captured_amount - shippingPrice,
+                amount: (klarnaOrder.captured_amount - shippingPrice) / 100,
             })).save();
 
             return sendResponse(
