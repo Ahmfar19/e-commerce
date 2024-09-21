@@ -564,11 +564,11 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
             shippingPrice = shipping.shipping_price;
         }
 
-        if (klarnaOrder.refunded_amount === refundDetails.refunded_amount) {
+        if (klarnaOrder.refunded_amount === refundDetails.captured_amount) {
             return sendResponse(
                 res,
                 400,
-                'The refund is already done with the refund amount',
+                'Refund amount is more than the captured amount.',
                 null,
                 'ec_order_cancel_klarna_alreadyDoneWithThisAmount',
                 null,
