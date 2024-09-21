@@ -333,9 +333,11 @@ const cancelKlarnaOrder = async (req, res) => {
     }
 };
 
-const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, newAmount) => {
+const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, updatedOrder) => {
     let orderLines = klarnaOrder.order_lines;
 
+    const newShippingPrice = +updatedOrder.shipping_price;
+    const newAmount = updatedOrder.total;
     const merchantData = JSON.parse(klarnaOrder.merchant_data || {});
     const newAmountInOre = Math.round(newAmount * 100);
 
@@ -349,10 +351,14 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, n
 
     let refundedOrderLines = [];
     orderLines = orderLines.reduce((acc, item) => {
-        // Keep the item if it's a shipping fee
+        // Update it when the new order has got a shipping fee
         if (item.type === 'shipping_fee') {
-            acc.push(item);
-            return acc; // Ensure accumulator is returned
+            const shippingFee = { ...item };
+            if (newShippingPrice) {
+                shippingFee.total_amount = newShippingPrice;
+            }
+            acc.push(shippingFee);
+            return acc;
         }
 
         if (deletedItems?.length) {
@@ -415,109 +421,86 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, n
     return { updatedKlarnaOrder: klarnaOrder, refundedOrderLines };
 };
 
-const updateKlarnaOrder = async (req, res, transaction) => {
-    const { klarna_order_id, newSubTotal, refundAmount, deletedItems, updatedItems } = req.body;
+const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, deletedItems, updatedItems) => {
+    const refundAmount = Number(oldOrder.total) - Number(updatedOrder.total);
+
+    if (!klarna_order_id || !refundAmount || (!deletedItems?.length && !updatedItems?.length)) {
+        return {
+            success: false,
+            statusMessage: 'Invalid request parameter',
+            error: 'ec_order_cancel_klarna_error',
+        };
+    }
 
     try {
         const [existingPayment] = await Payments.getPaymentsByPaymentId(klarna_order_id);
         if (!existingPayment) {
-            transaction?.rollback();
-            return sendResponse(res, 404, 'Error', 'Payment not found.', 'ec_order_cancel_klarna_error', null);
+            return {
+                success: false,
+                statusMessage: 'Payment not found.',
+                error: 'ec_order_cancel_klarna_error',
+            };
         }
 
         // Get the order status from the ordermanagment
         const klarnaOrder = await klarnaModel.getOrder(klarna_order_id);
 
         if (klarnaOrder.status === ORDER_STATUS.CANCELLED) {
-            transaction?.rollback();
-            return sendResponse(
-                res,
-                400,
-                'Error',
-                'Klarna order is already cancelled',
-                'ec_order_cancel_klarna_cancel_alreadyCanceld',
-                null,
-            );
+            return {
+                success: false,
+                statusMessage: 'Klarna order is already cancelled',
+                error: 'ec_order_cancel_klarna_cancel_alreadyCanceld',
+            };
         }
 
-        if (refundAmount && newSubTotal) {
-            // Not captured yet - just cancel it and handel order/qty update
-            if (!deletedItems?.length && !updatedItems?.length) {
-                transaction?.rollback();
-                return sendResponse(
-                    res,
-                    400,
-                    'Bad Request',
-                    'Invalid request body.',
-                    'ec_Invalid_request_parameters',
-                    null,
-                );
-            }
+        // Not captured yet - just cancel it and handel order/qty update
+        const { updatedKlarnaOrder, refundedOrderLines } = await updateKlarnaOrderLines(
+            klarnaOrder,
+            deletedItems,
+            updatedItems,
+            updatedOrder,
+        );
 
-            const { updatedKlarnaOrder, refundedOrderLines } = await updateKlarnaOrderLines(
-                klarnaOrder,
-                deletedItems,
-                updatedItems,
-                newSubTotal,
-            );
-
-            if (klarnaOrder.status === ORDER_STATUS.AUTHORIZED) {
-                const updateResult = await klarnaModel.updateKlarnaAuthorization(klarna_order_id, updatedKlarnaOrder);
-                if (updateResult.success) {
-                    transaction?.commit();
-                    return sendResponse(
-                        res,
-                        200,
-                        'Klarna order has been updated',
-                        'ec_order_cancel_klarna_udpate_success',
-                        null,
-                        updatedKlarnaOrder,
-                    );
-                }
-            }
-            if (klarnaOrder.status === ORDER_STATUS.CAPTURED) {
-                const refundDetails = {
-                    refunded_amount: (refundAmount * 100),
-                    order_lines: refundedOrderLines,
-                    description: 'Refund for returned/updated items for order ' + klarna_order_id,
+        // When the order is not paid yet, just udpate it
+        if (klarnaOrder.status === ORDER_STATUS.AUTHORIZED) {
+            const updateResult = await klarnaModel.updateKlarnaAuthorization(klarna_order_id, updatedKlarnaOrder);
+            if (updateResult.success) {
+                return {
+                    success: true,
+                    statusMessage: 'Klarna order has been updated',
                 };
-
-                const result = await klarnaModel.refundKlarnaOrder(klarna_order_id, refundDetails);
-
-                console.error('result', result);
-
-                if (result.success) {
-                    transaction?.commit();
-                    return sendResponse(
-                        res,
-                        200,
-                        'Klarna order has been updated',
-                        'ec_order_cancel_klarna_udpate_success',
-                        null,
-                        updatedKlarnaOrder,
-                    );
-                }
             }
         }
 
-        transaction?.rollback();
-        return sendResponse(
-            res,
-            400,
-            'Error',
-            'Klarna order is already cancelled',
-            'ec_order_cancel_klarna_cancel_alreadyCanceld',
-            null,
-        );
+        // When the order is captured, a refund should be made is this case
+        if (klarnaOrder.status === ORDER_STATUS.CAPTURED) {
+            const refundDetails = {
+                refunded_amount: (refundAmount * 100),
+                order_lines: refundedOrderLines,
+                description: 'Refund for returned/updated items for order ' + klarna_order_id,
+            };
+
+            const result = await klarnaModel.refundKlarnaOrder(klarna_order_id, refundDetails);
+
+            if (result.success) {
+                return {
+                    success: true,
+                    statusMessage: 'Klarna order has been updated',
+                };
+            }
+        }
+
+        return {
+            success: false,
+            statusMessage: 'Faild to udpate the klarna order',
+            error: 'Server error',
+        };
     } catch (error) {
-        return sendResponse(
-            res,
-            500,
-            error.message,
-            'Failed to cancel Klarna order',
-            'ec_order_cancel_klarna_error',
-            null,
-        );
+        return {
+            success: false,
+            statusMessage: 'Faild to udpate the klarna order',
+            error: 'ec_order_cancel_klarna_error',
+        };
     }
 };
 

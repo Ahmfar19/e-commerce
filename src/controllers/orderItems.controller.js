@@ -175,14 +175,36 @@ const putOrderItems = async (req, res) => {
         }
 
         // When Klarna
-        // if (payment_type_id === 3) {
-        //     req.body.klarna_order_id = payment_id;
-        //     req.body.refundAmount = refundAmount;
-        //     req.body.newSubTotal = newSubTotal;
-        //     updateKlarnaOrder(req, res, transaction);
-        // }
+        if (payment_type_id === 3) {
+            const klarnaRes = await updateKlarnaOrder(
+                payment_id,
+                oldOrder,
+                updatedOrder,
+                deletedItems,
+                updatedItems,
+            );
 
-        sendResponse(res, 202, 'Accepted', 'Successfully edit a items.', null, null);
+            if (!klarnaRes.success) {
+                await transaction.rollback();
+                return sendResponse(
+                    res,
+                    404,
+                    'Error',
+                    klarnaRes.statusMessage || 'Faild to create a refund request',
+                    klarnaRes.error,
+                    null,
+                );
+            }
+        }
+        await transaction.rollback();
+        return sendResponse(
+            res,
+            202,
+            'Accepted',
+            'Successfully edited the items and done an updated/refund.',
+            null,
+            null,
+        );
     } catch (err) {
         await transaction?.rollback();
         return sendResponse(res, 500, null, err.message || err, 'ec_server_fail', null);
