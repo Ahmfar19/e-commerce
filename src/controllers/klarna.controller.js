@@ -541,11 +541,12 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
         };
 
         if (klarnaOrder.refunded_amount) {
-            refundDetails.refunded_amount = klarnaOrder.order_amount - klarnaOrder.refunded_amount;
+            refundDetails.refunded_amount = klarnaOrder.captured_amount - klarnaOrder.refunded_amount;
         }
 
         let shippingPrice = 0;
-        if(klarnaOrder.status === ORDER_STATUS.CAPTURED && shipping_name) {
+
+        if (klarnaOrder.status === ORDER_STATUS.CAPTURED && shipping_name) {
             const [shipping] = await Shipping.getShippingByname(shipping_name);
 
             if (!shipping) {
@@ -560,8 +561,8 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
             }
 
             // Refund the amount minus the shipping when the order is returned eg. type_id is 2 meaning shipped
-            refundDetails.refunded_amount = refundDetails.refunded_amount - shipping.shipping_price;
-            shippingPrice = shipping.shipping_price;
+            refundDetails.refunded_amount = refundDetails.refunded_amount - (shipping.shipping_price * 100);
+            shippingPrice = shipping.shipping_price * 100;
         }
 
         if (klarnaOrder.refunded_amount === refundDetails.refunded_amount) {
@@ -590,9 +591,9 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
 
             await OrderModel.updateOrderAfterCancelleation({
                 order_id: existingPayment.order_id,
-                sub_total: klarnaOrder.captured_amount - shippingPrice,
+                sub_total: (klarnaOrder.captured_amount / 100) - shippingPrice,
                 shipping_price: shippingPrice,
-                total: klarnaOrder.captured_amount,
+                total: (klarnaOrder.captured_amount / 100),
                 type_id: 3, // Cancelled
             });
 
@@ -600,7 +601,7 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
                 status: 2, // PENDING
                 order_id: existingPayment.order_id,
                 refund_id: existingPayment.payment_id,
-                amount: (klarnaOrder.captured_amount - shippingPrice) / 100,
+                amount: (klarnaOrder.captured_amount / 100) - shippingPrice,
             })).save();
 
             return sendResponse(
