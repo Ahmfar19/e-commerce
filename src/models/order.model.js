@@ -258,6 +258,26 @@ class Order {
         return rows;
     }
 
+    static async updateOrderAfterCancelleation(options) {
+        const sql = `
+            UPDATE orders SET 
+                sub_total = ?,
+                total = ?,
+                shipping_price = ?,
+                type_id = ?
+            WHERE order_id = ?`;
+
+        const values = [
+            options.sub_total,
+            options.total,
+            options.shipping_price,
+            options.type_id,
+            options.order_id,
+        ];
+        const [rows] = await pool.execute(sql, values);
+        return rows;
+    }
+
     static async updateOrderStatus(order_id, type_id) {
         const sql = 'UPDATE orders SET type_id = ? WHERE order_id = ?';
         const [rows] = await pool.execute(sql, [type_id, order_id]);
