@@ -478,7 +478,6 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
         if (klarnaOrder.status === ORDER_STATUS.AUTHORIZED) {
             const updateResult = await klarnaModel.updateKlarnaAuthorization(klarna_order_id, updatedKlarnaOrder);
 
-            console.error('updateResult', updateResult);
             if (updateResult.success) {
                 return {
                     success: true,
@@ -601,7 +600,7 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
                 status: 2, // PENDING
                 order_id: existingPayment.order_id,
                 refund_id: existingPayment.payment_id,
-                amount: (klarnaOrder.captured_amount / 100) - shippingPrice,
+                amount: refundDetails.refunded_amount / 100,
             })).save();
 
             return sendResponse(
