@@ -17,6 +17,8 @@ async function createKlarnaSession(orderData) {
             'Content-Type': 'application/json',
         },
     });
+
+    console.error('response', response);
     if (response?.data.order_id) {
         return {
             success: true,

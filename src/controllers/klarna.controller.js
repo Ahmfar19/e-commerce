@@ -6,6 +6,9 @@ const OrderModel = require('../models/order.model.js');
 const OrderItemsModel = require('../models/orderItems.model');
 const { sendResponse } = require('../helpers/apiResponse');
 const StoreInfo = require('../models/storeInfo.model');
+const Shipping = require('../models/shipping.model');
+const { calculateVatAmount } = require('../helpers/utils.js');
+const PaymentRefundModel = require('../models/paymentRefund.model');
 
 // Read here for more information
 // https://docs.klarna.com/klarna-checkout/additional-resources/confirm-purchase/
@@ -23,7 +26,6 @@ const updateOrderAfterCancelation = async (order_id) => {
     const updatedProducts = products?.map((product) => {
         return { ...product, quantity: -product.quantity };
     });
-    await OrderModel.updateOrderStatus(order_id, 3); // 3 Cancelled
     await OrderModel.updateProductQuantities(updatedProducts);
 };
 
@@ -250,7 +252,7 @@ const getOrderCaptures = async (req, res) => {
 };
 
 const cancelKlarnaOrder = async (req, res) => {
-    const { klarna_order_id } = req.body;
+    const { klarna_order_id, shipping_name } = req.body;
 
     try {
         const [existingPayment] = await Payments.getPaymentsByPaymentId(klarna_order_id);
@@ -283,6 +285,7 @@ const cancelKlarnaOrder = async (req, res) => {
                 });
 
                 await updateOrderAfterCancelation(existingPayment.order_id);
+                await OrderModel.updateOrderStatus(existingPayment.order_id, 3); // 3 Cancelled
 
                 return sendResponse(
                     res,
@@ -309,6 +312,7 @@ const cancelKlarnaOrder = async (req, res) => {
             }
         } else if (klarnaOrder.status === ORDER_STATUS.CAPTURED) {
             // We need to make a refund here
+            req.body.shipping_name = shipping_name;
             return refundOrder(req, res, klarnaOrder, existingPayment);
         } else {
             return sendResponse(
@@ -394,14 +398,15 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
                 const totalAmountAfterDiscount = Math.round((unitPriceInOres - discountInOres) * quantityInKg);
 
                 // Calculate tax rate and total tax amount
-                // const totalTaxAmount = calculateVatAmount(totalAmountAfterDiscount, storeTax);
+                const totalTaxAmount = calculateVatAmount(totalAmountAfterDiscount, storeTax);
                 const totalDiscountAmount = Math.round(discountInOres * quantityInKg);
 
                 // Update the quantity and price
                 const newItem = {
                     ...item,
+                    unit_price: unitPriceInOres,
                     total_discount_amount: totalDiscountAmount,
-                    total_tax_amount: 0,
+                    total_tax_amount: Math.round(totalTaxAmount),
                     quantity_unit: unit_name,
                     quantity: quantityInKg,
                     total_amount: totalAmountAfterDiscount,
@@ -409,8 +414,9 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
 
                 refundedOrderLines.push({
                     ...newItem,
-                    total_discount_amount: item.total_discount_amount - totalDiscountAmount,
-                    total_tax_amount: 0,
+                    unit_price: unitPriceInOres,
+                    total_discount_amount: (orginalQuantity - quantityInKg) * discountInOres,
+                    total_tax_amount: Math.round(item.total_tax_amount - totalTaxAmount),
                     quantity: orginalQuantity - quantityInKg,
                     total_amount: item.total_amount - totalAmountAfterDiscount,
                 });
@@ -471,6 +477,8 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
         // When the order is not paid yet, just udpate it
         if (klarnaOrder.status === ORDER_STATUS.AUTHORIZED) {
             const updateResult = await klarnaModel.updateKlarnaAuthorization(klarna_order_id, updatedKlarnaOrder);
+
+            console.error('updateResult', updateResult);
             if (updateResult.success) {
                 return {
                     success: true,
@@ -492,7 +500,6 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
             };
 
             const result = await klarnaModel.refundKlarnaOrder(klarna_order_id, refundDetails);
-
             if (result.success) {
                 return {
                     refundAmount: refundAmount,
@@ -518,7 +525,7 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
 
 // This will do a full refund, it calls when the order is cancelled
 const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
-    const { klarna_order_id } = req.body;
+    const { klarna_order_id, shipping_name } = req.body;
 
     // Already refunded
     if (existingPayment.status === 6) {
@@ -535,6 +542,26 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
 
         if (klarnaOrder.refunded_amount) {
             refundDetails.refunded_amount = klarnaOrder.order_amount - klarnaOrder.refunded_amount;
+        }
+
+        let shippingPrice = 0;
+        if(klarnaOrder.status === ORDER_STATUS.CAPTURED && shipping_name) {
+            const [shipping] = await Shipping.getShippingByname(shipping_name);
+
+            if (!shipping) {
+                return sendResponse(
+                    res,
+                    400,
+                    'Error',
+                    'Shipping method not found in the database.',
+                    'ec_order_cancel_klarna_error',
+                    null,
+                );
+            }
+
+            // Refund the amount minus the shipping when the order is returned eg. type_id is 2 meaning shipped
+            refundDetails.refunded_amount = refundDetails.refunded_amount - shipping.shipping_price;
+            shippingPrice = shipping.shipping_price;
         }
 
         if (klarnaOrder.refunded_amount === refundDetails.refunded_amount) {
@@ -558,7 +585,23 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
                 status: 6, // REFUNDED
             });
 
+            // Update the products qty in the product table
             await updateOrderAfterCancelation(existingPayment.order_id);
+
+            await OrderModel.updateOrderAfterCancelleation({
+                order_id: existingPayment.order_id,
+                sub_total: klarnaOrder.captured_amount - shippingPrice,
+                shipping_price: shippingPrice,
+                total: klarnaOrder.captured_amount,
+                type_id: 3, // Cancelled
+            });
+
+            await (new PaymentRefundModel({
+                status: 2, // PENDING
+                order_id: existingPayment.order_id,
+                refund_id: existingPayment.payment_id,
+                amount: klarnaOrder.captured_amount - shippingPrice,
+            })).save();
 
             return sendResponse(
                 res,
