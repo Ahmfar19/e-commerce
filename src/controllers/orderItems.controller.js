@@ -195,12 +195,34 @@ const putOrderItems = async (req, res) => {
                     null,
                 );
             }
+
+            await transaction?.commit();
+
+            // Create a refund payment record in the refund_payments table when the order is CAPTURED
+            if (klarnaRes.refundAmount) {
+                await (new PaymentRefundModel({
+                    status: 1, // PENDING
+                    order_id: oldOrder.order_id,
+                    refund_id: payment_id,
+                    amount: klarnaRes.refundAmount,
+                })).save();
+            }
+
+            return sendResponse(
+                res,
+                200,
+                'CREATED',
+                'Successfully edited the items and done an updated/refund.',
+                null,
+                null,
+            );
         }
+
         await transaction.rollback();
         return sendResponse(
             res,
-            202,
-            'Accepted',
+            404,
+            'Not payment found',
             'Successfully edited the items and done an updated/refund.',
             null,
             null,

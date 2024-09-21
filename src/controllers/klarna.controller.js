@@ -355,7 +355,7 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
         if (item.type === 'shipping_fee') {
             const shippingFee = { ...item };
             if (newShippingPrice) {
-                shippingFee.total_amount = newShippingPrice;
+                shippingFee.total_amount = newShippingPrice * 100;
             }
             acc.push(shippingFee);
             return acc;
@@ -484,6 +484,7 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
 
             if (result.success) {
                 return {
+                    refundAmount: refundAmount,
                     success: true,
                     statusMessage: 'Klarna order has been updated',
                 };
