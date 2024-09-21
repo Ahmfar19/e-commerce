@@ -5,7 +5,6 @@ const Payments = require('../models/payments.model');
 const OrderModel = require('../models/order.model.js');
 const OrderItemsModel = require('../models/orderItems.model');
 const { sendResponse } = require('../helpers/apiResponse');
-const { calculateVatAmount } = require('../helpers/utils.js');
 const StoreInfo = require('../models/storeInfo.model');
 
 // Read here for more information
@@ -391,21 +390,23 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
                 const totalAmountAfterDiscount = (unitPriceInOres - discountInOres) * quantityInKg;
 
                 // Calculate tax rate and total tax amount
-                const totalTaxAmount = calculateVatAmount(totalAmountAfterDiscount, storeTax);
+                // const totalTaxAmount = calculateVatAmount(totalAmountAfterDiscount, storeTax);
                 const totalDiscountAmount = discountInOres * quantityInKg;
 
                 // Push the updated refunded/updated orderLine
                 refundedOrderLines.push({
                     ...item,
                     total_discount_amount: item.total_discount_amount - totalDiscountAmount,
-                    total_tax_amount: item.total_tax_amount - totalTaxAmount,
+                    total_tax_amount: 0,
+                    // total_tax_amount: item.total_tax_amount - totalTaxAmount,
                     quantity: item.quantity - quantityInKg,
                     total_amount: item.total_amount - totalAmountAfterDiscount,
                 });
 
                 // Update the quantity and price
                 item.total_discount_amount = totalDiscountAmount;
-                item.total_tax_amount = totalTaxAmount;
+                item.total_tax_amount = 0;
+                // item.total_tax_amount = totalDiscountAmount;
                 item.quantity = quantityInKg;
                 item.total_amount = totalAmountAfterDiscount;
                 acc.push(item);
@@ -460,16 +461,23 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
             updatedItems,
             updatedOrder,
         );
-
+        console.error('klarnaOrder.status', klarnaOrder.status);
         // When the order is not paid yet, just udpate it
         if (klarnaOrder.status === ORDER_STATUS.AUTHORIZED) {
             const updateResult = await klarnaModel.updateKlarnaAuthorization(klarna_order_id, updatedKlarnaOrder);
+
+            console.error('updateResult', updateResult);
+
             if (updateResult.success) {
                 return {
                     success: true,
                     statusMessage: 'Klarna order has been updated',
                 };
             }
+            return {
+                success: false,
+                statusMessage: 'Faild to update the klarna order',
+            };
         }
 
         // When the order is captured, a refund should be made is this case
@@ -494,7 +502,7 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
         return {
             success: false,
             statusMessage: 'Faild to udpate the klarna order',
-            error: 'Server error',
+            error: 'The order status is unknow',
         };
     } catch (error) {
         return {

@@ -206,6 +206,7 @@ const putOrderItems = async (req, res) => {
                     refund_id: payment_id,
                     amount: klarnaRes.refundAmount,
                 })).save();
+                await Payments.updatePaymentsStatus(payment_id, 8); // 8 - SUB_REFUNDEN
             }
 
             return sendResponse(
