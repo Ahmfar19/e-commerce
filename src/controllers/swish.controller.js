@@ -198,7 +198,7 @@ async function cancelSwishOrder(req, res) {
     }
 
     // Check if the order is already cancelled
-    if (order.status === 1) {
+    if (order.type_id === 3) {
         return sendResponse(
             res,
             400,
@@ -221,8 +221,9 @@ async function cancelSwishOrder(req, res) {
             null,
         );
     }
+
     // Refund the amount minus the shipping when the order is returned eg. type_id is 2 meaning shipped
-    const refundAmount = order.type_id === 2 ? order.total - shipping.shipping_price : order.total;
+    const refundAmount = order.type_id === 2 ? order.sub_total - shipping.shipping_price : order.sub_total;
 
     const refundResult = await createRefundRequest(payment_id, refundAmount);
 

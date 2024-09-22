@@ -130,8 +130,13 @@ const putOrderItems = async (req, res) => {
 
         // When Swish
         if (payment_type_id === 2) {
-            // Make a refund with this amount
-            const refundAmount = Number(oldOrder.total) - Number(updatedOrder.total);
+            let refundAmount = 0
+            if (oldOrder.type_id === 1) {
+                // Make a refund with this amount
+                refundAmount = Number(oldOrder.total) - Number(updatedOrder.total);
+            } else {
+                refundAmount = Number(oldOrder.sub_total) - Number(updatedOrder.sub_total);
+            }
 
             const swishRefund = await createRefundRequest(payment_id, refundAmount);
 
