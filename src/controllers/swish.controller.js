@@ -237,9 +237,13 @@ async function cancelSwishOrder(req, res) {
 
         // Update the order status and the product qty
         const products = await OrderItemsModel.getItemsByOrderId(order_id);
-        const updatedProducts = products?.map((product) => {
-            return { ...product, quantity: -product.quantity };
-        });
+
+        const updatedProducts = products?.reduce((acc, product) => {
+            if(!product.returned) {
+                acc.push({ ...product, quantity: -product.quantity });
+            }
+            return acc;
+        }, []);
 
         await OrderModel.updateProductQuantities(updatedProducts);
 
