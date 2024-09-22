@@ -222,13 +222,44 @@ async function cancelSwishOrder(req, res) {
         );
     }
 
-    // Refund the amount minus the shipping when the order is returned eg. type_id is 2 meaning shipped
-    const refundAmount = order.type_id === 2 ? order.sub_total - shipping.shipping_price : order.sub_total;
+    let refundAmount = order.total;
+    if (order.type_id === 2 && !order.shipping_price) {
+        refundAmount = refundAmount - shipping.shipping_price;
+    }
+    if (order.type_id === 2 && order.shipping_price) {
+        refundAmount = order.sub_total;
+    }
 
     const refundResult = await createRefundRequest(payment_id, refundAmount);
 
     if (refundResult.success) {
         await Payments.updatePaymentsStatus(payment_id, 6); // 6 - REFUNDED
+
+        // Update the order status and the product qty
+        const products = await OrderItemsModel.getItemsByOrderId(order_id);
+        const updatedProducts = products?.map((product) => {
+            return { ...product, quantity: -product.quantity };
+        });
+
+        await OrderModel.updateProductQuantities(updatedProducts);
+
+        // Update the orderitems to be returned
+        await OrderItemsModel.deleteMulti(products);
+
+        let refundedAmount = await PaymentRefundModel.sumAmountByOrderId(order_id);
+        if (refundedAmount) {
+            // Cancel the order and update the order total/subtotal
+            await OrderModel.updateOrderAfterCancelleation({
+                order_id,
+                shipping_price: order.shipping_price || 0,
+                sub_total: order.sub_total + refundedAmount,
+                total: order.total + refundedAmount,
+                type_id: 3, // Cancelled
+            });
+        } else {
+            // Just cancel the order
+            await OrderModel.updateOrderStatus(order_id, 3);
+        }
 
         // Create a refund payment record in the refund_payments table
         await (new PaymentRefundModel({
@@ -237,35 +268,6 @@ async function cancelSwishOrder(req, res) {
             refund_id: refundResult.refund_id,
             amount: refundAmount,
         })).save();
-
-        // Update the order status and the product qty
-        const products = await OrderItemsModel.getItemsByOrderId(order_id);
-        const updatedProducts = products?.map((product) => {
-            return { ...product, quantity: -product.quantity };
-        });
-        await OrderModel.updateProductQuantities(updatedProducts);
-
-        // Update the orderitems to be returned
-        await OrderItemsModel.deleteMulti(products);
-
-        let orgianlAmount = await PaymentRefundModel.sumAmountByOrderId(order_id);
-        let sub_total = orgianlAmount;
-
-        if (+order.shipping_price && order.type_id === 1) {
-            sub_total -= order.shipping_price;
-        }
-
-        if (+order.shipping_price && order.type_id === 2) {
-            orgianlAmount += order.shipping_price;
-        }
-
-        await OrderModel.updateOrderAfterCancelleation({
-            order_id,
-            sub_total: sub_total,
-            shipping_price: order.shipping_price || 0,
-            total: orgianlAmount,
-            type_id: 3, // Cancelled
-        });
 
         return sendResponse(res, 200, 'Cancelled', 'Order cancelled successfully.', null, {
             payment_id: refundResult.refund_id,
