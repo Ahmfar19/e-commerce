@@ -7,6 +7,7 @@ const { createRefundRequest } = require('./swish.controller');
 const { updateKlarnaOrder } = require('./klarna.controller');
 const PaymentRefundModel = require('../models/paymentRefund.model');
 const Payments = require('../models/payments.model');
+const { roundToTwoDecimals } = require('../helpers/utils');
 
 const addProductItems = async (req, res) => {
     let transaction = null;
@@ -130,7 +131,7 @@ const putOrderItems = async (req, res) => {
 
         // When Swish
         if (payment_type_id === 2) {
-            const refundAmount = Number(oldOrder.total) - Number(updatedOrder.total);
+            const refundAmount = roundToTwoDecimals(Number(oldOrder.total) - Number(updatedOrder.total));
 
             const swishRefund = await createRefundRequest(payment_id, refundAmount);
 
