@@ -263,6 +263,7 @@ class Order {
             UPDATE orders SET 
                 sub_total = ?,
                 total = ?,
+                tax = ?,
                 shipping_price = ?,
                 type_id = ?
             WHERE order_id = ?`;
@@ -270,6 +271,7 @@ class Order {
         const values = [
             options.sub_total,
             options.total,
+            options.tax,
             options.shipping_price,
             options.type_id,
             options.order_id,

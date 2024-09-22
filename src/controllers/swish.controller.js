@@ -6,6 +6,8 @@ const PaymentRefundModel = require('../models/paymentRefund.model');
 const { commitOrder } = require('../helpers/orderUtils');
 const { deleteById } = require('../models/order.model');
 const Shipping = require('../models/shipping.model');
+const StoreInfo = require('../models/storeInfo.model');
+const { calculateVatAmount } = require('../helpers/utils');
 const {
     swishPaymentRequests,
     getPaymentRequests,
@@ -239,7 +241,7 @@ async function cancelSwishOrder(req, res) {
         const products = await OrderItemsModel.getItemsByOrderId(order_id);
 
         const updatedProducts = products?.reduce((acc, product) => {
-            if(!product.returned) {
+            if (!product.returned) {
                 acc.push({ ...product, quantity: -product.quantity });
             }
             return acc;
@@ -251,18 +253,52 @@ async function cancelSwishOrder(req, res) {
         await OrderItemsModel.deleteMulti(products);
 
         let refundedAmount = await PaymentRefundModel.sumAmountByOrderId(order_id);
+        const [storeInfo] = await StoreInfo.getAll();
+        const tax = storeInfo.tax_percentage;
         if (refundedAmount) {
             // Cancel the order and update the order total/subtotal
+            const totalRefund = refundedAmount + refundAmount;
+            const totalAmount = order.total + refundedAmount;
+            let subtotalAmount = order.sub_total + refundedAmount;
+            let shippingAmount = order.shipping_price || 0;
+
+            if (totalAmount >= storeInfo.free_shipping) {
+                subtotalAmount = totalAmount;
+                shippingAmount = 0;
+            }
+
+            const newTax = calculateVatAmount(subtotalAmount - totalRefund, tax);
+
             await OrderModel.updateOrderAfterCancelleation({
                 order_id,
-                shipping_price: order.shipping_price || 0,
-                sub_total: order.sub_total + refundedAmount,
-                total: order.total + refundedAmount,
+                shipping_price: shippingAmount,
+                sub_total: subtotalAmount,
+                tax: newTax,
+                total: totalAmount,
                 type_id: 3, // Cancelled
             });
         } else {
             // Just cancel the order
-            await OrderModel.updateOrderStatus(order_id, 3);
+            if (order.type_id === 2) {
+                const newTax = calculateVatAmount(shipping.shipping_price, tax);
+                await OrderModel.updateOrderAfterCancelleation({
+                    order_id,
+                    shipping_price: order.shipping_price,
+                    sub_total: order.sub_total,
+                    tax: newTax,
+                    total: order.total,
+                    type_id: 3, // Cancelled
+                });
+            } else {
+                await OrderModel.updateOrderAfterCancelleation({
+                    order_id,
+                    shipping_price: order.shipping_price,
+                    sub_total: order.sub_total,
+                    tax: 0,
+                    total: order.total,
+                    type_id: 3, // Cancelled
+                });
+            }
         }
 
         // Create a refund payment record in the refund_payments table
