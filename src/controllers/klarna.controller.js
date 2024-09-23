@@ -7,7 +7,7 @@ const OrderItemsModel = require('../models/orderItems.model');
 const { sendResponse } = require('../helpers/apiResponse');
 const StoreInfo = require('../models/storeInfo.model');
 const Shipping = require('../models/shipping.model');
-const { calculateVatAmount } = require('../helpers/utils.js');
+const { calculateVatAmount, roundToTwoDecimals } = require('../helpers/utils.js');
 const PaymentRefundModel = require('../models/paymentRefund.model');
 
 // Read here for more information
@@ -435,7 +435,7 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
 };
 
 const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, deletedItems, updatedItems) => {
-    const refundAmount = Number(oldOrder.total) - Number(updatedOrder.total);
+    const refundAmount = roundToTwoDecimals(Number(oldOrder.total) - Number(updatedOrder.total));
 
     if (!klarna_order_id || !refundAmount || (!deletedItems?.length && !updatedItems?.length)) {
         return {
@@ -466,7 +466,7 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
             };
         }
 
-        // Not captured yet - just cancel it and handel order/qty update
+        // Update the orderLines and the order amount etc.
         const { updatedKlarnaOrder, refundedOrderLines } = await updateKlarnaOrderLines(
             klarnaOrder,
             deletedItems,
@@ -474,7 +474,7 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
             updatedOrder,
         );
 
-        // When the order is not paid yet, just udpate it
+        // When the order is not paid yet (Not CAPTURED), just udpate it
         if (klarnaOrder.status === ORDER_STATUS.AUTHORIZED) {
             const updateResult = await klarnaModel.updateKlarnaAuthorization(klarna_order_id, updatedKlarnaOrder);
 
