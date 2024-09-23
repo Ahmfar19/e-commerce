@@ -185,7 +185,7 @@ const putOrderItems = async (req, res) => {
             );
 
             if (!klarnaRes.success) {
-                await transaction.rollback();
+                await transaction?.rollback();
                 return sendResponse(
                     res,
                     404,
@@ -201,7 +201,7 @@ const putOrderItems = async (req, res) => {
             // Create a refund payment record in the refund_payments table when the order is CAPTURED
             if (klarnaRes.refundAmount) {
                 await (new PaymentRefundModel({
-                    status: 1, // PENDING
+                    status: 2, // PAID
                     order_id: oldOrder.order_id,
                     refund_id: payment_id,
                     amount: klarnaRes.refundAmount,

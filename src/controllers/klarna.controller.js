@@ -336,10 +336,11 @@ const cancelKlarnaOrder = async (req, res) => {
     }
 };
 
-const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, updatedOrder) => {
+const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, updatedOrder, oldOrder) => {
     let orderLines = klarnaOrder.order_lines;
 
     const newShippingPrice = +updatedOrder.shipping_price;
+    const oldShippingPrice = +oldOrder.shipping_price;
     const newAmount = updatedOrder.total;
     const merchantData = JSON.parse(klarnaOrder.merchant_data || {});
     const newAmountInOre = Math.round(newAmount * 100);
@@ -358,7 +359,11 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
         if (item.type === 'shipping_fee') {
             const shippingFee = { ...item };
             if (newShippingPrice) {
+                shippingFee.unit_price = newShippingPrice * 100;
                 shippingFee.total_amount = newShippingPrice * 100;
+            }
+            if (newShippingPrice && !oldShippingPrice) {
+                refundedOrderLines.push(shippingFee);
             }
             acc.push(shippingFee);
             return acc;
@@ -422,11 +427,11 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
                 });
 
                 acc.push(newItem);
-                return acc; // Skip this item but return the accumulator
+                return acc;
             }
         }
         acc.push(item);
-        return acc; // Always return acc to avoid undefined
+        return acc;
     }, []);
 
     klarnaOrder.order_lines = orderLines;
@@ -472,6 +477,7 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
             deletedItems,
             updatedItems,
             updatedOrder,
+            oldOrder,
         );
 
         // When the order is not paid yet (Not CAPTURED), just udpate it
@@ -490,7 +496,7 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
             };
         }
 
-        // When the order is captured, a refund should be made is this case
+        // When the order is captured, a refund should be made in this case
         if (klarnaOrder.status === ORDER_STATUS.CAPTURED) {
             const refundDetails = {
                 refunded_amount: Math.round(refundAmount * 100),
@@ -532,10 +538,12 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
     }
 
     try {
-        // Prepare capture details
+        // Prepare capture details, Filter out the shipping_fee, the customer need to pay the
+        // Filter out the shipping fee, it could not be returned
+        const filtredOrderLines = klarnaOrder.order_lines.filter((item) => item.type !== 'shipping_fee');
         let refundDetails = {
             refunded_amount: klarnaOrder.order_amount,
-            order_lines: klarnaOrder.order_lines,
+            order_lines: filtredOrderLines,
             description: 'Refund for returned items for order ' + klarna_order_id,
         };
 
@@ -544,7 +552,6 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
         }
 
         let shippingPrice = 0;
-
         if (klarnaOrder.status === ORDER_STATUS.CAPTURED && shipping_name) {
             const [shipping] = await Shipping.getShippingByname(shipping_name);
 
@@ -562,6 +569,16 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
             // Refund the amount minus the shipping when the order is returned eg. type_id is 2 meaning shipped
             refundDetails.refunded_amount = refundDetails.refunded_amount - (shipping.shipping_price * 100);
             shippingPrice = shipping.shipping_price;
+
+            // Add the shipping because its already shipped/CAPTURED.
+            const returnFee = {
+                name: 'Return Fee',
+                type: 'return_fee',
+                quantity: 1,
+                unit_price: -(shipping.shipping_price * 100),
+                total_amount: -(shipping.shipping_price * 100),
+            };
+            refundDetails.order_lines = refundDetails.order_lines.push(returnFee);
         }
 
         if (klarnaOrder.refunded_amount === refundDetails.captured_amount) {
@@ -588,16 +605,22 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
             // Update the products qty in the product table
             await updateOrderAfterCancelation(existingPayment.order_id);
 
+            const [storeInfo] = await StoreInfo.getAll();
+            const tax = storeInfo.tax_percentage;
+            const remaningAmount = (klarnaOrder.captured_amount / 100) - (refundDetails.refunded_amount / 100);
+            const newTax = calculateVatAmount(remaningAmount, tax);
+
             await OrderModel.updateOrderAfterCancelleation({
                 order_id: existingPayment.order_id,
                 sub_total: (klarnaOrder.captured_amount / 100) - shippingPrice,
                 shipping_price: shippingPrice,
+                tax: newTax,
                 total: (klarnaOrder.captured_amount / 100),
                 type_id: 3, // Cancelled
             });
 
             await (new PaymentRefundModel({
-                status: 2, // PENDING
+                status: 2, // PAID
                 order_id: existingPayment.order_id,
                 refund_id: existingPayment.payment_id,
                 amount: refundDetails.refunded_amount / 100,

@@ -267,10 +267,9 @@ async function cancelSwishOrder(req, res) {
                 shippingAmount = 0;
             }
 
-            
             let newTax = 0;
 
-            if(order.type_id === 2) {
+            if (order.type_id === 2) {
                 newTax = calculateVatAmount(totalAmount - totalRefund, tax);
             }
 

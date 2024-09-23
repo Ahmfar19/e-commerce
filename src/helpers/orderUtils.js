@@ -195,7 +195,7 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
             } catch {
                 productImage = PRODUCTS_NO_IMAGE_URL;
             }
-            console.error('unitPriceInOres', unitPriceInOres);
+
             return {
                 type: 'physical',
                 reference: String(product.product_id),

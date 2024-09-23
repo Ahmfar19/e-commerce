@@ -18,7 +18,6 @@ async function createKlarnaSession(orderData) {
         },
     });
 
-    console.error('response', response);
     if (response?.data.order_id) {
         return {
             success: true,
