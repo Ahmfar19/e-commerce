@@ -57,7 +57,6 @@ const createOrderData = async (body) => {
         // Calculate final price
         const finallprice = totalPriceAfterDiscount + shipping_price;
 
-
         const vatAmount = calculateVatAmount(finallprice, storeInfo.tax_percentage);
 
         // Calculate total discount
@@ -66,7 +65,6 @@ const createOrderData = async (body) => {
             return roundToTwoDecimals(res);
         }, 0);
 
-        
         return {
             customer,
             products,
