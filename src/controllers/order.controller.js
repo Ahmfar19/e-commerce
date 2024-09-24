@@ -54,16 +54,16 @@ const createOrderData = async (body) => {
             shipping_price = 0;
         }
 
-        const vatAmount = calculateVatAmount(totalPriceAfterDiscount, storeInfo.tax_percentage);
+        // Calculate final price
+        const finallprice = totalPriceAfterDiscount + shipping_price;
+
+        const vatAmount = calculateVatAmount(finallprice, storeInfo.tax_percentage);
 
         // Calculate total discount
         const totalDiscount = products.reduce((acc, current) => {
             const res = acc + (current.discount * current.quantity);
             return roundToTwoDecimals(res);
         }, 0);
-
-        // Calculate final price
-        const finallprice = totalPriceAfterDiscount + shipping_price;
 
         return {
             customer,

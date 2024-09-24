@@ -28,8 +28,12 @@ class OrderItems {
             unit_name,
             discount,
             image,
-            quantity
+            quantity,
+            returned,
+            refundedQuantity
         ) VALUES (
+            ?,
+            ?,
             ?,
             ?,
             ?,
@@ -55,6 +59,8 @@ class OrderItems {
             totalDiscount,
             this.image,
             this.quantity,
+            this.returned || false,
+            this.refundedQuantity || 0.00,
         ];
         const result = await pool.execute(sql, values);
         this.item_id = result[0].insertId;
@@ -68,8 +74,8 @@ class OrderItems {
         // Create an array of promises for report item insertion
         const insertionPromises = product_items.products.map(async (product) => {
             const sql = `INSERT INTO order_items 
-            (order_id, product_id ,product_name, articelNumber, price, unit_name, discount, image, quantity) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            (order_id, product_id ,product_name, articelNumber, price, unit_name, discount, image, quantity, returned, refundedQuantity) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
             const priceAfterDiscount = product.price - (product.discount || 0);
             const productPrice = priceAfterDiscount * product.quantity;
@@ -85,6 +91,8 @@ class OrderItems {
                 totalDiscount,
                 product.image,
                 product.quantity,
+                false,
+                0.00,
             ];
 
             if (transaction) {
@@ -212,7 +220,12 @@ class OrderItems {
 
         const { sub_total, items_discount } = rows[0];
 
-        const vatAmount = calculateVatAmount(sub_total, storeInfo.tax_percentage);
+        let newSubTotal = sub_total;
+        if (newSubTotal < storeInfo.free_shipping) {
+            newSubTotal = sub_total + shipping_price;
+        }
+
+        const vatAmount = calculateVatAmount(newSubTotal, storeInfo.tax_percentage);
 
         const updateSql = `
            UPDATE orders 
@@ -225,17 +238,15 @@ class OrderItems {
               WHERE order_id = ?;
            `;
 
-        const total = sub_total;
-
         if (transaction) {
             await sequelize.query(updateSql, {
-                replacements: [sub_total, items_discount, total, vatAmount, order_id],
+                replacements: [sub_total, items_discount, sub_total, vatAmount, order_id],
                 transaction,
             });
         } else {
-            await pool.execute(updateSql, [sub_total, items_discount, total, order_id]);
+            await pool.execute(updateSql, [sub_total, items_discount, sub_total, order_id]);
         }
-        return total;
+        return sub_total;
     }
 }
 
