@@ -28,8 +28,12 @@ class OrderItems {
             unit_name,
             discount,
             image,
-            quantity
+            quantity,
+            returned,
+            refundedQuantity
         ) VALUES (
+            ?,
+            ?,
             ?,
             ?,
             ?,
@@ -55,6 +59,8 @@ class OrderItems {
             totalDiscount,
             this.image,
             this.quantity,
+            this.returned || false,
+            this.refundedQuantity || 0.00
         ];
         const result = await pool.execute(sql, values);
         this.item_id = result[0].insertId;
@@ -68,8 +74,8 @@ class OrderItems {
         // Create an array of promises for report item insertion
         const insertionPromises = product_items.products.map(async (product) => {
             const sql = `INSERT INTO order_items 
-            (order_id, product_id ,product_name, articelNumber, price, unit_name, discount, image, quantity) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            (order_id, product_id ,product_name, articelNumber, price, unit_name, discount, image, quantity, returned, refundedQuantity) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
             const priceAfterDiscount = product.price - (product.discount || 0);
             const productPrice = priceAfterDiscount * product.quantity;
@@ -85,6 +91,8 @@ class OrderItems {
                 totalDiscount,
                 product.image,
                 product.quantity,
+                false,
+                0.00
             ];
 
             if (transaction) {
