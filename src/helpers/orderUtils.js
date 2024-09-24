@@ -114,6 +114,7 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
     const orderTotalInOres = Math.round(orderData.sub_total * 100); // Convert total amount to öre
     const shippingPrice = Math.round(orderData.shipping_price * 100);
     const shippingInfo = orderData.shipping_name + ' 2 - ' + orderData.shipping_time + ' Dagar';
+    const shippingTax = calculateVatAmount(shippingPrice, tax);
 
     return {
         purchase_country: 'SE',
@@ -148,8 +149,8 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
                 name: shippingInfo,
                 price: shippingPrice,
                 preselected: true,
-                tax_amount: 0,
-                tax_rate: 0,
+                tax_amount: shippingTax,
+                tax_rate: Math.round(tax * 100),
                 shipping_method: 'PickUpStore',
             },
         ],

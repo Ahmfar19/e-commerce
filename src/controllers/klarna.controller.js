@@ -23,9 +23,12 @@ const ORDER_STATUS = {
 const updateOrderAfterCancelation = async (order_id) => {
     // update the order status and the product qty
     const products = await OrderItemsModel.getItemsByOrderId(order_id);
-    const updatedProducts = products?.map((product) => {
-        return { ...product, quantity: -product.quantity };
-    });
+    const updatedProducts = products?.reduce((acc, product) => {
+        if (!product.returned) {
+            acc.push({ ...product, quantity: -product.quantity });
+        }
+        return acc;
+    }, []);
     await OrderModel.updateProductQuantities(updatedProducts);
 };
 
@@ -285,7 +288,35 @@ const cancelKlarnaOrder = async (req, res) => {
                 });
 
                 await updateOrderAfterCancelation(existingPayment.order_id);
-                await OrderModel.updateOrderStatus(existingPayment.order_id, 3); // 3 Cancelled
+
+                let merchantData = {};
+                try {
+                    if (klarnaOrder.merchant_data) {
+                        merchantData = JSON.parse(klarnaOrder.merchant_data);
+                    }
+                } catch (error) {
+                    merchantData = {};
+                }
+
+                let storeTax = merchantData.tax;
+                if (!storeTax) {
+                    let [tax] = await StoreInfo.getTax();
+                    storeTax = tax.tax_percentage;
+                }
+
+                const orginalAmount = klarnaOrder.original_order_amount / 100;
+                const shippingAmount = (klarnaOrder.selected_shipping_option?.price || 0) / 100;
+                const subTotalAmount = orginalAmount - shippingAmount;
+                const newTax = calculateVatAmount(orginalAmount, storeTax);
+
+                await OrderModel.updateOrderAfterCancelleation({
+                    order_id: existingPayment.order_id,
+                    shipping_price: shippingAmount,
+                    sub_total: subTotalAmount,
+                    tax: newTax,
+                    total: orginalAmount,
+                    type_id: 3, // Cancelled
+                });
 
                 return sendResponse(
                     res,
@@ -297,6 +328,10 @@ const cancelKlarnaOrder = async (req, res) => {
                         payment_id: existingPayment.payment_id,
                         status: 7,
                         type_id: 3,
+                        sub_total: subTotalAmount,
+                        total: orginalAmount,
+                        tax: newTax,
+                        shipping_price: shippingAmount,
                         type_name: 'ec_orderType_canceled',
                     }, // 7 - payment CANCELLED, 3 - order cancelled
                 );
@@ -342,7 +377,14 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
     const newShippingPrice = +updatedOrder.shipping_price;
     const oldShippingPrice = +oldOrder.shipping_price;
     const newAmount = updatedOrder.total;
-    const merchantData = JSON.parse(klarnaOrder.merchant_data || {});
+    let merchantData = {};
+    try {
+        if (klarnaOrder.merchant_data) {
+            merchantData = JSON.parse(klarnaOrder.merchant_data);
+        }
+    } catch (error) {
+        merchantData = {};
+    }
     const newAmountInOre = Math.round(newAmount * 100);
 
     klarnaOrder.order_amount = newAmountInOre;
@@ -361,6 +403,9 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
             if (newShippingPrice) {
                 shippingFee.unit_price = newShippingPrice * 100;
                 shippingFee.total_amount = newShippingPrice * 100;
+                shippingFee.tax_rate = Math.round(storeTax * 100);
+                shippingFee.tax_amount = calculateVatAmount(newShippingPrice * 100, storeTax);
+                shippingFee.total_tax_amount = calculateVatAmount(newShippingPrice * 100, storeTax);
             }
             if (newShippingPrice && !oldShippingPrice) {
                 refundedOrderLines.push(shippingFee);
