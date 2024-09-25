@@ -222,7 +222,7 @@ class OrderItems {
 
         let newSubTotal = sub_total;
         if (newSubTotal < storeInfo.free_shipping) {
-            newSubTotal = sub_total + shipping_price;
+            newSubTotal = Number(sub_total) + Number(shipping_price);
         }
 
         const vatAmount = calculateVatAmount(newSubTotal, storeInfo.tax_percentage);
