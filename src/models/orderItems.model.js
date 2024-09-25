@@ -121,6 +121,22 @@ class OrderItems {
         }
     }
 
+    static async getNotReturnedItemsByOrderId(orderId) {
+        if (!orderId) {
+            throw new Error('Invalid order ID');
+        }
+        const sql = `
+            SELECT * FROM order_items
+            WHERE order_items.order_id = ${orderId} AND returned = 0
+        `;
+        try {
+            const [rows] = await pool.execute(sql);
+            return rows;
+        } catch {
+            throw new Error('Failed to get the order items');
+        }
+    }
+
     static async updateMulti(product_items, transaction) {
         if (!Array.isArray(product_items) || product_items.length === 0) {
             throw new Error('Invalid order items');

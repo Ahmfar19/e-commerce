@@ -1,3 +1,4 @@
+/* eslint-disable no-unreachable */
 const klarnaModel = require('../models/klarna.model.js');
 const { unmigrateKlarnaStruct } = require('../helpers/orderUtils.js');
 const { createOrderFromKlarnaStruct } = require('./order.controller.js');
@@ -30,6 +31,7 @@ const updateOrderAfterCancelation = async (order_id) => {
         return acc;
     }, []);
     await OrderModel.updateProductQuantities(updatedProducts);
+    return products;
 };
 
 const klarna_paymentrequests = async (orderData) => {
@@ -414,9 +416,18 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
             const isDeleted = deletedItems.find(deletedItem => +deletedItem.product_id === +item.reference);
 
             if (isDeleted) {
-                item.quantity = item.quantity - isDeleted.refundedQuantity;
+                // TODO: Handle when the qty is 'g'
+                let refundedQuantity = isDeleted.refundedQuantity;
+                let discountInOres = isDeleted.discount * 100;
+
+                if (item.quantity_unit === 'g') {
+                    refundedQuantity = refundedQuantity * 1000;
+                    discountInOres = discountInOres / 1000;
+                }
+
+                item.quantity = item.quantity - refundedQuantity;
                 item.total_amount = item.quantity * item.unit_price;
-                item.total_discount_amount = item.quantity * isDeleted.discount;
+                item.total_discount_amount = discountInOres;
                 item.total_tax_amount = calculateVatAmount(item.total_amount, storeTax);
                 refundedOrderLines.push(item);
                 return acc; // Skip this item but return the accumulator
@@ -428,46 +439,45 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
 
             if (isUpdated) {
                 let discountInOres = (isUpdated.discount || 0) * 100;
-                let productPriceInOres = isUpdated.price * 100;
-
-                let quantityInKg = isUpdated.quantity;
+                let unitPriceInOres = isUpdated.price * 100;
+                let quantity = isUpdated.quantity;
+                let removedQty = isUpdated.oldQuantity
+                    ? isUpdated.oldQuantity - isUpdated.quantity
+                    : isUpdated.quantity;
                 let unit_name = isUpdated.unit_name;
-                let orginalQuantity = item.quantity;
-
-                // Calculate unit price in öre before discount
-                let unitPriceInOres = productPriceInOres;
 
                 // If the product is measured in grams rather than kilograms
-                if (isUpdated.unit_name === 'g' || !Number.isInteger(quantityInKg)) {
+                if (item.quantity_unit === 'g' || !Number.isInteger(quantity)) {
                     unitPriceInOres = unitPriceInOres / 1000;
                     discountInOres = discountInOres / 1000;
-                    quantityInKg = quantityInKg * 1000;
-                    orginalQuantity = orginalQuantity * 1000;
+                    quantity = quantity * 1000;
+                    removedQty = removedQty * 1000;
                     unit_name = 'g';
                 }
-                const totalAmountAfterDiscount = Math.round((unitPriceInOres - discountInOres) * quantityInKg);
 
-                // Calculate tax rate and total tax amount
+                // When authorized
+                const totalAmountAfterDiscount = Math.round((unitPriceInOres - discountInOres) * quantity);
                 const totalTaxAmount = calculateVatAmount(totalAmountAfterDiscount, storeTax);
-                const totalDiscountAmount = Math.round(discountInOres * quantityInKg);
-
-                // Update the quantity and price
                 const newItem = {
                     ...item,
                     unit_price: unitPriceInOres,
-                    total_discount_amount: totalDiscountAmount,
-                    total_tax_amount: Math.round(totalTaxAmount),
                     quantity_unit: unit_name,
-                    quantity: quantityInKg,
+
+                    total_discount_amount: Math.round(discountInOres * quantity),
+                    total_tax_amount: Math.round(totalTaxAmount),
+                    quantity: quantity,
                     total_amount: totalAmountAfterDiscount,
                 };
 
+                // When Captured
+                const totalAmountAfterDiscount2 = Math.round((unitPriceInOres - discountInOres) * removedQty);
+                const totalTaxAmount2 = calculateVatAmount(totalAmountAfterDiscount2, storeTax);
                 refundedOrderLines.push({
                     ...newItem,
-                    total_discount_amount: (orginalQuantity - quantityInKg) * discountInOres,
-                    total_tax_amount: Math.round(item.total_tax_amount - totalTaxAmount),
-                    quantity: orginalQuantity - quantityInKg,
-                    total_amount: item.total_amount - totalAmountAfterDiscount,
+                    total_discount_amount: Math.round(discountInOres * removedQty),
+                    total_tax_amount: Math.round(totalTaxAmount2),
+                    quantity: Math.round(removedQty),
+                    total_amount: totalAmountAfterDiscount2,
                 });
 
                 acc.push(newItem);
@@ -506,7 +516,7 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
 
         // Get the order status from the ordermanagment
         const klarnaOrder = await klarnaModel.getOrder(klarna_order_id);
-        
+
         if (klarnaOrder.status === ORDER_STATUS.CANCELLED) {
             return {
                 success: false,
@@ -547,6 +557,18 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
                 description: 'Refund for returned/updated items for order ' + klarna_order_id,
             };
 
+            // Add the shipping
+            if (!+oldOrder.shipping_price && +updatedOrder.shipping_price) {
+                const returnFee = {
+                    name: 'Return Fee',
+                    type: 'return_fee',
+                    quantity: 1,
+                    unit_price: -(updatedOrder.shipping_price * 100),
+                    total_amount: -(updatedOrder.shipping_price * 100),
+                };
+                refundDetails.order_lines = [...refundedOrderLines, returnFee];
+            }
+
             const result = await klarnaModel.refundKlarnaOrder(klarna_order_id, refundDetails);
             if (result.success) {
                 return {
@@ -581,23 +603,53 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
     }
 
     try {
-        // Prepare capture details, Filter out the shipping_fee, the customer need to pay the
-        // Filter out the shipping fee, it could not be returned
+        const [storeInfo] = await StoreInfo.getAll();
+        const tax = storeInfo.tax_percentage;
+        const freeShippingLimit = storeInfo.free_shipping;
+
+        // Prepare capture details, Filter out the shipping_fee
         const filtredOrderLines = klarnaOrder.order_lines.filter((item) => item.type !== 'shipping_fee');
         let refundDetails = {
-            refunded_amount: klarnaOrder.order_amount,
+            refunded_amount: klarnaOrder.captured_amount,
             order_lines: filtredOrderLines,
             description: 'Refund for returned items for order ' + klarna_order_id,
         };
 
         if (klarnaOrder.refunded_amount) {
-            refundDetails.refunded_amount = klarnaOrder.captured_amount - klarnaOrder.refunded_amount;
+            const remaningAmount = klarnaOrder.captured_amount - klarnaOrder.refunded_amount;
+            refundDetails.refunded_amount = remaningAmount;
+
+            const orderItems = await OrderItemsModel.getNotReturnedItemsByOrderId(existingPayment.order_id);
+            if (orderItems?.length) {
+                const remaningItemsToRefund = klarnaOrder.order_lines.reduce((acc, item) => {
+                    const found = orderItems.find(orderItems => +orderItems.product_id === +item.reference);
+
+                    if (found) {
+                        let foundQuantity = found.quantity;
+                        let foundDiscount = (found.discount || 0) * 100;
+                        if (item.quantity_unit === 'g') {
+                            foundQuantity = foundQuantity * 1000;
+                            foundDiscount = foundDiscount / 100;
+                        }
+                        item.quantity = foundQuantity;
+                        item.total_amount = item.quantity * item.unit_price;
+                        item.total_discount_amount = item.quantity * foundDiscount;
+                        item.total_tax_amount = Math.round(calculateVatAmount(item.total_amount, tax));
+                        acc.push(item);
+                    }
+                    return acc;
+                }, []);
+                refundDetails.order_lines = remaningItemsToRefund;
+            }
         }
 
         let shippingPrice = 0;
-        if (klarnaOrder.status === ORDER_STATUS.CAPTURED && shipping_name) {
+        const orderShippingPrice = klarnaOrder.selected_shipping_option?.price || 0
+        if (orderShippingPrice > 0) {
+            const refundAmount = refundDetails.refunded_amount;
+            refundDetails.refunded_amount = refundAmount - orderShippingPrice;
+        } else if (shipping_name) {
             const [shipping] = await Shipping.getShippingByname(shipping_name);
-
             if (!shipping) {
                 return sendResponse(
                     res,
@@ -609,11 +661,10 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
                 );
             }
 
-            // Refund the amount minus the shipping when the order is returned eg. type_id is 2 meaning shipped
-            refundDetails.refunded_amount = refundDetails.refunded_amount - (shipping.shipping_price * 100);
+            // The Store shipping price
             shippingPrice = shipping.shipping_price;
 
-            // Add the shipping because its already shipped/CAPTURED.
+            // Shipping fee.
             const returnFee = {
                 name: 'Return Fee',
                 type: 'return_fee',
@@ -621,7 +672,17 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
                 unit_price: -(shipping.shipping_price * 100),
                 total_amount: -(shipping.shipping_price * 100),
             };
-            refundDetails.order_lines = refundDetails.order_lines.push(returnFee);
+
+            // Refund the amount minus the shipping when the order is returned eg. type_id is 2 meaning shipped
+            const refundAmount = refundDetails.refunded_amount;
+            refundDetails.refunded_amount = refundAmount - (shipping.shipping_price * 100);
+
+            // If the refund amount is more than free shipping limit, add the return fee.
+            const shouldTakeReturnFee = (refundAmount / 100) > freeShippingLimit;
+
+            if (!klarnaOrder.refunded_amount || shouldTakeReturnFee) {
+                refundDetails.order_lines = [...refundDetails.order_lines, returnFee];
+            }
         }
 
         if (klarnaOrder.refunded_amount === refundDetails.captured_amount) {
@@ -645,11 +706,6 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
                 status: 6, // REFUNDED
             });
 
-            // Update the products qty in the product table
-            await updateOrderAfterCancelation(existingPayment.order_id);
-
-            const [storeInfo] = await StoreInfo.getAll();
-            const tax = storeInfo.tax_percentage;
             const remaningAmount = (klarnaOrder.captured_amount / 100) - (refundDetails.refunded_amount / 100);
             const newTax = calculateVatAmount(remaningAmount, tax);
 
@@ -669,13 +725,28 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
                 amount: refundDetails.refunded_amount / 100,
             })).save();
 
+            // Update the products qty in the product table
+            const orderItems = await updateOrderAfterCancelation(existingPayment.order_id);
+
+            // Update the orderitems to be returned
+            await OrderItemsModel.deleteMulti(orderItems);
+
             return sendResponse(
                 res,
                 200,
                 'ec_order_cancel_klarna_refund_success',
                 'Order refunded successfully',
                 null,
-                { payment_id: existingPayment.payment_id, status: 6, type_id: 3, type_name: 'ec_orderType_canceled' }, // 6 - payment REFUNDED, 3 - order cancelled
+                {
+                    payment_id: existingPayment.payment_id,
+                    status: 6,
+                    type_id: 3,
+                    sub_total: (klarnaOrder.captured_amount / 100) - shippingPrice,
+                    total: (klarnaOrder.captured_amount / 100),
+                    tax: newTax,
+                    shipping_price: shippingPrice,
+                    type_name: 'ec_orderType_canceled',
+                }, // 6 - payment REFUNDED, 3 - order cancelled
             );
         } else {
             return sendResponse(
