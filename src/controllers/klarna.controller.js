@@ -7,7 +7,7 @@ const OrderItemsModel = require('../models/orderItems.model');
 const { sendResponse } = require('../helpers/apiResponse');
 const StoreInfo = require('../models/storeInfo.model');
 const Shipping = require('../models/shipping.model');
-const { calculateVatAmount, roundToTwoDecimals } = require('../helpers/utils.js');
+const { calculateVatAmount } = require('../helpers/utils.js');
 const PaymentRefundModel = require('../models/paymentRefund.model');
 
 // Read here for more information
@@ -371,11 +371,10 @@ const cancelKlarnaOrder = async (req, res) => {
     }
 };
 
-const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, updatedOrder, oldOrder) => {
+const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, updatedOrder) => {
     let orderLines = klarnaOrder.order_lines;
 
     const newShippingPrice = +updatedOrder.shipping_price;
-    const oldShippingPrice = +oldOrder.shipping_price;
     const newAmount = updatedOrder.total;
     let merchantData = {};
     try {
@@ -407,9 +406,6 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
                 shippingFee.tax_amount = calculateVatAmount(newShippingPrice * 100, storeTax);
                 shippingFee.total_tax_amount = calculateVatAmount(newShippingPrice * 100, storeTax);
             }
-            if (newShippingPrice && !oldShippingPrice) {
-                refundedOrderLines.push(shippingFee);
-            }
             acc.push(shippingFee);
             return acc;
         }
@@ -418,6 +414,10 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
             const isDeleted = deletedItems.find(deletedItem => +deletedItem.product_id === +item.reference);
 
             if (isDeleted) {
+                item.quantity = item.quantity - isDeleted.refundedQuantity;
+                item.total_amount = item.quantity * item.unit_price;
+                item.total_discount_amount = item.quantity * isDeleted.discount;
+                item.total_tax_amount = calculateVatAmount(item.total_amount, storeTax);
                 refundedOrderLines.push(item);
                 return acc; // Skip this item but return the accumulator
             }
@@ -464,7 +464,6 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
 
                 refundedOrderLines.push({
                     ...newItem,
-                    unit_price: unitPriceInOres,
                     total_discount_amount: (orginalQuantity - quantityInKg) * discountInOres,
                     total_tax_amount: Math.round(item.total_tax_amount - totalTaxAmount),
                     quantity: orginalQuantity - quantityInKg,
@@ -485,7 +484,7 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
 };
 
 const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, deletedItems, updatedItems) => {
-    const refundAmount = roundToTwoDecimals(Number(oldOrder.total) - Number(updatedOrder.total));
+    const refundAmount = Math.round(Number(oldOrder.total) - Number(updatedOrder.total));
 
     if (!klarna_order_id || !refundAmount || (!deletedItems?.length && !updatedItems?.length)) {
         return {
@@ -507,7 +506,7 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
 
         // Get the order status from the ordermanagment
         const klarnaOrder = await klarnaModel.getOrder(klarna_order_id);
-
+        
         if (klarnaOrder.status === ORDER_STATUS.CANCELLED) {
             return {
                 success: false,
@@ -522,7 +521,6 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
             deletedItems,
             updatedItems,
             updatedOrder,
-            oldOrder,
         );
 
         // When the order is not paid yet (Not CAPTURED), just udpate it
