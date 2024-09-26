@@ -3,7 +3,7 @@ const Payments = require('../models/payments.model');
 const OrderItemsModel = require('../models/orderItems.model');
 const OrderModel = require('../models/order.model');
 const PaymentRefundModel = require('../models/paymentRefund.model');
-const { commitOrder } = require('../helpers/orderUtils');
+const { commitOrder, sendOrderEmail } = require('../helpers/orderUtils');
 const { deleteById } = require('../models/order.model');
 const Shipping = require('../models/shipping.model');
 const StoreInfo = require('../models/storeInfo.model');
@@ -15,6 +15,7 @@ const {
     getRefund,
     cancelPaymentRequest,
 } = require('../models/swish.model');
+const path = require('path');
 
 const PAYMENT_STATUS = {
     CREATED: 'CREATED',
@@ -313,6 +314,21 @@ async function cancelSwishOrder(req, res) {
             amount: refundAmount,
         })).save();
 
+        // send cancel email
+        
+       const finallOrderDetails = await OrderModel.getById(order_id)
+      
+
+        const orderData = {
+            products,
+            ...finallOrderDetails[0],
+        };
+       
+        
+        const templatePath = path.resolve(`public/orderTamplate/cancel.html`);
+        await sendOrderEmail(orderData, templatePath);
+
+    
         return sendResponse(res, 200, 'Cancelled', 'Order cancelled successfully.', null, {
             payment_id: refundResult.refund_id,
         });
