@@ -439,20 +439,18 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
 
             if (isUpdated) {
                 let discountInOres = (isUpdated.discount || 0) * 100;
-                let unitPriceInOres = isUpdated.price * 100;
+                let unitPriceInOres = item.unit_price / 100;
+
                 let quantity = isUpdated.quantity;
                 let removedQty = isUpdated.oldQuantity
                     ? isUpdated.oldQuantity - isUpdated.quantity
                     : isUpdated.quantity;
-                let unit_name = isUpdated.unit_name;
 
                 // If the product is measured in grams rather than kilograms
-                if (item.quantity_unit === 'g' || !Number.isInteger(quantity)) {
-                    unitPriceInOres = unitPriceInOres / 1000;
+                if (item.quantity_unit === 'g') {
                     discountInOres = discountInOres / 1000;
                     quantity = quantity * 1000;
                     removedQty = removedQty * 1000;
-                    unit_name = 'g';
                 }
 
                 // When authorized
@@ -460,9 +458,6 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
                 const totalTaxAmount = calculateVatAmount(totalAmountAfterDiscount, storeTax);
                 const newItem = {
                     ...item,
-                    unit_price: unitPriceInOres,
-                    quantity_unit: unit_name,
-
                     total_discount_amount: Math.round(discountInOres * quantity),
                     total_tax_amount: Math.round(totalTaxAmount),
                     quantity: quantity,
@@ -568,8 +563,11 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
                 };
                 refundDetails.order_lines = [...refundedOrderLines, returnFee];
             }
-
+            console.error('refundDetails', refundDetails);
             const result = await klarnaModel.refundKlarnaOrder(klarna_order_id, refundDetails);
+
+            console.error('result', result);
+
             if (result.success) {
                 return {
                     refundAmount: refundAmount,
