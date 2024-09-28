@@ -420,7 +420,7 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
                 let refundedQuantity = isDeleted.refundedQuantity;
                 let discountInOres = isDeleted.discount * 100;
 
-                if (item.quantity_unit === 'g') {
+                if (item.quantity_unit === 'g' || !Number.isInteger(isDeleted.quantity)) {
                     refundedQuantity = refundedQuantity * 1000;
                     discountInOres = discountInOres / 1000;
                 }
@@ -439,7 +439,7 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
 
             if (isUpdated) {
                 let discountInOres = (isUpdated.discount || 0) * 100;
-                let unitPriceInOres = item.unit_price / 100;
+                let unitPriceInOres = Math.round(isUpdated.price * 100);
 
                 let quantity = isUpdated.quantity;
                 let removedQty = isUpdated.oldQuantity
@@ -447,10 +447,12 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
                     : isUpdated.quantity;
 
                 // If the product is measured in grams rather than kilograms
-                if (item.quantity_unit === 'g') {
-                    discountInOres = discountInOres / 1000;
+                if (item.quantity_unit === 'g' || !Number.isInteger(isUpdated.quantity)) {
+                    unitPriceInOres = unitPriceInOres / 1000;
+                    discountInOres = Math.round(discountInOres / 1000);
                     quantity = quantity * 1000;
                     removedQty = removedQty * 1000;
+                    item.quantity_unit = 'g';
                 }
 
                 // When authorized
@@ -458,6 +460,7 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
                 const totalTaxAmount = calculateVatAmount(totalAmountAfterDiscount, storeTax);
                 const newItem = {
                     ...item,
+                    unit_price: Math.round(unitPriceInOres),
                     total_discount_amount: Math.round(discountInOres * quantity),
                     total_tax_amount: Math.round(totalTaxAmount),
                     quantity: quantity,
@@ -489,7 +492,7 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
 };
 
 const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, deletedItems, updatedItems) => {
-    const refundAmount = Math.round(Number(oldOrder.total) - Number(updatedOrder.total));
+    const refundAmount = Number((parseFloat(oldOrder.total) - parseFloat(updatedOrder.total)).toFixed(2));
 
     if (!klarna_order_id || !refundAmount || (!deletedItems?.length && !updatedItems?.length)) {
         return {
@@ -563,10 +566,8 @@ const updateKlarnaOrder = async (klarna_order_id, oldOrder, updatedOrder, delete
                 };
                 refundDetails.order_lines = [...refundedOrderLines, returnFee];
             }
-            console.error('refundDetails', refundDetails);
-            const result = await klarnaModel.refundKlarnaOrder(klarna_order_id, refundDetails);
 
-            console.error('result', result);
+            const result = await klarnaModel.refundKlarnaOrder(klarna_order_id, refundDetails);
 
             if (result.success) {
                 return {
@@ -623,16 +624,22 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
                     const found = orderItems.find(orderItems => +orderItems.product_id === +item.reference);
 
                     if (found) {
-                        let foundQuantity = found.quantity;
                         let foundDiscount = (found.discount || 0) * 100;
-                        if (item.quantity_unit === 'g') {
+                        let unitPriceInOres = Math.round(found.price * 100);
+                        let foundQuantity = found.quantity;
+
+                        if (item.quantity_unit === 'g' || !Number.isInteger(found.quantity)) {
+                            unitPriceInOres = unitPriceInOres / 1000;
+                            foundDiscount = foundDiscount / 1000;
                             foundQuantity = foundQuantity * 1000;
-                            foundDiscount = foundDiscount / 100;
+                            item.quantity_unit = 'g';
                         }
+                        const totalAmountAfterDiscount = Math.round((unitPriceInOres - foundDiscount) * foundQuantity);
+                        const totalTaxAmount = calculateVatAmount(totalAmountAfterDiscount, tax);
                         item.quantity = foundQuantity;
-                        item.total_amount = item.quantity * item.unit_price;
-                        item.total_discount_amount = item.quantity * foundDiscount;
-                        item.total_tax_amount = Math.round(calculateVatAmount(item.total_amount, tax));
+                        item.total_amount = totalAmountAfterDiscount;
+                        item.total_discount_amount = Math.round(foundDiscount * foundQuantity);
+                        item.total_tax_amount = totalTaxAmount;
                         acc.push(item);
                     }
                     return acc;
