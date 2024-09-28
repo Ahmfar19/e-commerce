@@ -639,10 +639,10 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
                             foundQuantity = foundQuantity * 1000;
                             item.quantity_unit = 'g';
                         }
-                        const totalAmountAfterDiscount = Math.round(unitPriceInOres * foundQuantity);
+                        const totalAmountAfterDiscount = Math.round((unitPriceInOres) * foundQuantity);
                         const totalTaxAmount = calculateVatAmount(totalAmountAfterDiscount, tax);
 
-                        item.unit_price = Math.round(unitPriceInOres);
+                        item.unit_price = Math.round(unitPriceInOres + foundDiscount);
                         item.quantity = foundQuantity;
                         item.total_amount = totalAmountAfterDiscount;
                         item.total_discount_amount = Math.round(foundDiscount * foundQuantity);
@@ -707,8 +707,6 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
                 null,
             );
         }
-
-        console.error('refundDetails', refundDetails);
 
         // Process the refund for the given order ID
         const result = await klarnaModel.refundKlarnaOrder(klarna_order_id, refundDetails);
