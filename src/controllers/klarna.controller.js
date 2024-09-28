@@ -417,20 +417,25 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
 
             if (isDeleted) {
                 // TODO: Handle when the qty is 'g'
-                let refundedQuantity = isDeleted.refundedQuantity;
-                let discountInOres = isDeleted.discount * 100;
+                let refundedQuantity = Math.abs(isDeleted.quantity);
+                let unitPriceInOres = (isDeleted.price / refundedQuantity) * 100;
+                let discountInOres = ((isDeleted.discount || 0) / refundedQuantity) * 100;
 
-                if (item.quantity_unit === 'g' || !Number.isInteger(isDeleted.quantity)) {
-                    refundedQuantity = refundedQuantity * 1000;
+                if (item.quantity_unit === 'g' || !Number.isInteger(refundedQuantity)) {
+                    unitPriceInOres = unitPriceInOres / 1000;
                     discountInOres = discountInOres / 1000;
+                    refundedQuantity = refundedQuantity * 1000;
+                    item.quantity_unit = 'g';
                 }
 
-                item.quantity = item.quantity - refundedQuantity;
-                item.total_amount = item.quantity * item.unit_price;
-                item.total_discount_amount = discountInOres;
-                item.total_tax_amount = calculateVatAmount(item.total_amount, storeTax);
+                const totalAmountAfterDiscount = Math.round(unitPriceInOres * refundedQuantity);
+                const totalTaxAmount = calculateVatAmount(totalAmountAfterDiscount, storeTax);
+                item.unit_price = Math.round(unitPriceInOres), item.quantity = refundedQuantity;
+                item.total_amount = totalAmountAfterDiscount;
+                item.total_discount_amount = Math.round(discountInOres * refundedQuantity);
+                item.total_tax_amount = Math.round(totalTaxAmount);
                 refundedOrderLines.push(item);
-                return acc; // Skip this item but return the accumulator
+                return acc;
             }
         }
 
@@ -637,7 +642,7 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
                         const totalAmountAfterDiscount = Math.round(unitPriceInOres * foundQuantity);
                         const totalTaxAmount = calculateVatAmount(totalAmountAfterDiscount, tax);
 
-                        item.unit_price = Math.round(unitPriceInOres),
+                        item.unit_price = Math.round(unitPriceInOres);
                         item.quantity = foundQuantity;
                         item.total_amount = totalAmountAfterDiscount;
                         item.total_discount_amount = Math.round(foundDiscount * foundQuantity);
