@@ -644,7 +644,7 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
         }
 
         let shippingPrice = 0;
-        const orderShippingPrice = klarnaOrder.selected_shipping_option?.price || 0
+        const orderShippingPrice = klarnaOrder.selected_shipping_option?.price || 0;
         if (orderShippingPrice > 0) {
             const refundAmount = refundDetails.refunded_amount;
             refundDetails.refunded_amount = refundAmount - orderShippingPrice;
@@ -674,8 +674,8 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
             };
 
             // Refund the amount minus the shipping when the order is returned eg. type_id is 2 meaning shipped
+            refundDetails.refunded_amount = refundDetails.refunded_amount - (shipping.shipping_price * 100);
             const refundAmount = refundDetails.refunded_amount;
-            refundDetails.refunded_amount = refundAmount - (shipping.shipping_price * 100);
 
             // If the refund amount is more than free shipping limit, add the return fee.
             const shouldTakeReturnFee = (refundAmount / 100) > freeShippingLimit;
@@ -706,7 +706,8 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
                 status: 6, // REFUNDED
             });
 
-            const remaningAmount = (klarnaOrder.captured_amount / 100) - (refundDetails.refunded_amount / 100);
+            const refundedAmount = klarnaOrder.refunded_amount + refundDetails.refunded_amount;
+            const remaningAmount = (klarnaOrder.captured_amount - refundedAmount) / 100;
             const newTax = calculateVatAmount(remaningAmount, tax);
 
             await OrderModel.updateOrderAfterCancelleation({
