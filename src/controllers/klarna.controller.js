@@ -430,7 +430,8 @@ const updateKlarnaOrderLines = async (klarnaOrder, deletedItems, updatedItems, u
 
                 const totalAmountAfterDiscount = Math.round(unitPriceInOres * refundedQuantity);
                 const totalTaxAmount = calculateVatAmount(totalAmountAfterDiscount, storeTax);
-                item.unit_price = Math.round(unitPriceInOres), item.quantity = refundedQuantity;
+                item.unit_price = Math.round(unitPriceInOres + discountInOres);
+                item.quantity = refundedQuantity;
                 item.total_amount = totalAmountAfterDiscount;
                 item.total_discount_amount = Math.round(discountInOres * refundedQuantity);
                 item.total_tax_amount = Math.round(totalTaxAmount);
@@ -639,7 +640,7 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
                             foundQuantity = foundQuantity * 1000;
                             item.quantity_unit = 'g';
                         }
-                        const totalAmountAfterDiscount = Math.round((unitPriceInOres) * foundQuantity);
+                        const totalAmountAfterDiscount = Math.round(unitPriceInOres * foundQuantity);
                         const totalTaxAmount = calculateVatAmount(totalAmountAfterDiscount, tax);
 
                         item.unit_price = Math.round(unitPriceInOres + foundDiscount);
@@ -710,8 +711,6 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
 
         // Process the refund for the given order ID
         const result = await klarnaModel.refundKlarnaOrder(klarna_order_id, refundDetails);
-
-        console.error('result', result);
 
         if (result.success) {
             await Payments.updatePaymentsStatusAndPaymentId({
