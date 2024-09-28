@@ -624,8 +624,8 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
                     const found = orderItems.find(orderItems => +orderItems.product_id === +item.reference);
 
                     if (found) {
-                        let foundDiscount = (found.discount || 0) * 100;
-                        let unitPriceInOres = Math.round(found.price * 100);
+                        let foundDiscount = ((found.discount || 0) / found.quantity) * 100;
+                        let unitPriceInOres = (found.price / found.quantity) * 100;
                         let foundQuantity = found.quantity;
 
                         if (item.quantity_unit === 'g' || !Number.isInteger(found.quantity)) {
@@ -634,12 +634,14 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
                             foundQuantity = foundQuantity * 1000;
                             item.quantity_unit = 'g';
                         }
-                        const totalAmountAfterDiscount = Math.round((unitPriceInOres - foundDiscount) * foundQuantity);
+                        const totalAmountAfterDiscount = Math.round(unitPriceInOres * foundQuantity);
                         const totalTaxAmount = calculateVatAmount(totalAmountAfterDiscount, tax);
+
+                        item.unit_price = Math.round(unitPriceInOres),
                         item.quantity = foundQuantity;
                         item.total_amount = totalAmountAfterDiscount;
                         item.total_discount_amount = Math.round(foundDiscount * foundQuantity);
-                        item.total_tax_amount = totalTaxAmount;
+                        item.total_tax_amount = Math.round(totalTaxAmount);
                         acc.push(item);
                     }
                     return acc;
@@ -701,8 +703,12 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
             );
         }
 
+        console.error('refundDetails', refundDetails);
+
         // Process the refund for the given order ID
         const result = await klarnaModel.refundKlarnaOrder(klarna_order_id, refundDetails);
+
+        console.error('result', result);
 
         if (result.success) {
             await Payments.updatePaymentsStatusAndPaymentId({
