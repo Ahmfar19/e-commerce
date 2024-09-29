@@ -8,6 +8,7 @@ const { sendHtmlEmail } = require('../controllers/sendEmail.controller');
 const { roundToTwoDecimals, getSwedenTimestamp } = require('../helpers/utils');
 const config = require('config');
 
+const WEBSITE_URL = config.get('WEBSITE_URL')
 const PRODUCTS_IMAGE_URL = config.get('PRODUCTS_IMAGE_URL');
 const PRODUCTS_NO_IMAGE_URL = config.get('PRODUCTS_NO_IMAGE_URL');
 const PRODUCTS_URL = config.get('PRODUCTS_URL');
@@ -214,7 +215,7 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
             };
         }),
         merchant_urls: {
-            terms: 'https://www.example.com/terms',
+            terms: `${WEBSITE_URL}\terms`,
             checkout: CHECKOUT_URL,
             confirmation: `${KLARNA_CONFIRMATION}?klarna_order_id={checkout.order.id}`,
             push: KLARNA_CALLBACK,
