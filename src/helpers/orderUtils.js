@@ -8,7 +8,7 @@ const { sendHtmlEmail } = require('../controllers/sendEmail.controller');
 const { roundToTwoDecimals, getSwedenTimestamp } = require('../helpers/utils');
 const config = require('config');
 
-const WEBSITE_URL = config.get('WEBSITE_URL')
+const WEBSITE_URL = config.get('WEBSITE_URL');
 const PRODUCTS_IMAGE_URL = config.get('PRODUCTS_IMAGE_URL');
 const PRODUCTS_NO_IMAGE_URL = config.get('PRODUCTS_NO_IMAGE_URL');
 const PRODUCTS_URL = config.get('PRODUCTS_URL');
