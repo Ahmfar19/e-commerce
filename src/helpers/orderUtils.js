@@ -111,7 +111,7 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
     let [tax] = await StoreInfo.getTax();
     tax = tax.tax_percentage;
 
-    const orderTaxInOres = Math.round(calculateVatAmount(orderData.total, tax) * 100); // Convert total tax to öre
+    const orderTaxInOres = Math.round(calculateVatAmount(orderData.sub_total, tax) * 100); // Convert total tax to öre
     const orderTotalInOres = Math.round(orderData.sub_total * 100); // Convert total amount to öre
     const shippingPrice = Math.round(orderData.shipping_price * 100);
     const shippingInfo = orderData.shipping_name + ' 2 - ' + orderData.shipping_time + ' Dagar';
@@ -301,7 +301,8 @@ const unmigrateKlarnaStruct = async (data) => {
         return acc;
     }, []);
 
-    const sub_total = (data.order_amount / 100) - ((shipping_options.price / 100) || 0);
+    const total = data.order_amount / 100;
+    const sub_total = total - ((shipping_options.price / 100) || 0);
 
     // Calculate order details
     const unMigratedOrder = {
@@ -313,7 +314,7 @@ const unmigrateKlarnaStruct = async (data) => {
         zip: customer.postal_code,
         city: customer.city,
         sub_total: sub_total,
-        tax: calculateVatAmount(sub_total, storeTax),
+        tax: calculateVatAmount(total, storeTax),
         items_discount: total_discount,
         total: data.order_amount / 100,
     };
