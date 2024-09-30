@@ -215,7 +215,7 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
             };
         }),
         merchant_urls: {
-            terms: `${WEBSITE_URL}\terms`,
+            terms: `${WEBSITE_URL}/terms`,
             checkout: CHECKOUT_URL,
             confirmation: `${KLARNA_CONFIRMATION}?klarna_order_id={checkout.order.id}`,
             push: KLARNA_CALLBACK,
