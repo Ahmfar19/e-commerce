@@ -111,7 +111,7 @@ const migrateProductsToKlarnaStructure = async (products, orderData) => {
     let [tax] = await StoreInfo.getTax();
     tax = tax.tax_percentage;
 
-    const orderTaxInOres = Math.round(calculateVatAmount(orderData.sub_total, tax) * 100); // Convert total tax to öre
+    const orderTaxInOres = Math.round(calculateVatAmount(orderData.total, tax) * 100); // Convert total tax to öre
     const orderTotalInOres = Math.round(orderData.sub_total * 100); // Convert total amount to öre
     const shippingPrice = Math.round(orderData.shipping_price * 100);
     const shippingInfo = orderData.shipping_name + ' 2 - ' + orderData.shipping_time + ' Dagar';

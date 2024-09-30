@@ -328,9 +328,9 @@ class Order {
 
     static async getOrdersTotalPriceAndCount(date) {
         const [year, month] = date.split('-');
-
+    
         const sql =
-            'SELECT SUM(sub_total) AS total_price, COUNT(*) AS orders_count FROM orders WHERE MONTH(orders.order_date) = ? AND YEAR(orders.order_date) = ?';
+            'SELECT SUM(sub_total) AS total_price, COUNT(*) AS orders_count FROM orders WHERE MONTH(orders.order_date) = ? AND YEAR(orders.order_date) = ? AND type_id != 3';
         const [rows] = await pool.execute(sql, [month, year]);
         return rows;
     }
