@@ -321,7 +321,7 @@ async function cancelSwishOrder(req, res) {
         const orderData = {
             products,
             ...finallOrderDetails[0],
-            refundedAmount,
+            refundedAmount: refundAmount,
         };
 
         const templatePath = path.resolve(`public/orderTamplate/cancel.html`);
