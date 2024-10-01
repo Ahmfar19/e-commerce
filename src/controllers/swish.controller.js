@@ -315,20 +315,19 @@ async function cancelSwishOrder(req, res) {
         })).save();
 
         // send cancel email
-        
-       const finallOrderDetails = await OrderModel.getById(order_id)
-      
+
+        const finallOrderDetails = await OrderModel.getById(order_id);
+        const totalAmountRefunded = await PaymentRefundModel.sumAmountByOrderId(order_id);
 
         const orderData = {
             products,
             ...finallOrderDetails[0],
+            totalAmountRefunded,
         };
-       
-        
+
         const templatePath = path.resolve(`public/orderTamplate/cancel.html`);
         await sendOrderEmail(orderData, templatePath);
 
-    
         return sendResponse(res, 200, 'Cancelled', 'Order cancelled successfully.', null, {
             payment_id: refundResult.refund_id,
         });
