@@ -148,8 +148,8 @@
                 <div><strong>Leverans:</strong> <%= orderData.shipping_price %> Kr</div>
                 <div>Moms: <%= orderData.tax %> Kr</div>
                 <div><strong>Totalt:</strong> <%= orderData.total %> Kr</div>
-                <div><strong>Återbetalt belopp:</strong> <%= orderData.totalAmountRefunded %> Kr</div>
-                <div><strong>Totalt efter återbetalning:</strong> <%= (orderData.total - orderData.totalAmountRefunded) %> Kr</div>
+                <div><strong>Återbetalt belopp:</strong> <%= orderData.refundedAmount %> Kr</div>
+                <div><strong>Totalt efter återbetalning:</strong> <%= (orderData.total - orderData.refundedAmount) %> Kr</div>
             </div>
 
             <h3 class="bottom-border">Butiksinformation</h3>

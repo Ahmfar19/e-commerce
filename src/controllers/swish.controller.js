@@ -253,7 +253,7 @@ async function cancelSwishOrder(req, res) {
         // Update the orderitems to be returned
         await OrderItemsModel.deleteMulti(products);
 
-        let refundedAmount = await PaymentRefundModel.sumAmountByOrderId(order_id);
+        const refundedAmount = await PaymentRefundModel.sumAmountByOrderId(order_id);
         const [storeInfo] = await StoreInfo.getAll();
         const tax = storeInfo.tax_percentage;
         if (refundedAmount) {
@@ -317,12 +317,11 @@ async function cancelSwishOrder(req, res) {
         // send cancel email
 
         const finallOrderDetails = await OrderModel.getById(order_id);
-        const totalAmountRefunded = await PaymentRefundModel.sumAmountByOrderId(order_id);
 
         const orderData = {
             products,
             ...finallOrderDetails[0],
-            totalAmountRefunded,
+            refundedAmount,
         };
 
         const templatePath = path.resolve(`public/orderTamplate/cancel.html`);
