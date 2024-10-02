@@ -1,6 +1,6 @@
 /* eslint-disable no-unreachable */
 const klarnaModel = require('../models/klarna.model.js');
-const { unmigrateKlarnaStruct } = require('../helpers/orderUtils.js');
+const { unmigrateKlarnaStruct, sendOrderEmail } = require('../helpers/orderUtils.js');
 const { createOrderFromKlarnaStruct } = require('./order.controller.js');
 const Payments = require('../models/payments.model');
 const OrderModel = require('../models/order.model.js');
@@ -10,6 +10,7 @@ const StoreInfo = require('../models/storeInfo.model');
 const Shipping = require('../models/shipping.model');
 const { calculateVatAmount } = require('../helpers/utils.js');
 const PaymentRefundModel = require('../models/paymentRefund.model');
+const path = require('path');
 
 // Read here for more information
 // https://docs.klarna.com/klarna-checkout/additional-resources/confirm-purchase/
@@ -745,6 +746,17 @@ const refundOrder = async (req, res, klarnaOrder, existingPayment) => {
             // Update the orderitems to be returned
             await OrderItemsModel.deleteMulti(orderItems);
 
+            const finallOrderDetails = await OrderModel.getById(existingPayment.order_id);
+          
+            const orderData = {
+                products: orderItems,
+                ...finallOrderDetails[0],
+                refundedAmount: (klarnaOrder.captured_amount / 100) - shippingPrice,
+            };
+            
+            const templatePath = path.resolve(`public/orderTamplate/cancel.html`);
+            await sendOrderEmail(orderData, templatePath);
+            
             return sendResponse(
                 res,
                 200,
