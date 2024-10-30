@@ -19,14 +19,14 @@ const testConfig = {
 };
 
 const prodConfig = {
-    payeeAlias: 'YOUR_PAYEE_ALIAS',
+    payeeAlias: '1230161182',
     host: 'https://cpc.getswish.net/swish-cpcapi',
     qrHost: 'https://mpc.getswish.net/qrg-swish',
-    cert: path.resolve(__dirname, 'ssl/prod.pem'),
-    key: path.resolve(__dirname, 'ssl/prod.key'),
+    cert: path.resolve(__dirname, '../ssl/swishProduction/prod.pem'),
+    key: path.resolve(__dirname, '../ssl/swishProduction/prod.key'),
     passphrase: null,
 };
-
+// ssl/prod.pem
 const swishConfig = process.env.NODE_ENV === 'production' ? prodConfig : testConfig;
 
 const axiosInstance = axios.create({
